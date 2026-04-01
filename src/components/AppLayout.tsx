@@ -7,6 +7,7 @@ import {
   Clock,
   Warehouse,
   ClipboardList,
+  BookOpen,
 } from "lucide-react";
 
 const navGroups = [
