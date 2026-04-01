@@ -507,9 +507,15 @@ const MFRTable = () => {
         <div className="flex-1">
           <div className="text-[15px] font-medium">Manufacturing Reference Table</div>
           <div className="text-[11px] text-muted-foreground mt-px">
-            {data.length} classical formulations · Ingredients · Manufacturing steps · QC parameters · Ref: AFI / API / Charaka Samhita
+            {allData.length} formulations ({customFormulations.length} custom) · Ingredients · Manufacturing steps · QC parameters
           </div>
         </div>
+        <button onClick={() => navigate("/bmr-create")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1">
+          <FileText className="w-3 h-3" /> Create BMR
+        </button>
+        <button onClick={() => navigate("/mfr-create")} className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1">
+          <Plus className="w-3 h-3" /> New formulation
+        </button>
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
           <input
