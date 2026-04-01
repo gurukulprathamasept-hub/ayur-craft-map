@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ChevronRight, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronRight, Search, Plus, FileText } from "lucide-react";
+import { useFormulations, Formulation as CustomFormulation } from "@/context/FormulationContext";
 
 type RMCategory = "herb" | "extract" | "mineral" | "animal" | "base" | "process";
 
@@ -11,7 +13,7 @@ interface RMItem {
 }
 
 interface Formulation {
-  id: number;
+  id: number | string;
   name: string;
   sanskrit: string;
   type: string;
@@ -24,6 +26,9 @@ interface Formulation {
   qc: string[];
   ipc: string;
   dosha: string;
+  _custom?: boolean;
+  _customId?: string;
+  _stdBatch?: string;
 }
 
 const CAT_BADGE: Record<RMCategory, string> = {
@@ -454,17 +459,41 @@ const FormulationDetail = ({ f }: { f: Formulation }) => {
 };
 
 const MFRTable = () => {
+  const navigate = useNavigate();
+  const { formulations: customFormulations } = useFormulations();
   const [filter, setFilter] = useState("All");
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [search, setSearch] = useState("");
 
-  const filtered = data.filter((f) => {
+  // Merge reference data with custom formulations
+  const customAsLegacy = customFormulations.map((cf): Formulation => ({
+    id: cf.id as any,
+    name: cf.name,
+    sanskrit: cf.sanskrit,
+    type: cf.type,
+    form: cf.form,
+    ref: cf.ref,
+    use: cf.use,
+    shelf: cf.shelf,
+    rm: cf.rm.map((r) => ({ name: r.name, cat: r.cat, qty: `${r.qty} ${r.unit}`, part: r.part })),
+    steps: cf.steps.map((s) => s.step),
+    qc: cf.qc.map((q) => `${q.parameter} ${q.spec}`),
+    ipc: cf.ipc,
+    dosha: cf.dosha,
+    _custom: true,
+    _customId: cf.id,
+    _stdBatch: `${cf.standardBatchSize} ${cf.standardBatchUnit}`,
+  })) as any[];
+
+  const allData = [...customAsLegacy, ...data];
+
+  const filtered = allData.filter((f: any) => {
     const matchType = filter === "All" || f.type === filter;
     const matchSearch = !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.sanskrit.includes(search);
     return matchType && matchSearch;
   });
 
-  const toggle = (id: number) => {
+  const toggle = (id: number | string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -478,9 +507,15 @@ const MFRTable = () => {
         <div className="flex-1">
           <div className="text-[15px] font-medium">Manufacturing Reference Table</div>
           <div className="text-[11px] text-muted-foreground mt-px">
-            {data.length} classical formulations · Ingredients · Manufacturing steps · QC parameters · Ref: AFI / API / Charaka Samhita
+            {allData.length} formulations ({customFormulations.length} custom) · Ingredients · Manufacturing steps · QC parameters
           </div>
         </div>
+        <button onClick={() => navigate("/bmr-create")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1">
+          <FileText className="w-3 h-3" /> Create BMR
+        </button>
+        <button onClick={() => navigate("/mfr-create")} className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1">
+          <Plus className="w-3 h-3" /> New formulation
+        </button>
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
           <input
@@ -556,7 +591,8 @@ const MFRTable = () => {
                           />
                         </td>
                         <td>
-                          <div className="font-medium">{f.name}</div>
+                          <div className="font-medium">{f.name} {(f as any)._custom && <span className="app-badge app-badge-teal text-[9px] ml-1">Custom</span>}</div>
+                          {(f as any)._stdBatch && <div className="text-[10px] text-muted-foreground">Std batch: {(f as any)._stdBatch}</div>}
                           <div className="text-[10px] text-muted-foreground italic">{f.sanskrit}</div>
                         </td>
                         <td>

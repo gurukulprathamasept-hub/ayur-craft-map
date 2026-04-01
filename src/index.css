@@ -239,6 +239,10 @@
   .form-field textarea {
     @apply resize-y min-h-[60px];
   }
+  .form-field-input {
+    @apply w-full px-2.5 py-1.5 border border-border rounded-md bg-card text-foreground text-xs;
+    font-family: inherit;
+  }
 
   .step-num {
     @apply w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0;
