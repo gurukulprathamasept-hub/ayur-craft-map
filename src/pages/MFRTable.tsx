@@ -462,13 +462,35 @@ const MFRTable = () => {
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [search, setSearch] = useState("");
 
-  const filtered = data.filter((f) => {
+  // Merge reference data with custom formulations
+  const customAsLegacy = customFormulations.map((cf): Formulation => ({
+    id: cf.id as any,
+    name: cf.name,
+    sanskrit: cf.sanskrit,
+    type: cf.type,
+    form: cf.form,
+    ref: cf.ref,
+    use: cf.use,
+    shelf: cf.shelf,
+    rm: cf.rm.map((r) => ({ name: r.name, cat: r.cat, qty: `${r.qty} ${r.unit}`, part: r.part })),
+    steps: cf.steps.map((s) => s.step),
+    qc: cf.qc.map((q) => `${q.parameter} ${q.spec}`),
+    ipc: cf.ipc,
+    dosha: cf.dosha,
+    _custom: true,
+    _customId: cf.id,
+    _stdBatch: `${cf.standardBatchSize} ${cf.standardBatchUnit}`,
+  })) as any[];
+
+  const allData = [...customAsLegacy, ...data];
+
+  const filtered = allData.filter((f: any) => {
     const matchType = filter === "All" || f.type === filter;
     const matchSearch = !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.sanskrit.includes(search);
     return matchType && matchSearch;
   });
 
-  const toggle = (id: number) => {
+  const toggle = (id: number | string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
