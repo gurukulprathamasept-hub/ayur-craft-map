@@ -11,6 +11,7 @@ import BMR from "./pages/BMR";
 import RMMaster from "./pages/RMMaster";
 import StockLedger from "./pages/StockLedger";
 import ScheduleTA from "./pages/ScheduleTA";
+import MFRTable from "./pages/MFRTable";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
