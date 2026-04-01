@@ -11,6 +11,7 @@ import BMR from "./pages/BMR";
 import RMMaster from "./pages/RMMaster";
 import StockLedger from "./pages/StockLedger";
 import ScheduleTA from "./pages/ScheduleTA";
+import MFRTable from "./pages/MFRTable";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/rm-master" element={<RMMaster />} />
             <Route path="/stock-ledger" element={<StockLedger />} />
             <Route path="/schedule-ta" element={<ScheduleTA />} />
+            <Route path="/mfr-table" element={<MFRTable />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
