@@ -13,7 +13,7 @@ interface RMItem {
 }
 
 interface Formulation {
-  id: number;
+  id: number | string;
   name: string;
   sanskrit: string;
   type: string;
@@ -26,6 +26,9 @@ interface Formulation {
   qc: string[];
   ipc: string;
   dosha: string;
+  _custom?: boolean;
+  _customId?: string;
+  _stdBatch?: string;
 }
 
 const CAT_BADGE: Record<RMCategory, string> = {
