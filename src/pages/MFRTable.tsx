@@ -456,8 +456,10 @@ const FormulationDetail = ({ f }: { f: Formulation }) => {
 };
 
 const MFRTable = () => {
+  const navigate = useNavigate();
+  const { formulations: customFormulations } = useFormulations();
   const [filter, setFilter] = useState("All");
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [search, setSearch] = useState("");
 
   const filtered = data.filter((f) => {
