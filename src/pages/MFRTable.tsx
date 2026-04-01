@@ -591,7 +591,8 @@ const MFRTable = () => {
                           />
                         </td>
                         <td>
-                          <div className="font-medium">{f.name}</div>
+                          <div className="font-medium">{f.name} {(f as any)._custom && <span className="app-badge app-badge-teal text-[9px] ml-1">Custom</span>}</div>
+                          {(f as any)._stdBatch && <div className="text-[10px] text-muted-foreground">Std batch: {(f as any)._stdBatch}</div>}
                           <div className="text-[10px] text-muted-foreground italic">{f.sanskrit}</div>
                         </td>
                         <td>
