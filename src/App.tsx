@@ -31,6 +31,7 @@ const App = () => (
             <Route path="/rm-master" element={<RMMaster />} />
             <Route path="/stock-ledger" element={<StockLedger />} />
             <Route path="/schedule-ta" element={<ScheduleTA />} />
+            <Route path="/mfr-table" element={<MFRTable />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

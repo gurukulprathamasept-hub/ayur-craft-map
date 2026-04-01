@@ -30,6 +30,7 @@ const navGroups = [
     items: [
       { to: "/rm-master", icon: Clock, label: "RM Master" },
       { to: "/stock-ledger", icon: Warehouse, label: "Stock Ledger" },
+      { to: "/mfr-table", icon: BookOpen, label: "MFR Table" },
     ],
   },
   {
