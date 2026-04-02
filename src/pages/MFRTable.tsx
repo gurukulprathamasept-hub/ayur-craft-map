@@ -603,6 +603,30 @@ const MFRTable = () => {
                         <td className="text-[11px] text-muted-foreground">{f.ref}</td>
                         <td className="text-[11px] max-w-[180px]">{f.use}</td>
                         <td className="text-[11px] text-muted-foreground whitespace-nowrap">{f.shelf}</td>
+                        <td>
+                          {(f as any)._custom && (
+                            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => navigate(`/mfr-create?edit=${(f as any)._customId}`)}
+                                className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Delete "${f.name}"?`)) {
+                                    deleteFormulation((f as any)._customId);
+                                  }
+                                }}
+                                className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                       {isOpen && (
                         <tr key={`detail-${f.id}`}>
