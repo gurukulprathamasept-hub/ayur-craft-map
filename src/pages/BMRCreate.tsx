@@ -33,7 +33,43 @@ const BMRCreate = () => {
   }, [mfr, scaleFactor]);
 
   const handleCreate = () => {
-    toast.success(`BMR ${batchNo} created from ${mfr?.name}`);
+    if (!mfr || scaleFactor <= 0) return;
+    const bmrRecord: BMRRecord = {
+      id: crypto.randomUUID(),
+      batchNo,
+      productName: mfr.name,
+      mfrId: mfr.id,
+      mfrName: `${mfr.name} (${mfr.type})`,
+      batchSize,
+      batchUnit: mfr.standardBatchUnit,
+      scaleFactor,
+      startDate,
+      status: "In process",
+      ingredients: mfr.rm.map((rm) => ({
+        name: rm.name,
+        cat: rm.cat,
+        requiredQty: rm.unit === "q.s." ? 0 : Number((rm.qty * scaleFactor).toFixed(3)),
+        actualQty: 0,
+        unit: rm.unit,
+        part: rm.part,
+        lot: "",
+        cost: 0,
+      })),
+      steps: mfr.steps.map((s, i) => ({
+        step: s.step,
+        equipment: s.equipment,
+        duration: s.duration,
+        temp: s.temp,
+        ipcCheck: s.ipcCheck,
+        status: i === 0 ? "current" : "todo",
+      })),
+      qcParams: mfr.qc.map((q) => ({ parameter: q.parameter, spec: q.spec, result: "" })),
+      theoreticalYield: batchSize * 0.98,
+      actualYield: 0,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    addBMR(bmrRecord);
+    toast.success(`BMR ${batchNo} created from ${mfr.name}`);
     navigate("/bmr");
   };
 
