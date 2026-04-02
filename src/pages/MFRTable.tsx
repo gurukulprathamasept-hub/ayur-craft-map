@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Search, Plus, FileText } from "lucide-react";
+import { ChevronRight, Search, Plus, FileText, Pencil, Trash2 } from "lucide-react";
 import { useFormulations, Formulation as CustomFormulation } from "@/context/FormulationContext";
 
 type RMCategory = "herb" | "extract" | "mineral" | "animal" | "base" | "process";
