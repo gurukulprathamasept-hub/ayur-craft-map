@@ -110,7 +110,7 @@ const MFRCreate = () => {
       {/* Header */}
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
         <div className="flex-1">
-          <div className="text-[15px] font-medium">Create New Formulation (MFR)</div>
+          <div className="text-[15px] font-medium">{editId ? "Edit Formulation (MFR)" : "Create New Formulation (MFR)"}</div>
           <div className="text-[11px] text-muted-foreground mt-px">Define standard batch, ingredients, process and QC parameters</div>
         </div>
         <button onClick={() => navigate("/mfr-table")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Cancel</button>
