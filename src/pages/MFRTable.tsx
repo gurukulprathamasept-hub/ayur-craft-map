@@ -631,7 +631,7 @@ const MFRTable = () => {
                       </tr>
                       {isOpen && (
                         <tr key={`detail-${f.id}`}>
-                          <td colSpan={8} className="!p-0">
+                          <td colSpan={9} className="!p-0">
                             <FormulationDetail f={f} />
                           </td>
                         </tr>
