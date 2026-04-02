@@ -46,6 +46,8 @@ export interface Formulation {
 interface FormulationContextType {
   formulations: Formulation[];
   addFormulation: (f: Formulation) => void;
+  updateFormulation: (id: string, f: Formulation) => void;
+  deleteFormulation: (id: string) => void;
   getFormulation: (id: string) => Formulation | undefined;
 }
 
