@@ -558,16 +558,17 @@ const MFRTable = () => {
           <div className="overflow-x-auto">
             <table className="app-table">
               <thead>
-                <tr>
-                  <th style={{ width: 28 }}></th>
-                  <th>Formulation</th>
-                  <th>Category</th>
-                  <th>Dosage form</th>
-                  <th>Key herbs (RM)</th>
-                  <th>Pharmacopoeial ref</th>
-                  <th>Therapeutic use</th>
-                  <th>Shelf life</th>
-                </tr>
+                 <tr>
+                   <th style={{ width: 28 }}></th>
+                   <th>Formulation</th>
+                   <th>Category</th>
+                   <th>Dosage form</th>
+                   <th>Key herbs (RM)</th>
+                   <th>Pharmacopoeial ref</th>
+                   <th>Therapeutic use</th>
+                   <th>Shelf life</th>
+                   <th style={{ width: 70 }}>Actions</th>
+                 </tr>
               </thead>
               <tbody>
                 {filtered.map((f) => {
