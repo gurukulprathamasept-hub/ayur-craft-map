@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useFormulations, RMItem, ProcessStep, QCParam } from "@/context/FormulationContext";
 import { toast } from "sonner";
