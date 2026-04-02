@@ -16,7 +16,9 @@ const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
 
 const MFRCreate = () => {
   const navigate = useNavigate();
-  const { addFormulation } = useFormulations();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const { addFormulation, updateFormulation, getFormulation } = useFormulations();
   const [activeStep, setActiveStep] = useState(0);
 
   // Basic info
@@ -40,6 +42,29 @@ const MFRCreate = () => {
   // QC
   const [qcParams, setQcParams] = useState<QCParam[]>([emptyQC()]);
   const [ipc, setIpc] = useState("");
+
+  // Load existing formulation for editing
+  useEffect(() => {
+    if (editId) {
+      const existing = getFormulation(editId);
+      if (existing) {
+        setName(existing.name);
+        setSanskrit(existing.sanskrit);
+        setType(existing.type);
+        setForm(existing.form);
+        setRef(existing.ref);
+        setUse(existing.use);
+        setShelf(existing.shelf);
+        setDosha(existing.dosha);
+        setBatchSize(existing.standardBatchSize);
+        setBatchUnit(existing.standardBatchUnit);
+        setIngredients(existing.rm.length ? existing.rm : [emptyRM()]);
+        setSteps(existing.steps.length ? existing.steps : [emptyStep()]);
+        setQcParams(existing.qc.length ? existing.qc : [emptyQC()]);
+        setIpc(existing.ipc);
+      }
+    }
+  }, [editId]);
 
   const updateIngredient = (i: number, field: keyof RMItem, value: any) => {
     setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
