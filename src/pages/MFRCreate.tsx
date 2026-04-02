@@ -85,7 +85,7 @@ const MFRCreate = () => {
 
   const handleSave = () => {
     const formulation = {
-      id: `MFR-${Date.now()}`,
+      id: editId || `MFR-${Date.now()}`,
       name, sanskrit, type, form, ref, use, shelf, dosha,
       standardBatchSize: batchSize,
       standardBatchUnit: batchUnit,
@@ -93,10 +93,15 @@ const MFRCreate = () => {
       steps: steps.filter((s) => s.step.trim()),
       qc: qcParams.filter((q) => q.parameter.trim()),
       ipc,
-      createdAt: new Date().toISOString(),
+      createdAt: editId ? (getFormulation(editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
     };
-    addFormulation(formulation);
-    toast.success(`Formulation "${name}" created successfully`);
+    if (editId) {
+      updateFormulation(editId, formulation);
+      toast.success(`Formulation "${name}" updated successfully`);
+    } else {
+      addFormulation(formulation);
+      toast.success(`Formulation "${name}" created successfully`);
+    }
     navigate("/mfr-table");
   };
 
