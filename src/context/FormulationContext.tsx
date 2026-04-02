@@ -46,6 +46,8 @@ export interface Formulation {
 interface FormulationContextType {
   formulations: Formulation[];
   addFormulation: (f: Formulation) => void;
+  updateFormulation: (id: string, f: Formulation) => void;
+  deleteFormulation: (id: string) => void;
   getFormulation: (id: string) => Formulation | undefined;
 }
 
@@ -64,10 +66,18 @@ export const FormulationProvider = ({ children }: { children: ReactNode }) => {
     setFormulations((prev) => [...prev, f]);
   };
 
+  const updateFormulation = (id: string, f: Formulation) => {
+    setFormulations((prev) => prev.map((p) => (p.id === id ? f : p)));
+  };
+
+  const deleteFormulation = (id: string) => {
+    setFormulations((prev) => prev.filter((p) => p.id !== id));
+  };
+
   const getFormulation = (id: string) => formulations.find((f) => f.id === id);
 
   return (
-    <FormulationContext.Provider value={{ formulations, addFormulation, getFormulation }}>
+    <FormulationContext.Provider value={{ formulations, addFormulation, updateFormulation, deleteFormulation, getFormulation }}>
       {children}
     </FormulationContext.Provider>
   );

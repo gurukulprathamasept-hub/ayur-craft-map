@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Search, Plus, FileText } from "lucide-react";
+import { ChevronRight, Search, Plus, FileText, Pencil, Trash2 } from "lucide-react";
 import { useFormulations, Formulation as CustomFormulation } from "@/context/FormulationContext";
 
 type RMCategory = "herb" | "extract" | "mineral" | "animal" | "base" | "process";
@@ -460,7 +460,7 @@ const FormulationDetail = ({ f }: { f: Formulation }) => {
 
 const MFRTable = () => {
   const navigate = useNavigate();
-  const { formulations: customFormulations } = useFormulations();
+  const { formulations: customFormulations, deleteFormulation } = useFormulations();
   const [filter, setFilter] = useState("All");
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [search, setSearch] = useState("");
@@ -558,16 +558,17 @@ const MFRTable = () => {
           <div className="overflow-x-auto">
             <table className="app-table">
               <thead>
-                <tr>
-                  <th style={{ width: 28 }}></th>
-                  <th>Formulation</th>
-                  <th>Category</th>
-                  <th>Dosage form</th>
-                  <th>Key herbs (RM)</th>
-                  <th>Pharmacopoeial ref</th>
-                  <th>Therapeutic use</th>
-                  <th>Shelf life</th>
-                </tr>
+                 <tr>
+                   <th style={{ width: 28 }}></th>
+                   <th>Formulation</th>
+                   <th>Category</th>
+                   <th>Dosage form</th>
+                   <th>Key herbs (RM)</th>
+                   <th>Pharmacopoeial ref</th>
+                   <th>Therapeutic use</th>
+                   <th>Shelf life</th>
+                   <th style={{ width: 70 }}>Actions</th>
+                 </tr>
               </thead>
               <tbody>
                 {filtered.map((f) => {
@@ -603,10 +604,34 @@ const MFRTable = () => {
                         <td className="text-[11px] text-muted-foreground">{f.ref}</td>
                         <td className="text-[11px] max-w-[180px]">{f.use}</td>
                         <td className="text-[11px] text-muted-foreground whitespace-nowrap">{f.shelf}</td>
+                        <td>
+                          {(f as any)._custom && (
+                            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => navigate(`/mfr-create?edit=${(f as any)._customId}`)}
+                                className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Delete "${f.name}"?`)) {
+                                    deleteFormulation((f as any)._customId);
+                                  }
+                                }}
+                                className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                       {isOpen && (
                         <tr key={`detail-${f.id}`}>
-                          <td colSpan={8} className="!p-0">
+                          <td colSpan={9} className="!p-0">
                             <FormulationDetail f={f} />
                           </td>
                         </tr>

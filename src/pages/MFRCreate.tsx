@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useFormulations, RMItem, ProcessStep, QCParam } from "@/context/FormulationContext";
 import { toast } from "sonner";
@@ -16,7 +16,9 @@ const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
 
 const MFRCreate = () => {
   const navigate = useNavigate();
-  const { addFormulation } = useFormulations();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const { addFormulation, updateFormulation, getFormulation } = useFormulations();
   const [activeStep, setActiveStep] = useState(0);
 
   // Basic info
@@ -41,6 +43,29 @@ const MFRCreate = () => {
   const [qcParams, setQcParams] = useState<QCParam[]>([emptyQC()]);
   const [ipc, setIpc] = useState("");
 
+  // Load existing formulation for editing
+  useEffect(() => {
+    if (editId) {
+      const existing = getFormulation(editId);
+      if (existing) {
+        setName(existing.name);
+        setSanskrit(existing.sanskrit);
+        setType(existing.type);
+        setForm(existing.form);
+        setRef(existing.ref);
+        setUse(existing.use);
+        setShelf(existing.shelf);
+        setDosha(existing.dosha);
+        setBatchSize(existing.standardBatchSize);
+        setBatchUnit(existing.standardBatchUnit);
+        setIngredients(existing.rm.length ? existing.rm : [emptyRM()]);
+        setSteps(existing.steps.length ? existing.steps : [emptyStep()]);
+        setQcParams(existing.qc.length ? existing.qc : [emptyQC()]);
+        setIpc(existing.ipc);
+      }
+    }
+  }, [editId]);
+
   const updateIngredient = (i: number, field: keyof RMItem, value: any) => {
     setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   };
@@ -60,7 +85,7 @@ const MFRCreate = () => {
 
   const handleSave = () => {
     const formulation = {
-      id: `MFR-${Date.now()}`,
+      id: editId || `MFR-${Date.now()}`,
       name, sanskrit, type, form, ref, use, shelf, dosha,
       standardBatchSize: batchSize,
       standardBatchUnit: batchUnit,
@@ -68,10 +93,15 @@ const MFRCreate = () => {
       steps: steps.filter((s) => s.step.trim()),
       qc: qcParams.filter((q) => q.parameter.trim()),
       ipc,
-      createdAt: new Date().toISOString(),
+      createdAt: editId ? (getFormulation(editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
     };
-    addFormulation(formulation);
-    toast.success(`Formulation "${name}" created successfully`);
+    if (editId) {
+      updateFormulation(editId, formulation);
+      toast.success(`Formulation "${name}" updated successfully`);
+    } else {
+      addFormulation(formulation);
+      toast.success(`Formulation "${name}" created successfully`);
+    }
     navigate("/mfr-table");
   };
 
@@ -80,7 +110,7 @@ const MFRCreate = () => {
       {/* Header */}
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
         <div className="flex-1">
-          <div className="text-[15px] font-medium">Create New Formulation (MFR)</div>
+          <div className="text-[15px] font-medium">{editId ? "Edit Formulation (MFR)" : "Create New Formulation (MFR)"}</div>
           <div className="text-[11px] text-muted-foreground mt-px">Define standard batch, ingredients, process and QC parameters</div>
         </div>
         <button onClick={() => navigate("/mfr-table")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Cancel</button>
