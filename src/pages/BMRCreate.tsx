@@ -9,6 +9,7 @@ const BMRCreate = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { formulations } = useFormulations();
+  const { addBMR } = useBMRs();
 
   const preselectedId = searchParams.get("mfr");
   const [selectedMFR, setSelectedMFR] = useState<string>(preselectedId || "");
