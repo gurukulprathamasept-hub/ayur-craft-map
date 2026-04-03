@@ -19,6 +19,8 @@ type InwardLine = {
 const RMInward = () => {
   const navigate = useNavigate();
   const { rmData, inwardStock } = useStock();
+  const { suppliers } = useSupplier();
+  const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
   const [submitted, setSubmitted] = useState(false);
   const [lines, setLines] = useState<InwardLine[]>([]);
   const [showPicker, setShowPicker] = useState(false);
