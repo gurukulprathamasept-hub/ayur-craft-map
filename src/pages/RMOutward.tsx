@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
-import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer } from "lucide-react";
+import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 
 type IssuedItem = {
