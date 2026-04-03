@@ -99,10 +99,19 @@ type IssueLine = {
   rate?: string;
 };
 
+type InwardLine = {
+  rmName: string;
+  qty: number;
+  batch: string;
+  expiry: string;
+  rate?: string;
+};
+
 type StockContextType = {
   rmData: RMEntry[];
   getStockForRM: (name: string) => { available: number; batch: string; batchColor: string; expiry: string; uom: string } | null;
   issueStock: (issRef: string, lines: IssueLine[]) => void;
+  inwardStock: (grnRef: string, lines: InwardLine[]) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
@@ -176,8 +185,40 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const inwardStock = (grnRef: string, lines: InwardLine[]) => {
+    setRmData(prev => {
+      const updated = [...prev];
+      for (const line of lines) {
+        const idx = updated.findIndex(r =>
+          r.name.toLowerCase().includes(line.rmName.toLowerCase()) ||
+          line.rmName.toLowerCase().includes(r.name.toLowerCase())
+        );
+        if (idx === -1 || line.qty <= 0) continue;
+
+        const rm = { ...updated[idx] };
+        const newStock = parseFloat((rm.currentStock + line.qty).toFixed(3));
+        const newTxn: Txn = {
+          date: today(),
+          type: "Inward",
+          typeBadge: "teal",
+          ref: grnRef,
+          batch: line.batch,
+          expiry: line.expiry,
+          qtyIn: line.qty.toFixed(3),
+          qtyOut: "—",
+          balance: newStock.toFixed(3),
+          rate: line.rate || "—",
+        };
+        rm.currentStock = newStock;
+        rm.txns = [...rm.txns, newTxn];
+        updated[idx] = rm;
+      }
+      return updated;
+    });
+  };
+
   return (
-    <StockContext.Provider value={{ rmData, getStockForRM, issueStock }}>
+    <StockContext.Provider value={{ rmData, getStockForRM, issueStock, inwardStock }}>
       {children}
     </StockContext.Provider>
   );
