@@ -8,6 +8,7 @@ import {
   Warehouse,
   ClipboardList,
   BookOpen,
+  Truck,
 } from "lucide-react";
 
 const navGroups = [
@@ -31,6 +32,7 @@ const navGroups = [
       { to: "/rm-master", icon: Clock, label: "RM Master" },
       { to: "/stock-ledger", icon: Warehouse, label: "Stock Ledger" },
       { to: "/mfr-table", icon: BookOpen, label: "MFR Table" },
+      { to: "/supplier-master", icon: Truck, label: "Suppliers" },
     ],
   },
   {
