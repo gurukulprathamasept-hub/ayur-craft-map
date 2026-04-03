@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FormulationProvider } from "@/context/FormulationContext";
 import { BMRProvider } from "@/context/BMRContext";
+import { StockProvider } from "@/context/StockContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import RMInward from "./pages/RMInward";
@@ -26,26 +27,28 @@ const App = () => (
     <TooltipProvider>
       <FormulationProvider>
         <BMRProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/rm-inward" element={<RMInward />} />
-                <Route path="/rm-outward" element={<RMOutward />} />
-                <Route path="/bmr" element={<BMR />} />
-                <Route path="/bmr-create" element={<BMRCreate />} />
-                <Route path="/bmr/:id" element={<BMRDetail />} />
-                <Route path="/rm-master" element={<RMMaster />} />
-                <Route path="/stock-ledger" element={<StockLedger />} />
-                <Route path="/schedule-ta" element={<ScheduleTA />} />
-                <Route path="/mfr-table" element={<MFRTable />} />
-                <Route path="/mfr-create" element={<MFRCreate />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <StockProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/rm-inward" element={<RMInward />} />
+                  <Route path="/rm-outward" element={<RMOutward />} />
+                  <Route path="/bmr" element={<BMR />} />
+                  <Route path="/bmr-create" element={<BMRCreate />} />
+                  <Route path="/bmr/:id" element={<BMRDetail />} />
+                  <Route path="/rm-master" element={<RMMaster />} />
+                  <Route path="/stock-ledger" element={<StockLedger />} />
+                  <Route path="/schedule-ta" element={<ScheduleTA />} />
+                  <Route path="/mfr-table" element={<MFRTable />} />
+                  <Route path="/mfr-create" element={<MFRCreate />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </StockProvider>
         </BMRProvider>
       </FormulationProvider>
     </TooltipProvider>
