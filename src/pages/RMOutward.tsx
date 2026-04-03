@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
-import { ArrowLeft, Package, FlaskConical, Search } from "lucide-react";
+import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 
 /* ── Single-drug issue detail ── */
 const SingleDrugIssueDetail = ({ onBack }: { onBack: () => void }) => {
@@ -59,8 +59,31 @@ const SingleDrugIssueDetail = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-/* ── Batch issue detail (original screen) ── */
+/* ── Batch issue detail (with stock status & partial issue) ── */
 const BatchIssueDetail = ({ onBack, bmrLabel }: { onBack: () => void; bmrLabel: string }) => {
+  const initialIngredients = [
+    { name: "Amla / Amalaki", bot: "Emblica officinalis", req: 3.333, unit: "kg", batch: "AR/2025-162", batchColor: "teal", expiry: "Dec 2025", available: 12.5, status: "available" as const },
+    { name: "Haritaki", bot: "Terminalia chebula", req: 3.333, unit: "kg", batch: "AR/2024-312", batchColor: "amber", expiry: "14 Jun 2025", expiryWarn: true, available: 1.2, status: "low" as const },
+    { name: "Vibhitaki", bot: "Terminalia bellirica", req: 3.334, unit: "kg", batch: "AR/2025-171", batchColor: "teal", expiry: "Feb 2026", available: 0, status: "unavailable" as const },
+  ];
+
+  const [ingredients, setIngredients] = useState(initialIngredients.map(ing => ({
+    ...ing,
+    qtyToIssue: ing.status === "unavailable" ? 0 : Math.min(ing.req, ing.available),
+    issueChecked: ing.status !== "unavailable",
+  })));
+
+  const toggleIssue = (idx: number) => {
+    setIngredients(prev => prev.map((ing, i) => i === idx ? { ...ing, issueChecked: !ing.issueChecked, qtyToIssue: !ing.issueChecked ? Math.min(ing.req, ing.available) : 0 } : ing));
+  };
+
+  const updateQty = (idx: number, val: number) => {
+    setIngredients(prev => prev.map((ing, i) => i === idx ? { ...ing, qtyToIssue: val } : ing));
+  };
+
+  const issuedCount = ingredients.filter(i => i.issueChecked && i.qtyToIssue > 0).length;
+  const pendingCount = ingredients.filter(i => !i.issueChecked || i.qtyToIssue === 0).length;
+
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
@@ -69,8 +92,14 @@ const BatchIssueDetail = ({ onBack, bmrLabel }: { onBack: () => void; bmrLabel: 
           <div className="text-[15px] font-medium">RM issue to production</div>
           <div className="text-[11px] text-muted-foreground mt-px">ISS-2025-0094 · Against {bmrLabel}</div>
         </div>
+        <div className="flex items-center gap-1.5 mr-2">
+          <span className="app-badge app-badge-teal flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />{issuedCount} issued</span>
+          {pendingCount > 0 && <span className="app-badge app-badge-amber flex items-center gap-1"><Clock className="w-3 h-3" />{pendingCount} pending</span>}
+        </div>
         <button onClick={onBack} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Back</button>
-        <button className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">Confirm issue</button>
+        <button className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
+          {pendingCount > 0 ? "Issue available & mark pending" : "Confirm issue"}
+        </button>
       </div>
       <div className="flex-1 overflow-y-auto px-5 py-4">
         <div className="grid grid-cols-3 gap-3 mb-2.5">
@@ -85,32 +114,112 @@ const BatchIssueDetail = ({ onBack, bmrLabel }: { onBack: () => void; bmrLabel: 
         <div className="app-card">
           <div className="app-card-head"><div className="app-card-title">Ingredients to issue — FIFO batch auto-selected</div></div>
           <div className="p-3.5">
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.2fr_1fr] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
-              <div>RM</div><div>Required (BMR)</div><div>FIFO batch</div><div>Expiry</div><div>Qty to issue</div><div>Variance</div>
+            <div className="grid grid-cols-[auto_2fr_1fr_0.8fr_1fr_0.8fr_1.2fr_1fr] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
+              <div>Issue</div><div>RM</div><div>Required</div><div>Available</div><div>FIFO batch</div><div>Expiry</div><div>Qty to issue</div><div>Status</div>
             </div>
-            {[
-              { name: "Amla / Amalaki", bot: "Emblica officinalis", req: "3.333 kg", batch: "AR/2025-162", batchColor: "teal", expiry: "Dec 2025", qty: 3.333, variance: "0.000", vClass: "text-kpi-ok" },
-              { name: "Haritaki", bot: "Terminalia chebula", req: "3.333 kg", batch: "AR/2024-312", batchColor: "amber", expiry: "14 Jun 2025", expiryWarn: true, qty: 3.333, variance: "0.000", vClass: "text-kpi-ok" },
-              { name: "Vibhitaki", bot: "Terminalia bellirica", req: "3.334 kg", batch: "AR/2025-171", batchColor: "teal", expiry: "Feb 2026", qty: 3.334, variance: "0.000", vClass: "text-kpi-ok" },
-            ].map((item, i) => (
-              <div key={i} className={`grid grid-cols-[2fr_1fr_1fr_1fr_1.2fr_1fr] gap-2 py-2 items-center text-xs ${i < 2 ? "border-b border-border" : ""}`}>
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{item.bot}</div>
+            {ingredients.map((item, i) => {
+              const isShort = item.status === "low" && item.available < item.req;
+              const isOut = item.status === "unavailable";
+              const rowBg = isOut ? "bg-destructive/5" : isShort ? "bg-amber-500/5" : "";
+              const variance = item.qtyToIssue - item.req;
+
+              return (
+                <div key={i} className={`grid grid-cols-[auto_2fr_1fr_0.8fr_1fr_0.8fr_1.2fr_1fr] gap-2 py-2 items-center text-xs ${i < ingredients.length - 1 ? "border-b border-border" : ""} ${rowBg}`}>
+                  <div className="flex justify-center">
+                    <input
+                      type="checkbox"
+                      checked={item.issueChecked}
+                      onChange={() => toggleIssue(i)}
+                      disabled={isOut}
+                      className="w-3.5 h-3.5 rounded border-border accent-primary"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{item.bot}</div>
+                  </div>
+                  <div>{item.req} {item.unit}</div>
+                  <div className={isOut ? "text-destructive font-medium" : isShort ? "text-kpi-warning font-medium" : "text-kpi-ok"}>
+                    {item.available} {item.unit}
+                  </div>
+                  <div>
+                    {isOut
+                      ? <span className="text-[10px] text-muted-foreground italic">No stock</span>
+                      : <span className={`app-badge app-badge-${item.batchColor}`}>{item.batch}</span>
+                    }
+                  </div>
+                  <div className={item.expiryWarn ? "text-kpi-warning font-medium" : ""}>
+                    {isOut ? "—" : item.expiry}
+                  </div>
+                  <div>
+                    {isOut
+                      ? <span className="text-[10px] text-muted-foreground">—</span>
+                      : <input
+                          type="number"
+                          className="w-[70px] px-2 py-1 border border-border rounded-md text-[11px]"
+                          value={item.qtyToIssue}
+                          onChange={e => updateQty(i, parseFloat(e.target.value) || 0)}
+                          max={item.available}
+                          disabled={!item.issueChecked}
+                        />
+                    }
+                  </div>
+                  <div>
+                    {isOut ? (
+                      <span className="app-badge bg-destructive/10 text-destructive flex items-center gap-1 w-fit">
+                        <AlertTriangle className="w-3 h-3" /> Pending
+                      </span>
+                    ) : isShort && item.qtyToIssue < item.req ? (
+                      <span className="app-badge app-badge-amber flex items-center gap-1 w-fit">
+                        <AlertTriangle className="w-3 h-3" /> Partial
+                      </span>
+                    ) : item.issueChecked ? (
+                      <span className="app-badge app-badge-teal flex items-center gap-1 w-fit">
+                        <CheckCircle2 className="w-3 h-3" /> Ready
+                      </span>
+                    ) : (
+                      <span className="app-badge app-badge-amber flex items-center gap-1 w-fit">
+                        <Clock className="w-3 h-3" /> Skipped
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div>{item.req}</div>
-                <div><span className={`app-badge app-badge-${item.batchColor}`}>{item.batch}</span></div>
-                <div className={item.expiryWarn ? "text-kpi-warning font-medium" : ""}>{item.expiry}</div>
-                <div><input type="number" className="w-[70px] px-2 py-1 border border-border rounded-md text-[11px]" defaultValue={item.qty} /></div>
-                <div className={`${item.vClass} font-medium`}>{item.variance}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        <div className="alert-strip alert-strip-amber mt-1.5">
-          Warning: Haritaki batch AR/2024-312 expires today. Confirm use with QC before issuing.
-        </div>
+        {ingredients.some(i => i.status === "unavailable") && (
+          <div className="alert-strip alert-strip-amber mt-1.5 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-medium text-xs">Pending items detected</div>
+              <div className="text-[11px] mt-0.5">
+                {ingredients.filter(i => i.status === "unavailable").map(i => i.name).join(", ")} — stock unavailable. 
+                Issue will be recorded as partial. Pending items can be issued later when stock arrives.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {ingredients.some(i => i.status === "low" && i.available < i.req) && (
+          <div className="alert-strip alert-strip-amber mt-1.5 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-medium text-xs">Low stock warning</div>
+              <div className="text-[11px] mt-0.5">
+                {ingredients.filter(i => i.status === "low" && i.available < i.req).map(i => `${i.name} (need ${i.req}, have ${i.available} ${i.unit})`).join("; ")}. 
+                Partial quantity will be issued. Remainder marked as pending.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {ingredients.some(i => i.expiryWarn) && (
+          <div className="alert-strip alert-strip-amber mt-1.5">
+            Warning: Haritaki batch AR/2024-312 expires today. Confirm use with QC before issuing.
+          </div>
+        )}
       </div>
     </>
   );
