@@ -8,6 +8,7 @@ import {
   Warehouse,
   ClipboardList,
   BookOpen,
+  Truck,
 } from "lucide-react";
 
 const navGroups = [
