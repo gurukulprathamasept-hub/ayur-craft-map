@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStock } from "@/context/StockContext";
+import { useSupplier } from "@/context/SupplierContext";
 import { toast } from "@/hooks/use-toast";
 import { Plus, X, Search, ChevronDown } from "lucide-react";
 
