@@ -301,11 +301,16 @@ const RMOutward = () => {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by product, BMR no., or RM name..." className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-xs bg-background" />
         </div>
 
-        <Tabs defaultValue="batch" className="w-full">
+        <Tabs defaultValue="all" className="w-full">
           <TabsList className="mb-3">
+            <TabsTrigger value="all" className="text-xs">All issues</TabsTrigger>
             <TabsTrigger value="batch" className="text-xs">Batch issue (BMR)</TabsTrigger>
             <TabsTrigger value="single" className="text-xs">Single drug issue</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="all">
+            <AllIssuesView search={search} batchIssues={filteredBatch} singleIssues={filteredSingle} onBatchClick={(bmr) => { setSelectedBMR(bmr); setView("batch"); }} />
+          </TabsContent>
 
           <TabsContent value="batch">
             <div className="app-card">
