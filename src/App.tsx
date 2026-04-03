@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { FormulationProvider } from "@/context/FormulationContext";
 import { BMRProvider } from "@/context/BMRContext";
 import { StockProvider } from "@/context/StockContext";
+import { SupplierProvider } from "@/context/SupplierContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import RMInward from "./pages/RMInward";
@@ -18,6 +19,7 @@ import StockLedger from "./pages/StockLedger";
 import ScheduleTA from "./pages/ScheduleTA";
 import MFRTable from "./pages/MFRTable";
 import MFRCreate from "./pages/MFRCreate";
+import SupplierMaster from "./pages/SupplierMaster";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
