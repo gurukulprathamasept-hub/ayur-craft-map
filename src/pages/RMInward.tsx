@@ -136,7 +136,6 @@ const RMInward = () => {
                 <label>Source type</label>
                 <input disabled value={suppliers.find(s => s.id === selectedSupplier)?.sourceType || "—"} className="bg-secondary" />
               </div>
-              </div>
             </div>
           </div>
         </div>
