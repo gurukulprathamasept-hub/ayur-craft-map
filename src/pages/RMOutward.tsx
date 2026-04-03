@@ -244,6 +244,158 @@ const BatchIssueDetail = ({ onBack, bmrLabel, bmrIngredients }: { onBack: () => 
   );
 };
 
+/* ── All Issues consolidated view ── */
+type BatchItem = { id: string; bmr: string; product: string; batchSize: string; date: string; status: string; items: number };
+type SingleItem = { id: string; rm: string; qty: string; purpose: string; date: string; status: string };
+
+const AllIssuesView = ({ search, batchIssues, singleIssues, onBatchClick }: { search: string; batchIssues: BatchItem[]; singleIssues: SingleItem[]; onBatchClick: (bmr: string) => void }) => {
+  const { rmData } = useStock();
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  // Gather all actual outward transactions from the stock ledger
+  const allOutwardTxns = rmData.flatMap(rm =>
+    rm.txns
+      .filter(t => t.type === "Outward")
+      .map(t => ({ rmCode: rm.code, rmName: rm.name, botanical: rm.botanical, uom: rm.uom, ...t }))
+  );
+
+  // Group by issue ref
+  const grouped: Record<string, { ref: string; date: string; lines: typeof allOutwardTxns }> = {};
+  for (const txn of allOutwardTxns) {
+    if (!grouped[txn.ref]) grouped[txn.ref] = { ref: txn.ref, date: txn.date, lines: [] };
+    grouped[txn.ref].lines.push(txn);
+  }
+  const ledgerIssues = Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
+
+  // Combine: ledger issues + demo issues that aren't in ledger
+  const ledgerRefs = new Set(ledgerIssues.map(l => l.ref));
+  const extraBatch = batchIssues.filter(b => !ledgerRefs.has(b.id));
+  const extraSingle = singleIssues.filter(s => !ledgerRefs.has(s.id));
+
+  const totalIssued = ledgerIssues.reduce((sum, g) => sum + g.lines.length, 0);
+  const totalQty = allOutwardTxns.reduce((sum, t) => sum + parseFloat(t.qtyOut === "—" ? "0" : t.qtyOut), 0);
+
+  const toggle = (ref: string) => setExpanded(prev => prev === ref ? null : ref);
+
+  const matchesSearch = (text: string) => text.toLowerCase().includes(search.toLowerCase());
+
+  return (
+    <div className="space-y-4">
+      {/* Summary cards */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="app-card p-3.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Total issues</div>
+          <div className="text-xl font-semibold">{ledgerIssues.length + extraBatch.length + extraSingle.length}</div>
+        </div>
+        <div className="app-card p-3.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Items issued</div>
+          <div className="text-xl font-semibold">{totalIssued}</div>
+        </div>
+        <div className="app-card p-3.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Total qty moved</div>
+          <div className="text-xl font-semibold">{totalQty.toFixed(3)}</div>
+        </div>
+        <div className="app-card p-3.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Pending</div>
+          <div className="text-xl font-semibold text-kpi-warning">{extraBatch.filter(b => b.status === "Pending").length}</div>
+        </div>
+      </div>
+
+      {/* Ledger-based issues (expandable) */}
+      <div className="app-card">
+        <div className="app-card-head"><div className="app-card-title">Issue log — all dispatched materials</div></div>
+        <div className="divide-y divide-border">
+          {ledgerIssues.length === 0 && extraBatch.length === 0 && extraSingle.length === 0 && (
+            <div className="p-6 text-center text-xs text-muted-foreground">No issues recorded yet.</div>
+          )}
+
+          {ledgerIssues
+            .filter(g => matchesSearch(g.ref) || g.lines.some(l => matchesSearch(l.rmName)))
+            .map(group => {
+              const isBatch = group.ref.startsWith("ISS-2025");
+              const isExpanded = expanded === group.ref;
+              return (
+                <div key={group.ref}>
+                  <div onClick={() => toggle(group.ref)} className="grid grid-cols-[auto_1fr_0.8fr_0.6fr_0.8fr_0.5fr] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 cursor-pointer transition-colors">
+                    <div className="w-5 flex justify-center">
+                      {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </div>
+                    <div>
+                      <div className="font-medium text-primary flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5" /> {group.ref}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {group.lines.length} item(s): {group.lines.map(l => l.rmName).join(", ")}
+                      </div>
+                    </div>
+                    <div>{group.date}</div>
+                    <div>{group.lines.length} items</div>
+                    <div>{group.lines.reduce((s, l) => s + parseFloat(l.qtyOut === "—" ? "0" : l.qtyOut), 0).toFixed(3)}</div>
+                    <div><span className="app-badge app-badge-teal">Issued</span></div>
+                  </div>
+                  {isExpanded && (
+                    <div className="bg-secondary/30 px-8 py-2 border-t border-border">
+                      <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
+                        <div>Raw material</div><div>Batch</div><div>Expiry</div><div>Qty out</div><div>Balance after</div><div>Rate</div>
+                      </div>
+                      {group.lines.map((line, li) => (
+                        <div key={li} className={`grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-2 py-1.5 text-xs ${li < group.lines.length - 1 ? "border-b border-border" : ""}`}>
+                          <div>
+                            <div className="font-medium">{line.rmName}</div>
+                            <div className="text-[10px] text-muted-foreground">{line.botanical} · {line.rmCode}</div>
+                          </div>
+                          <div><span className="app-badge app-badge-teal">{line.batch}</span></div>
+                          <div>{line.expiry}</div>
+                          <div className="font-medium">{line.qtyOut} {line.uom}</div>
+                          <div>{line.balance} {line.uom}</div>
+                          <div>{line.rate !== "—" ? `₹${line.rate}` : "—"}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+          {/* Demo batch issues not yet in ledger */}
+          {extraBatch
+            .filter(b => matchesSearch(b.product) || matchesSearch(b.bmr) || matchesSearch(b.id))
+            .map((item, i) => (
+              <div key={`eb-${i}`} onClick={() => onBatchClick(`${item.bmr} · ${item.product}`)} className="grid grid-cols-[auto_1fr_0.8fr_0.6fr_0.8fr_0.5fr] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 cursor-pointer transition-colors">
+                <div className="w-5 flex justify-center"><Package className="w-3.5 h-3.5 text-muted-foreground" /></div>
+                <div>
+                  <div className="font-medium text-primary">{item.id}</div>
+                  <div className="text-[10px] text-muted-foreground">{item.bmr} · {item.product}</div>
+                </div>
+                <div>{item.date}</div>
+                <div>{item.items} items</div>
+                <div>{item.batchSize}</div>
+                <div><span className={`app-badge ${item.status === "Issued" ? "app-badge-teal" : "app-badge-amber"}`}>{item.status}</span></div>
+              </div>
+            ))}
+
+          {/* Demo single issues not yet in ledger */}
+          {extraSingle
+            .filter(s => matchesSearch(s.rm) || matchesSearch(s.id))
+            .map((item, i) => (
+              <div key={`es-${i}`} className="grid grid-cols-[auto_1fr_0.8fr_0.6fr_0.8fr_0.5fr] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 cursor-pointer transition-colors">
+                <div className="w-5 flex justify-center"><FlaskConical className="w-3.5 h-3.5 text-muted-foreground" /></div>
+                <div>
+                  <div className="font-medium text-primary">{item.id}</div>
+                  <div className="text-[10px] text-muted-foreground">{item.rm} · {item.purpose}</div>
+                </div>
+                <div>{item.date}</div>
+                <div>1 item</div>
+                <div>{item.qty}</div>
+                <div><span className="app-badge app-badge-teal">{item.status}</span></div>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ── Main RMOutward page ── */
 const RMOutward = () => {
   const navigate = useNavigate();
