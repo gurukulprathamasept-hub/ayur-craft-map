@@ -122,15 +122,20 @@ const RMInward = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="form-field"><label>GRN number</label><input value="GRN-2025-0187" disabled className="bg-secondary" /></div>
               <div className="form-field"><label>GRN date</label><input type="date" defaultValue="2025-06-14" /></div>
-              <div className="form-field"><label>Supplier</label><select><option>Himalaya Herbs Traders, Dehradun</option></select></div>
+              <div className="form-field">
+                <label>Supplier</label>
+                <select value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)}>
+                  {suppliers.filter(s => s.active).map(s => (
+                    <option key={s.id} value={s.id}>{s.name}, {s.city}</option>
+                  ))}
+                </select>
+              </div>
               <div className="form-field"><label>Invoice / challan no.</label><input defaultValue="HHT/2025/4421" /></div>
               <div className="form-field"><label>Invoice date</label><input type="date" defaultValue="2025-06-12" /></div>
               <div className="form-field">
                 <label>Source type</label>
-                <select>
-                  <option>Trader</option><option>Manufacturer</option><option>Forest Collector</option>
-                  <option>Cultivator</option><option>Importer</option>
-                </select>
+                <input disabled value={suppliers.find(s => s.id === selectedSupplier)?.sourceType || "—"} className="bg-secondary" />
+              </div>
               </div>
             </div>
           </div>
