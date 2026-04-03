@@ -30,6 +30,7 @@ const App = () => (
       <FormulationProvider>
         <BMRProvider>
           <StockProvider>
+          <SupplierProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -46,10 +47,12 @@ const App = () => (
                   <Route path="/schedule-ta" element={<ScheduleTA />} />
                   <Route path="/mfr-table" element={<MFRTable />} />
                   <Route path="/mfr-create" element={<MFRCreate />} />
+                  <Route path="/supplier-master" element={<SupplierMaster />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
+          </SupplierProvider>
           </StockProvider>
         </BMRProvider>
       </FormulationProvider>
