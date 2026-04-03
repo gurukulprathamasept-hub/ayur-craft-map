@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
-import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer } from "lucide-react";
+import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 
 type IssuedItem = {
@@ -34,6 +36,54 @@ const IssueSummary = ({ items, onClear, onClose }: { items: IssuedItem[]; onClea
   const totalItems = rows.length;
   const totalQty = rows.reduce((s, r) => s + r.totalQty, 0);
 
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+    doc.setFontSize(16);
+    doc.text("RM Issue — Collection Slip", 14, 18);
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${dateStr} ${timeStr}`, 14, 25);
+    doc.text(`Total: ${totalItems} materials · ${totalQty.toFixed(3)} qty`, 14, 30);
+    doc.setTextColor(0);
+
+    const tableBody: string[][] = [];
+    rows.forEach((row, idx) => {
+      row.batches.forEach((b, bi) => {
+        tableBody.push([
+          bi === 0 ? `${idx + 1}` : "",
+          bi === 0 ? row.rmName + (row.botanical ? ` (${row.botanical})` : "") : "",
+          b.batch,
+          b.qty.toFixed(3),
+          bi === 0 ? row.uom : "",
+          b.source,
+          b.issRef,
+          "" // collected checkbox
+        ]);
+      });
+    });
+
+    autoTable(doc, {
+      startY: 35,
+      head: [["#", "Raw Material", "Batch", "Qty", "UOM", "Source", "Issue Ref", "Collected ✓"]],
+      body: tableBody,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [41, 98, 255], fontSize: 8 },
+      columnStyles: { 0: { cellWidth: 8 }, 7: { cellWidth: 18 } },
+    });
+
+    const finalY = (doc as any).lastAutoTable?.finalY || 120;
+    doc.setFontSize(9);
+    doc.text("Store Person: ___________________", 14, finalY + 15);
+    doc.text("Received By: ___________________", 120, finalY + 15);
+    doc.text("Date: ___________________", 14, finalY + 25);
+
+    doc.save(`collection-slip-${Date.now()}.pdf`);
+  };
+
   return (
     <div className="app-card border-2 border-primary/20">
       <div className="app-card-head flex items-center justify-between">
@@ -43,6 +93,9 @@ const IssueSummary = ({ items, onClear, onClose }: { items: IssuedItem[]; onClea
           <span className="app-badge app-badge-teal ml-2">{totalItems} drugs · {totalQty.toFixed(3)} total</span>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={downloadPDF} className="px-2.5 py-1 rounded-md border border-border text-[10px] font-medium hover:bg-secondary transition-all flex items-center gap-1 text-primary">
+            <Download className="w-3 h-3" /> PDF
+          </button>
           <button onClick={() => window.print()} className="px-2.5 py-1 rounded-md border border-border text-[10px] font-medium hover:bg-secondary transition-all flex items-center gap-1">
             <Printer className="w-3 h-3" /> Print
           </button>
