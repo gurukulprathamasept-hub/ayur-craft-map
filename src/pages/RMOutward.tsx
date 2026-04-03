@@ -3,11 +3,82 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
-import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer } from "lucide-react";
 import { toast } from "sonner";
 
+type IssuedItem = {
+  rmName: string;
+  botanical?: string;
+  qty: number;
+  uom: string;
+  batch: string;
+  expiry: string;
+  source: string; // e.g. "BMR-2025-0041" or "Ad-hoc"
+  issRef: string;
+  timestamp: number;
+};
+
+/* ── Issue Summary Panel ── */
+const IssueSummary = ({ items, onClear, onClose }: { items: IssuedItem[]; onClear: () => void; onClose: () => void }) => {
+  // Aggregate by rmName
+  const aggregated = items.reduce<Record<string, { rmName: string; botanical?: string; uom: string; totalQty: number; batches: { batch: string; expiry: string; qty: number; source: string; issRef: string }[] }>>((acc, item) => {
+    if (!acc[item.rmName]) {
+      acc[item.rmName] = { rmName: item.rmName, botanical: item.botanical, uom: item.uom, totalQty: 0, batches: [] };
+    }
+    acc[item.rmName].totalQty += item.qty;
+    acc[item.rmName].batches.push({ batch: item.batch, expiry: item.expiry, qty: item.qty, source: item.source, issRef: item.issRef });
+    return acc;
+  }, {});
+
+  const rows = Object.values(aggregated).sort((a, b) => a.rmName.localeCompare(b.rmName));
+  const totalItems = rows.length;
+  const totalQty = rows.reduce((s, r) => s + r.totalQty, 0);
+
+  return (
+    <div className="app-card border-2 border-primary/20">
+      <div className="app-card-head flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ClipboardList className="w-4 h-4 text-primary" />
+          <div className="app-card-title">Issue summary — collect all at once</div>
+          <span className="app-badge app-badge-teal ml-2">{totalItems} drugs · {totalQty.toFixed(3)} total</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => window.print()} className="px-2.5 py-1 rounded-md border border-border text-[10px] font-medium hover:bg-secondary transition-all flex items-center gap-1">
+            <Printer className="w-3 h-3" /> Print
+          </button>
+          <button onClick={onClear} className="px-2.5 py-1 rounded-md border border-border text-[10px] font-medium hover:bg-secondary transition-all text-destructive">Clear</button>
+          <button onClick={onClose} className="p-1 rounded hover:bg-secondary"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      </div>
+      <div className="p-3.5">
+        <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
+          <div>Raw material</div><div>Total qty</div><div>UOM</div><div>Issue sources</div>
+        </div>
+        {rows.map((row, i) => (
+          <div key={i} className={`grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-2 py-2.5 items-start text-xs ${i < rows.length - 1 ? "border-b border-border" : ""}`}>
+            <div>
+              <div className="font-medium">{row.rmName}</div>
+              {row.botanical && <div className="text-[10px] text-muted-foreground italic">{row.botanical}</div>}
+            </div>
+            <div className="font-semibold text-primary">{row.totalQty.toFixed(3)}</div>
+            <div>{row.uom}</div>
+            <div className="space-y-0.5">
+              {row.batches.map((b, j) => (
+                <div key={j} className="text-[10px] text-muted-foreground">
+                  <span className="app-badge app-badge-teal text-[9px] mr-1">{b.batch}</span>
+                  {b.qty.toFixed(3)} — {b.source} ({b.issRef})
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ── Single-drug issue detail ── */
-const SingleDrugIssueDetail = ({ onBack }: { onBack: () => void }) => {
+const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void }) => {
   const { rmData, getStockForRM, issueStock } = useStock();
 
   const rmItems = rmData.map(rm => {
@@ -25,7 +96,16 @@ const SingleDrugIssueDetail = ({ onBack }: { onBack: () => void }) => {
         return { rmName: name, qty, batch: rm?.batch || "—", expiry: rm?.expiry || "—" };
       });
     if (lines.length === 0) { toast.error("No quantities entered"); return; }
-    issueStock(`ISS-${Date.now().toString().slice(-7)}`, lines);
+    const issRef = `ISS-${Date.now().toString().slice(-7)}`;
+    issueStock(issRef, lines);
+    
+    // Report issued items to parent
+    const issuedItems: IssuedItem[] = lines.map(l => {
+      const rm = rmItems.find(r => r.name === l.rmName);
+      return { rmName: l.rmName, botanical: rm?.bot, qty: l.qty, uom: rm?.uom || "kg", batch: l.batch, expiry: l.expiry, source: "Ad-hoc", issRef, timestamp: Date.now() };
+    });
+    onIssued(issuedItems);
+    
     toast.success(`Issued ${lines.length} item(s) successfully`);
     onBack();
   };
@@ -86,17 +166,15 @@ const SingleDrugIssueDetail = ({ onBack }: { onBack: () => void }) => {
 };
 
 /* ── Batch issue detail (with live stock & partial issue) ── */
-const BatchIssueDetail = ({ onBack, bmrLabel, bmrIngredients }: { onBack: () => void; bmrLabel: string; bmrIngredients?: { name: string; botanical?: string; req: number; unit: string }[] }) => {
+const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void; bmrLabel: string; bmrIngredients?: { name: string; botanical?: string; req: number; unit: string }[] }) => {
   const { getStockForRM, issueStock } = useStock();
 
-  // Default demo ingredients if none passed from BMR
   const baseIngredients = bmrIngredients || [
     { name: "Amla / Amalaki", botanical: "Emblica officinalis", req: 3.333, unit: "kg" },
     { name: "Haritaki", botanical: "Terminalia chebula", req: 3.333, unit: "kg" },
     { name: "Vibhitaki", botanical: "Terminalia bellirica", req: 3.334, unit: "kg" },
   ];
 
-  // Build ingredients with live stock data
   const buildIngredients = () => baseIngredients.map(ing => {
     const stock = getStockForRM(ing.name);
     const available = stock?.available ?? 0;
@@ -135,6 +213,14 @@ const BatchIssueDetail = ({ onBack, bmrLabel, bmrIngredients }: { onBack: () => 
       .map(i => ({ rmName: i.name, qty: i.qtyToIssue, batch: i.batch, expiry: i.expiry }));
     if (lines.length === 0) { toast.error("Nothing to issue"); return; }
     issueStock(issRef, lines);
+    
+    // Report issued items to parent
+    const issuedItems: IssuedItem[] = lines.map(l => {
+      const ing = ingredients.find(i => i.name === l.rmName);
+      return { rmName: l.rmName, botanical: ing?.botanical, qty: l.qty, uom: ing?.unit || "kg", batch: l.batch, expiry: l.expiry, source: bmrLabel, issRef, timestamp: Date.now() };
+    });
+    onIssued(issuedItems);
+    
     toast.success(`Issued ${lines.length} item(s). ${pendingCount > 0 ? `${pendingCount} item(s) marked pending.` : ""}`);
     onBack();
   };
@@ -251,9 +337,16 @@ const RMOutward = () => {
   const [view, setView] = useState<"list" | "batch" | "single">("list");
   const [selectedBMR, setSelectedBMR] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [issuedItems, setIssuedItems] = useState<IssuedItem[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
 
-  if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} bmrLabel={selectedBMR} />;
-  if (view === "single") return <SingleDrugIssueDetail onBack={() => setView("list")} />;
+  const handleIssued = (items: IssuedItem[]) => {
+    setIssuedItems(prev => [...prev, ...items]);
+    setShowSummary(true);
+  };
+
+  if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} />;
+  if (view === "single") return <SingleDrugIssueDetail onBack={() => setView("list")} onIssued={handleIssued} />;
 
   const demoBatchIssues = [
     { id: "ISS-2025-0094", bmr: "BMR-2025-0041", product: "Triphala Churna", batchSize: "10 kg", date: "14 Jun 2025", status: "Pending", items: 3 },
@@ -287,6 +380,11 @@ const RMOutward = () => {
           <div className="text-[15px] font-medium">RM Outward / Issue</div>
           <div className="text-[11px] text-muted-foreground mt-px">Issue raw materials — batch (BMR) or single drug</div>
         </div>
+        {issuedItems.length > 0 && (
+          <button onClick={() => setShowSummary(!showSummary)} className={`px-3.5 py-1.5 rounded-md border text-xs font-medium transition-all flex items-center gap-1.5 ${showSummary ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"}`}>
+            <ClipboardList className="w-3.5 h-3.5" /> Summary ({issuedItems.length})
+          </button>
+        )}
         <button onClick={() => { setSelectedBMR(""); setView("single"); }} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1.5">
           <FlaskConical className="w-3.5 h-3.5" /> New single issue
         </button>
@@ -296,6 +394,13 @@ const RMOutward = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
+        {/* Issue Summary Panel */}
+        {showSummary && issuedItems.length > 0 && (
+          <div className="mb-4">
+            <IssueSummary items={issuedItems} onClear={() => { setIssuedItems([]); setShowSummary(false); }} onClose={() => setShowSummary(false)} />
+          </div>
+        )}
+
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by product, BMR no., or RM name..." className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-xs bg-background" />
