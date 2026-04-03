@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
-import { ArrowLeft, Package, FlaskConical, Search } from "lucide-react";
+import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 
 /* ── Single-drug issue detail ── */
 const SingleDrugIssueDetail = ({ onBack }: { onBack: () => void }) => {
