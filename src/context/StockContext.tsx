@@ -99,10 +99,19 @@ type IssueLine = {
   rate?: string;
 };
 
+type InwardLine = {
+  rmName: string;
+  qty: number;
+  batch: string;
+  expiry: string;
+  rate?: string;
+};
+
 type StockContextType = {
   rmData: RMEntry[];
   getStockForRM: (name: string) => { available: number; batch: string; batchColor: string; expiry: string; uom: string } | null;
   issueStock: (issRef: string, lines: IssueLine[]) => void;
+  inwardStock: (grnRef: string, lines: InwardLine[]) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
