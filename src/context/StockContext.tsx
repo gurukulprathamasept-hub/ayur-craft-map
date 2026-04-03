@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export type QCSpec = { parameter: string; spec: string };
+
 export type Txn = {
   date: string;
   type: "Opening" | "Inward" | "Outward";
@@ -18,15 +20,25 @@ export type RMEntry = {
   name: string;
   botanical: string;
   category: string;
+  part: string;
   uom: string;
   reorder: number;
+  shelf: string;
+  active: boolean;
   currentStock: number;
+  qcSpecs: QCSpec[];
   txns: Txn[];
 };
 
 const initialData: RMEntry[] = [
   {
-    code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", uom: "kg", reorder: 5, currentStock: 1.2,
+    code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
+    qcSpecs: [
+      { parameter: "Foreign matter", spec: "≤2%" },
+      { parameter: "Total ash", spec: "≤7%" },
+      { parameter: "Acid-insoluble ash", spec: "≤1%" },
+      { parameter: "Moisture", spec: "≤8%" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "6.200", qtyOut: "—", balance: "6.200", rate: "—" },
       { date: "05 Apr 2025", type: "Inward", typeBadge: "teal", ref: "GRN-2025-0102", batch: "AR/2025-102", expiry: "Mar 2027", qtyIn: "8.000", qtyOut: "—", balance: "14.200", rate: "440" },
@@ -37,7 +49,13 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-002", name: "Amalaki / Amla", botanical: "Emblica officinalis", category: "Herb", uom: "kg", reorder: 10, currentStock: 14.5,
+    code: "RM-002", name: "Amalaki / Amla", botanical: "Emblica officinalis", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 10, shelf: "24 mo", active: true, currentStock: 14.5,
+    qcSpecs: [
+      { parameter: "Foreign matter", spec: "≤2%" },
+      { parameter: "Total ash", spec: "≤5%" },
+      { parameter: "Moisture", spec: "≤9%" },
+      { parameter: "Vitamin C content", spec: "≥0.4%" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "12.000", qtyOut: "—", balance: "12.000", rate: "—" },
       { date: "18 Apr 2025", type: "Inward", typeBadge: "teal", ref: "GRN-2025-0115", batch: "AR/2025-115", expiry: "Apr 2027", qtyIn: "15.000", qtyOut: "—", balance: "27.000", rate: "180" },
@@ -46,21 +64,36 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-003", name: "Haritaki", botanical: "Terminalia chebula", category: "Herb", uom: "kg", reorder: 8, currentStock: 6.0,
+    code: "RM-003", name: "Haritaki", botanical: "Terminalia chebula", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 8, shelf: "24 mo", active: true, currentStock: 6.0,
+    qcSpecs: [
+      { parameter: "Foreign matter", spec: "≤2%" },
+      { parameter: "Total ash", spec: "≤5%" },
+      { parameter: "Moisture", spec: "≤10%" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "10.000", qtyOut: "—", balance: "10.000", rate: "—" },
       { date: "12 Apr 2025", type: "Outward", typeBadge: "amber", ref: "ISS-2025-0049", batch: "AR/2025-049", expiry: "Feb 2027", qtyIn: "—", qtyOut: "4.000", balance: "6.000", rate: "220" },
     ],
   },
   {
-    code: "RM-004", name: "Vibhitaki", botanical: "Terminalia bellirica", category: "Herb", uom: "kg", reorder: 5, currentStock: 0,
+    code: "RM-004", name: "Vibhitaki", botanical: "Terminalia bellirica", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 5, shelf: "24 mo", active: true, currentStock: 0,
+    qcSpecs: [
+      { parameter: "Foreign matter", spec: "≤2%" },
+      { parameter: "Total ash", spec: "≤5%" },
+      { parameter: "Moisture", spec: "≤10%" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "3.000", qtyOut: "—", balance: "3.000", rate: "—" },
       { date: "20 May 2025", type: "Outward", typeBadge: "amber", ref: "ISS-2025-0069", batch: "AR/2025-050", expiry: "Jan 2027", qtyIn: "—", qtyOut: "3.000", balance: "0.000", rate: "200" },
     ],
   },
   {
-    code: "RM-012", name: "Shuddha Guggulu", botanical: "Commiphora wightii", category: "Extract", uom: "kg", reorder: 3, currentStock: 4.8,
+    code: "RM-012", name: "Shuddha Guggulu", botanical: "Commiphora wightii", category: "Extract", part: "Purified resin", uom: "kg", reorder: 3, shelf: "60 mo", active: true, currentStock: 4.8,
+    qcSpecs: [
+      { parameter: "Foreign matter", spec: "≤1%" },
+      { parameter: "Moisture", spec: "≤20%" },
+      { parameter: "Ethanol-soluble extractive", spec: "≥25%" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "3.000", qtyOut: "—", balance: "3.000", rate: "—" },
       { date: "20 Apr 2025", type: "Inward", typeBadge: "teal", ref: "GRN-2025-0120", batch: "AR/2025-120", expiry: "Apr 2030", qtyIn: "5.000", qtyOut: "—", balance: "8.000", rate: "2800" },
@@ -68,14 +101,24 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-027", name: "Abhraka (Shuddha)", botanical: "Mica / Biotite", category: "Metal/Mineral", uom: "kg", reorder: 0.5, currentStock: 0.35,
+    code: "RM-027", name: "Abhraka (Shuddha)", botanical: "Mica / Biotite", category: "Metal/Mineral", part: "Shodhita flakes", uom: "kg", reorder: 0.5, shelf: "Indef.", active: true, currentStock: 0.35,
+    qcSpecs: [
+      { parameter: "Loss on ignition", spec: "≤2%" },
+      { parameter: "Iron content", spec: "Pass" },
+      { parameter: "Particle size", spec: "All passes #120 mesh" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "0.500", qtyOut: "—", balance: "0.500", rate: "—" },
       { date: "05 May 2025", type: "Outward", typeBadge: "amber", ref: "ISS-2025-0065", batch: "AR/2025-044", expiry: "Indef.", qtyIn: "—", qtyOut: "0.150", balance: "0.350", rate: "3500" },
     ],
   },
   {
-    code: "RM-031", name: "Cow ghee", botanical: "Clarified butter (Ghrita)", category: "Animal", uom: "L", reorder: 5, currentStock: 8.0,
+    code: "RM-031", name: "Cow ghee", botanical: "Clarified butter (Ghrita)", category: "Animal", part: "Clarified butter", uom: "L", reorder: 5, shelf: "16 mo", active: true, currentStock: 8.0,
+    qcSpecs: [
+      { parameter: "Rancidity (Kreis test)", spec: "Negative" },
+      { parameter: "Butyro refractometer reading (40°C)", spec: "40–44" },
+      { parameter: "Moisture", spec: "≤0.5%" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "4.000", qtyOut: "—", balance: "4.000", rate: "—" },
       { date: "10 Apr 2025", type: "Inward", typeBadge: "teal", ref: "GRN-2025-0108", batch: "AR/2025-108", expiry: "Aug 2026", qtyIn: "10.000", qtyOut: "—", balance: "14.000", rate: "650" },
@@ -83,7 +126,12 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-044", name: "Dhataki Pushpa", botanical: "Woodfordia fruticosa", category: "Herb", uom: "kg", reorder: 1, currentStock: 0.6,
+    code: "RM-044", name: "Dhataki Pushpa", botanical: "Woodfordia fruticosa", category: "Herb", part: "Flower", uom: "kg", reorder: 1, shelf: "18 mo", active: true, currentStock: 0.6,
+    qcSpecs: [
+      { parameter: "Foreign matter", spec: "≤3%" },
+      { parameter: "Total ash", spec: "≤6%" },
+      { parameter: "Moisture", spec: "≤10%" },
+    ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "1.200", qtyOut: "—", balance: "1.200", rate: "—" },
       { date: "18 May 2025", type: "Outward", typeBadge: "amber", ref: "ISS-2025-0070", batch: "AR/2025-033", expiry: "Nov 2026", qtyIn: "—", qtyOut: "0.600", balance: "0.600", rate: "1100" },
@@ -112,6 +160,9 @@ type StockContextType = {
   getStockForRM: (name: string) => { available: number; batch: string; batchColor: string; expiry: string; uom: string } | null;
   issueStock: (issRef: string, lines: IssueLine[]) => void;
   inwardStock: (grnRef: string, lines: InwardLine[]) => void;
+  addRM: (rm: Omit<RMEntry, "code" | "currentStock" | "txns">) => void;
+  updateRM: (code: string, data: Partial<Omit<RMEntry, "code" | "currentStock" | "txns">>) => void;
+  deleteRM: (code: string) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
@@ -122,7 +173,6 @@ export const useStock = () => {
   return ctx;
 };
 
-// Helper to format today's date
 const today = () => {
   const d = new Date();
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -133,17 +183,13 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [rmData, setRmData] = useState<RMEntry[]>(initialData);
 
   const getStockForRM = (name: string) => {
-    // Fuzzy match by checking if the RM name includes the search or vice versa
     const rm = rmData.find(r =>
       r.name.toLowerCase().includes(name.toLowerCase()) ||
       name.toLowerCase().includes(r.name.toLowerCase())
     );
     if (!rm) return null;
-
-    // Get the latest inward batch (FIFO - earliest unexpired)
     const inwardTxns = rm.txns.filter(t => t.type === "Inward");
     const latestBatch = inwardTxns.length > 0 ? inwardTxns[inwardTxns.length - 1] : null;
-
     return {
       available: rm.currentStock,
       batch: latestBatch?.batch || "—",
@@ -162,20 +208,12 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
           line.rmName.toLowerCase().includes(r.name.toLowerCase())
         );
         if (idx === -1 || line.qty <= 0) continue;
-
         const rm = { ...updated[idx] };
         const newStock = Math.max(0, parseFloat((rm.currentStock - line.qty).toFixed(3)));
         const newTxn: Txn = {
-          date: today(),
-          type: "Outward",
-          typeBadge: "amber",
-          ref: issRef,
-          batch: line.batch,
-          expiry: line.expiry,
-          qtyIn: "—",
-          qtyOut: line.qty.toFixed(3),
-          balance: newStock.toFixed(3),
-          rate: line.rate || "—",
+          date: today(), type: "Outward", typeBadge: "amber", ref: issRef,
+          batch: line.batch, expiry: line.expiry, qtyIn: "—",
+          qtyOut: line.qty.toFixed(3), balance: newStock.toFixed(3), rate: line.rate || "—",
         };
         rm.currentStock = newStock;
         rm.txns = [...rm.txns, newTxn];
@@ -194,20 +232,12 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
           line.rmName.toLowerCase().includes(r.name.toLowerCase())
         );
         if (idx === -1 || line.qty <= 0) continue;
-
         const rm = { ...updated[idx] };
         const newStock = parseFloat((rm.currentStock + line.qty).toFixed(3));
         const newTxn: Txn = {
-          date: today(),
-          type: "Inward",
-          typeBadge: "teal",
-          ref: grnRef,
-          batch: line.batch,
-          expiry: line.expiry,
-          qtyIn: line.qty.toFixed(3),
-          qtyOut: "—",
-          balance: newStock.toFixed(3),
-          rate: line.rate || "—",
+          date: today(), type: "Inward", typeBadge: "teal", ref: grnRef,
+          batch: line.batch, expiry: line.expiry, qtyIn: line.qty.toFixed(3),
+          qtyOut: "—", balance: newStock.toFixed(3), rate: line.rate || "—",
         };
         rm.currentStock = newStock;
         rm.txns = [...rm.txns, newTxn];
@@ -217,8 +247,27 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const addRM = (rm: Omit<RMEntry, "code" | "currentStock" | "txns">) => {
+    setRmData(prev => {
+      const maxNum = prev.reduce((max, r) => {
+        const n = parseInt(r.code.replace("RM-", ""));
+        return n > max ? n : max;
+      }, 0);
+      const code = `RM-${String(maxNum + 1).padStart(3, "0")}`;
+      return [...prev, { ...rm, code, currentStock: 0, txns: [] }];
+    });
+  };
+
+  const updateRM = (code: string, data: Partial<Omit<RMEntry, "code" | "currentStock" | "txns">>) => {
+    setRmData(prev => prev.map(r => r.code === code ? { ...r, ...data } : r));
+  };
+
+  const deleteRM = (code: string) => {
+    setRmData(prev => prev.filter(r => r.code !== code));
+  };
+
   return (
-    <StockContext.Provider value={{ rmData, getStockForRM, issueStock, inwardStock }}>
+    <StockContext.Provider value={{ rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM }}>
       {children}
     </StockContext.Provider>
   );
