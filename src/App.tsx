@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FormulationProvider } from "@/context/FormulationContext";
 import { BMRProvider } from "@/context/BMRContext";
+import { StockProvider } from "@/context/StockContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import RMInward from "./pages/RMInward";
