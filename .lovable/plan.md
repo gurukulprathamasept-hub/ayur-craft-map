@@ -1,38 +1,27 @@
 
 
-## Plan: Make RM Master Functional with Add/Edit/Delete + QC, Linked to Stock & Inward
+## Plan: Product-Specific Sequential Batch Numbers
 
 ### Problem
-- "Add RM" button in RM Master is static (no form/dialog)
-- RM Master uses hardcoded local data instead of the shared `StockContext`
-- RM Inward has hardcoded line items instead of letting users pick from the RM master list
-- No QC specifications stored per RM (unlike MFR which has QC params)
+Batch numbers are currently random and generic. They should be specific to each formulation/product so each product has its own sequence (e.g., Chyawanprash → `CHY-2504-0001`, `CHY-2504-0002`; Triphala Churna → `TRI-2504-0001`).
 
 ### Changes
 
-#### 1. Extend `RMEntry` type in `StockContext.tsx`
-Add fields to `RMEntry`: `part` (part used), `shelf` (shelf life), `active` (status), and `qcSpecs` (array of `{parameter, spec}` objects -- same pattern as MFR's QC params). Add `addRM`, `updateRM`, `deleteRM` functions to the context. Seed the initial data with part/shelf/qc values for existing items.
+#### 1. `src/context/BMRContext.tsx` — Add `getNextBatchNo(productName, mfrId)`
+- Generate a 3-letter prefix from the product name (first 3 uppercase letters, e.g., "Chyawanprash" → "CHY", "Triphala Churna" → "TRI")
+- Scan existing BMRs filtered by `mfrId`, extract the highest sequence number
+- Return next batch: `{PREFIX}-YYMM-{seq}` (e.g., `CHY-2504-0001`)
+- Also return the previous batch number for that product (or null if first)
 
-#### 2. Rewrite `RMMaster.tsx`
-- Connect to `StockContext` instead of local hardcoded array
-- **Add RM dialog**: Multi-section form (similar to MFR Create's wizard but in a Dialog) with fields:
-  - Basic: RM code (auto-generated), common name, botanical name, category (dropdown), part used, UOM, reorder level, shelf life, status toggle
-  - QC Specifications: Dynamic rows with parameter + spec (e.g., "Moisture" / "<8%", "Ash value" / "≤10%", "Heavy metals" / "<10ppm")
-- **Edit**: Click a row to open the same dialog pre-filled; save calls `updateRM`
-- **Delete**: Trash icon with confirmation dialog; calls `deleteRM`
-- Working search filter on name/botanical/code
-- Category filter chips (already exist, will work with live data)
+#### 2. `src/pages/BMRCreate.tsx` — Use product-specific batch number
+- When a formulation is selected, call `getNextBatchNo(productName, mfrId)` to auto-generate the batch number
+- Re-generate when the selected formulation changes
+- Show "Previous batch: CHY-2504-0003" (or "First batch for this product") below the batch number input
+- Batch number remains editable for manual override
 
-#### 3. Update `RMInward.tsx`
-- Replace hardcoded line items with a dynamic "Add RM" button that opens a searchable dropdown of all RMs from `StockContext`
-- Each added line: auto-fills RM name, UOM from master; user enters batch, expiry, qty, rate
-- Users can add/remove lines before submitting
-- Show RM's QC specs as a reference panel when a line is selected
-
-#### 4. File changes summary
+### Files
 | File | Change |
 |------|--------|
-| `src/context/StockContext.tsx` | Add `part`, `shelf`, `active`, `qcSpecs` to `RMEntry`; add `addRM`, `updateRM`, `deleteRM` |
-| `src/pages/RMMaster.tsx` | Full rewrite: consume StockContext, add/edit/delete dialogs with QC section |
-| `src/pages/RMInward.tsx` | Dynamic line items from RM master, QC spec display |
+| `src/context/BMRContext.tsx` | Add `getNextBatchNo(productName, mfrId)` returning `{nextBatchNo, prevBatchNo}` |
+| `src/pages/BMRCreate.tsx` | Auto-generate on formulation selection, show previous batch info |
 
