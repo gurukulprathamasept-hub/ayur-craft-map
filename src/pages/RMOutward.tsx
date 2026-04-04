@@ -387,6 +387,7 @@ const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBa
 const RMOutward = () => {
   const navigate = useNavigate();
   const { bmrs } = useBMRs();
+  const { issuedRecords, reverseIssue } = useStock();
   const [view, setView] = useState<"list" | "batch" | "single">("list");
   const [selectedBMR, setSelectedBMR] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -398,8 +399,18 @@ const RMOutward = () => {
     setShowSummary(true);
   };
 
-  if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} />;
-  if (view === "single") return <SingleDrugIssueDetail onBack={() => setView("list")} onIssued={handleIssued} />;
+  const handleEditIssue = (issRef: string) => {
+    const record = issuedRecords.find(r => r.issRef === issRef);
+    if (!record) return;
+    reverseIssue(issRef);
+    if (record.type === "batch") {
+      setSelectedBMR(record.source);
+      setView("batch");
+    } else {
+      setView("single");
+    }
+    toast.success(`Issue ${issRef} reversed — stock restored. Re-issue when ready.`);
+  };
 
   const demoBatchIssues = [
     { id: "ISS-2025-0094", bmr: "BMR-2025-0041", product: "Triphala Churna", batchSize: "10 kg", date: "14 Jun 2025", status: "Pending", items: 3 },
