@@ -36,19 +36,76 @@ const RMInward = () => {
   const {
     rmData, getNextGRN, incrementGRN,
     submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
+    drafts, saveDraft, deleteDraft,
   } = useStock();
   const { suppliers } = useSupplier();
   const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
-  const [step, setStep] = useState<"entry" | "qc" | "done">("entry");
+  const [step, setStep] = useState<"drafts" | "entry" | "qc" | "done">("drafts");
   const [lines, setLines] = useState<InwardLine[]>([emptyLine()]);
   const [selectedLineIdx, setSelectedLineIdx] = useState<number | null>(null);
   const [activeRMTab, setActiveRMTab] = useState(0);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
+  const [grnDate, setGrnDate] = useState(new Date().toISOString().split("T")[0]);
 
   const { nextGRN, prevGRN } = getNextGRN();
   const [grnNo, setGrnNo] = useState(nextGRN);
   const currentGRN = pendingGRNs.find(g => g.grnNo === grnNo);
 
-  useEffect(() => { if (step === "entry") setGrnNo(nextGRN); }, [nextGRN, step]);
+  useEffect(() => { if (step === "entry" && !draftId) setGrnNo(nextGRN); }, [nextGRN, step, draftId]);
+
+  const startNewGRN = () => {
+    setDraftId(null);
+    setGrnNo(nextGRN);
+    setSelectedSupplier("SUP-001");
+    setLines([emptyLine()]);
+    setInvoiceNo("");
+    setInvoiceDate("");
+    setGrnDate(new Date().toISOString().split("T")[0]);
+    setStep("entry");
+  };
+
+  const resumeDraft = (draft: GRNDraft) => {
+    setDraftId(draft.id);
+    setGrnNo(draft.grnNo);
+    setSelectedSupplier(draft.supplierId);
+    setInvoiceNo(draft.invoiceNo);
+    setInvoiceDate(draft.invoiceDate);
+    setGrnDate(draft.date);
+    setLines([
+      ...draft.lines.map(l => ({
+        rmCode: l.rmCode, rmName: l.rmName, botanical: l.botanical, uom: l.uom,
+        batch: l.batch, expiry: l.expiry, qty: l.qty, rate: l.rate,
+        searchOpen: false, searchTerm: "",
+      })),
+      emptyLine(),
+    ]);
+    setStep(draft.step);
+  };
+
+  const handleSaveDraft = () => {
+    const id = draftId || `draft-${Date.now()}`;
+    const filledL = lines.filter(l => l.rmCode);
+    const draft: GRNDraft = {
+      id,
+      grnNo,
+      date: grnDate,
+      supplierId: selectedSupplier,
+      supplierName: suppliers.find(s => s.id === selectedSupplier)?.name || selectedSupplier,
+      invoiceNo,
+      invoiceDate,
+      lines: filledL.map(l => ({
+        rmCode: l.rmCode, rmName: l.rmName, botanical: l.botanical, uom: l.uom,
+        batch: l.batch, expiry: l.expiry, qty: l.qty, rate: l.rate,
+      })),
+      step: step === "qc" ? "qc" : "entry",
+      savedAt: "",
+    };
+    saveDraft(draft);
+    setDraftId(id);
+    toast({ title: "Draft saved", description: `GRN ${grnNo} saved. You can resume from the drafts list.` });
+  };
 
   // Auto-add new line
   useEffect(() => {
