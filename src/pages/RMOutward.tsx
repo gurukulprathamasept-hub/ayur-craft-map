@@ -150,7 +150,7 @@ const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIss
       });
     if (lines.length === 0) { toast.error("No quantities entered"); return; }
     const issRef = `ISS-${Date.now().toString().slice(-7)}`;
-    issueStock(issRef, lines);
+    issueStock(issRef, lines, { type: "single", source: "Ad-hoc" });
     
     // Report issued items to parent
     const issuedItems: IssuedItem[] = lines.map(l => {
