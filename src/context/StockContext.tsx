@@ -349,7 +349,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     setPendingGRNs(prev => [...prev, grn]);
   };
 
-  const updateQCResult = (grnNo: string, lineIdx: number, paramIdx: number, actual: string, pass: boolean) => {
+  const updateQCResult = (grnNo: string, lineIdx: number, paramIdx: number, actual: string, pass: boolean | null) => {
     setPendingGRNs(prev => prev.map(g => {
       if (g.grnNo !== grnNo) return g;
       const lines = [...g.lines];
@@ -357,7 +357,18 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       const qcResults = [...line.qcResults];
       qcResults[paramIdx] = { ...qcResults[paramIdx], actual, pass };
       line.qcResults = qcResults;
+      // Auto-set status to in_test if any results entered
+      if (line.qcStatus === "pending") line.qcStatus = "in_test";
       lines[lineIdx] = line;
+      return { ...g, lines };
+    }));
+  };
+
+  const updateQCLineField = (grnNo: string, lineIdx: number, field: Partial<PendingGRNLine>) => {
+    setPendingGRNs(prev => prev.map(g => {
+      if (g.grnNo !== grnNo) return g;
+      const lines = [...g.lines];
+      lines[lineIdx] = { ...lines[lineIdx], ...field };
       return { ...g, lines };
     }));
   };
