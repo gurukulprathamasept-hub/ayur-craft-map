@@ -95,7 +95,16 @@ export type GRNDraft = {
   savedAt: string;
 };
 
-const initialData: RMEntry[] = [
+
+export type IssuedRecord = {
+  issRef: string;
+  type: "batch" | "single";
+  source: string; // BMR label or "Ad-hoc"
+  date: string;
+  lines: { rmName: string; botanical?: string; qty: number; uom: string; batch: string; expiry: string }[];
+  status: "issued" | "reversed";
+};
+
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
     qcSpecs: [
