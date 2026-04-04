@@ -239,7 +239,8 @@ type StockContextType = {
   // QC workflow
   pendingGRNs: PendingGRN[];
   submitForQC: (grn: PendingGRN) => void;
-  updateQCResult: (grnNo: string, lineIdx: number, paramIdx: number, actual: string, pass: boolean) => void;
+  updateQCResult: (grnNo: string, lineIdx: number, paramIdx: number, actual: string, pass: boolean | null) => void;
+  updateQCLineField: (grnNo: string, lineIdx: number, field: Partial<PendingGRNLine>) => void;
   approveGRNLine: (grnNo: string, lineIdx: number) => void;
   rejectGRNLine: (grnNo: string, lineIdx: number) => void;
   finalApproveGRN: (grnNo: string) => void;
