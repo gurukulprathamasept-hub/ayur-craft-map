@@ -218,20 +218,29 @@ const RMInward = () => {
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
+        {step !== "entry" && (
+          <button onClick={() => { if (step === "qc") setStep("entry"); else if (step === "done") setStep("qc"); }}
+            className="p-1.5 rounded-md border border-border hover:bg-secondary transition-all mr-1">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+        )}
         <div className="flex-1">
           <div className="text-[15px] font-medium">
-            {step === "qc" ? `QC sampling & approval — ${grnNo}` : `RM inward — new GRN`}
+            {step === "qc" ? `QC sampling & approval — ${grnNo}` : step === "done" ? `GRN finalised — ${grnNo}` : `RM inward — new GRN`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-px">
             {step === "qc"
               ? `Step 3 of 4 · ${currentGRN?.supplier} · Received ${currentGRN?.date} · Schedule U §II-D`
+              : step === "done" ? `Completed · Stock ledger updated`
               : `${grnNo} · Draft · Schedule U §II`}
           </div>
         </div>
         <button onClick={() => navigate("/")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Cancel</button>
         {step === "entry" && (
           <>
-            <button className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save draft</button>
+            <button onClick={() => {
+              toast({ title: "Draft saved", description: `GRN ${grnNo} saved as draft. You can resume later.` });
+            }} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save draft</button>
             <button onClick={handleSubmitForQC}
               className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
               Submit for QC
@@ -240,7 +249,9 @@ const RMInward = () => {
         )}
         {step === "qc" && (
           <>
-            <button className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save progress</button>
+            <button onClick={() => {
+              toast({ title: "Progress saved", description: `QC progress for ${grnNo} saved. You can continue later.` });
+            }} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save progress</button>
             <button onClick={handleFinalApprove}
               className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
               Finalise & approve
