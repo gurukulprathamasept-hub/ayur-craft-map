@@ -390,6 +390,7 @@ const RMOutward = () => {
   const { issuedRecords, reverseIssue } = useStock();
   const [view, setView] = useState<"list" | "batch" | "single">("list");
   const [selectedBMR, setSelectedBMR] = useState<string>("");
+  const [selectedBMRIngredients, setSelectedBMRIngredients] = useState<{ name: string; botanical?: string; req: number; unit: string }[] | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [issuedItems, setIssuedItems] = useState<IssuedItem[]>([]);
   const [showSummary, setShowSummary] = useState(false);
