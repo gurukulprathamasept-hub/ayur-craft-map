@@ -510,7 +510,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     const grn = pendingGRNs.find(g => g.grnNo === grnNo);
     if (!grn) return;
     // Only inward approved lines
-    const approvedLines = grn.lines.filter(l => l.qcStatus === "approved");
+    const approvedLines = grn.lines.filter(l => l.disposition === "approve" || l.qcStatus === "approved");
     if (approvedLines.length > 0) {
       inwardStock(grnNo, approvedLines.map(l => ({
         rmName: l.rmName, qty: l.qty, batch: l.batch, expiry: l.expiry, rate: l.rate,
