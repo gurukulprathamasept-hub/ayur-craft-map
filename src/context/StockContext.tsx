@@ -73,6 +73,28 @@ export type PendingGRN = {
   status: "pending_qc" | "approved" | "rejected" | "partial";
 };
 
+export type GRNDraft = {
+  id: string;
+  grnNo: string;
+  date: string;
+  supplierId: string;
+  supplierName: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  lines: {
+    rmCode: string;
+    rmName: string;
+    botanical: string;
+    uom: string;
+    batch: string;
+    expiry: string;
+    qty: number;
+    rate: string;
+  }[];
+  step: "entry" | "qc";
+  savedAt: string;
+};
+
 const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
@@ -244,6 +266,10 @@ type StockContextType = {
   approveGRNLine: (grnNo: string, lineIdx: number) => void;
   rejectGRNLine: (grnNo: string, lineIdx: number) => void;
   finalApproveGRN: (grnNo: string) => void;
+  // Draft management
+  drafts: GRNDraft[];
+  saveDraft: (draft: GRNDraft) => void;
+  deleteDraft: (id: string) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
@@ -264,6 +290,25 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [rmData, setRmData] = useState<RMEntry[]>(initialData);
   const [grnCount, setGrnCount] = useState(187);
   const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
+  const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
+    try {
+      const stored = localStorage.getItem("grn_drafts");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  const persistDrafts = (d: GRNDraft[]) => {
+    setDrafts(d);
+    localStorage.setItem("grn_drafts", JSON.stringify(d));
+  };
+
+  const saveDraft = (draft: GRNDraft) => {
+    persistDrafts([...drafts.filter(d => d.id !== draft.id), { ...draft, savedAt: new Date().toLocaleString("en-IN") }]);
+  };
+
+  const deleteDraft = (id: string) => {
+    persistDrafts(drafts.filter(d => d.id !== id));
+  };
 
   const getNextGRN = (): { nextGRN: string; prevGRN: string | null } => {
     const now = new Date();
@@ -438,6 +483,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM,
       getNextGRN, grnCount, incrementGRN,
       pendingGRNs, submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN,
+      drafts, saveDraft, deleteDraft,
     }}>
       {children}
     </StockContext.Provider>

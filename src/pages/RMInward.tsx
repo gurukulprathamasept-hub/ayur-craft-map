@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useStock, type PendingGRN, type PendingGRNLine, type QCResult } from "@/context/StockContext";
+import { useStock, type PendingGRN, type PendingGRNLine, type QCResult, type GRNDraft } from "@/context/StockContext";
 import { useSupplier } from "@/context/SupplierContext";
 import { toast } from "@/hooks/use-toast";
-import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX, RotateCcw, Info, ArrowLeft } from "lucide-react";
+import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX, RotateCcw, Info, ArrowLeft, FileText, Trash2, Clock } from "lucide-react";
 
 type InwardLine = {
   rmCode: string;
@@ -36,19 +36,76 @@ const RMInward = () => {
   const {
     rmData, getNextGRN, incrementGRN,
     submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
+    drafts, saveDraft, deleteDraft,
   } = useStock();
   const { suppliers } = useSupplier();
   const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
-  const [step, setStep] = useState<"entry" | "qc" | "done">("entry");
+  const [step, setStep] = useState<"drafts" | "entry" | "qc" | "done">("drafts");
   const [lines, setLines] = useState<InwardLine[]>([emptyLine()]);
   const [selectedLineIdx, setSelectedLineIdx] = useState<number | null>(null);
   const [activeRMTab, setActiveRMTab] = useState(0);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
+  const [grnDate, setGrnDate] = useState(new Date().toISOString().split("T")[0]);
 
   const { nextGRN, prevGRN } = getNextGRN();
   const [grnNo, setGrnNo] = useState(nextGRN);
   const currentGRN = pendingGRNs.find(g => g.grnNo === grnNo);
 
-  useEffect(() => { if (step === "entry") setGrnNo(nextGRN); }, [nextGRN, step]);
+  useEffect(() => { if (step === "entry" && !draftId) setGrnNo(nextGRN); }, [nextGRN, step, draftId]);
+
+  const startNewGRN = () => {
+    setDraftId(null);
+    setGrnNo(nextGRN);
+    setSelectedSupplier("SUP-001");
+    setLines([emptyLine()]);
+    setInvoiceNo("");
+    setInvoiceDate("");
+    setGrnDate(new Date().toISOString().split("T")[0]);
+    setStep("entry");
+  };
+
+  const resumeDraft = (draft: GRNDraft) => {
+    setDraftId(draft.id);
+    setGrnNo(draft.grnNo);
+    setSelectedSupplier(draft.supplierId);
+    setInvoiceNo(draft.invoiceNo);
+    setInvoiceDate(draft.invoiceDate);
+    setGrnDate(draft.date);
+    setLines([
+      ...draft.lines.map(l => ({
+        rmCode: l.rmCode, rmName: l.rmName, botanical: l.botanical, uom: l.uom,
+        batch: l.batch, expiry: l.expiry, qty: l.qty, rate: l.rate,
+        searchOpen: false, searchTerm: "",
+      })),
+      emptyLine(),
+    ]);
+    setStep(draft.step);
+  };
+
+  const handleSaveDraft = () => {
+    const id = draftId || `draft-${Date.now()}`;
+    const filledL = lines.filter(l => l.rmCode);
+    const draft: GRNDraft = {
+      id,
+      grnNo,
+      date: grnDate,
+      supplierId: selectedSupplier,
+      supplierName: suppliers.find(s => s.id === selectedSupplier)?.name || selectedSupplier,
+      invoiceNo,
+      invoiceDate,
+      lines: filledL.map(l => ({
+        rmCode: l.rmCode, rmName: l.rmName, botanical: l.botanical, uom: l.uom,
+        batch: l.batch, expiry: l.expiry, qty: l.qty, rate: l.rate,
+      })),
+      step: step === "qc" ? "qc" : "entry",
+      savedAt: "",
+    };
+    saveDraft(draft);
+    setDraftId(id);
+    toast({ title: "Draft saved", description: `GRN ${grnNo} saved. You can resume from the drafts list.` });
+  };
 
   // Auto-add new line
   useEffect(() => {
@@ -198,7 +255,7 @@ const RMInward = () => {
     );
   };
 
-  const stepNum = step === "entry" ? 2 : step === "qc" ? 3 : 4;
+  const stepNum = step === "drafts" ? 0 : step === "entry" ? 2 : step === "qc" ? 3 : 4;
 
   // QC helpers for current active RM tab
   const activeLine = currentGRN?.lines[activeRMTab];
@@ -218,29 +275,40 @@ const RMInward = () => {
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
-        {step !== "entry" && (
-          <button onClick={() => { if (step === "qc") setStep("entry"); else if (step === "done") setStep("qc"); }}
+        {step !== "drafts" && (
+          <button onClick={() => {
+            if (step === "entry") setStep("drafts");
+            else if (step === "qc") setStep("entry");
+            else if (step === "done") setStep("qc");
+          }}
             className="p-1.5 rounded-md border border-border hover:bg-secondary transition-all mr-1">
             <ArrowLeft className="w-4 h-4" />
           </button>
         )}
         <div className="flex-1">
           <div className="text-[15px] font-medium">
-            {step === "qc" ? `QC sampling & approval — ${grnNo}` : step === "done" ? `GRN finalised — ${grnNo}` : `RM inward — new GRN`}
+            {step === "drafts" ? "RM Inward — GRN Management"
+              : step === "qc" ? `QC sampling & approval — ${grnNo}`
+              : step === "done" ? `GRN finalised — ${grnNo}`
+              : `RM inward — new GRN`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-px">
-            {step === "qc"
-              ? `Step 3 of 4 · ${currentGRN?.supplier} · Received ${currentGRN?.date} · Schedule U §II-D`
+            {step === "drafts" ? `${drafts.length} draft${drafts.length !== 1 ? "s" : ""} saved · ${pendingGRNs.filter(g => g.status === "pending_qc").length} pending QC`
+              : step === "qc" ? `Step 3 of 4 · ${currentGRN?.supplier} · Received ${currentGRN?.date} · Schedule U §II-D`
               : step === "done" ? `Completed · Stock ledger updated`
               : `${grnNo} · Draft · Schedule U §II`}
           </div>
         </div>
-        <button onClick={() => navigate("/")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Cancel</button>
+        {step === "drafts" && (
+          <button onClick={startNewGRN}
+            className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
+            + New GRN
+          </button>
+        )}
         {step === "entry" && (
           <>
-            <button onClick={() => {
-              toast({ title: "Draft saved", description: `GRN ${grnNo} saved as draft. You can resume later.` });
-            }} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save draft</button>
+            <button onClick={() => navigate("/")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Cancel</button>
+            <button onClick={handleSaveDraft} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save draft</button>
             <button onClick={handleSubmitForQC}
               className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
               Submit for QC
@@ -249,9 +317,7 @@ const RMInward = () => {
         )}
         {step === "qc" && (
           <>
-            <button onClick={() => {
-              toast({ title: "Progress saved", description: `QC progress for ${grnNo} saved. You can continue later.` });
-            }} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save progress</button>
+            <button onClick={handleSaveDraft} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save progress</button>
             <button onClick={handleFinalApprove}
               className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
               Finalise & approve
@@ -261,7 +327,81 @@ const RMInward = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        {/* Stepper */}
+        {/* Drafts list */}
+        {step === "drafts" && (
+          <div>
+            {/* Pending QC section */}
+            {pendingGRNs.filter(g => g.status === "pending_qc").length > 0 && (
+              <div className="app-card mb-4">
+                <div className="app-card-head"><div className="app-card-title">Pending QC</div></div>
+                <div className="p-3.5 space-y-2">
+                  {pendingGRNs.filter(g => g.status === "pending_qc").map(grn => (
+                    <div key={grn.grnNo} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/50 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
+                          <FlaskConical className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">{grn.grnNo}</div>
+                          <div className="text-[11px] text-muted-foreground">{grn.supplier} · {grn.date} · {grn.lines.length} item{grn.lines.length !== 1 ? "s" : ""}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => { setGrnNo(grn.grnNo); setStep("qc"); setActiveRMTab(0); }}
+                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
+                        Continue QC
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Saved drafts */}
+            <div className="app-card">
+              <div className="app-card-head"><div className="app-card-title">Saved Drafts</div></div>
+              <div className="p-3.5">
+                {drafts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+                    <div className="text-sm text-muted-foreground">No saved drafts</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">Click "+ New GRN" to start a new goods receipt</div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {drafts.sort((a, b) => b.savedAt.localeCompare(a.savedAt)).map(draft => (
+                      <div key={draft.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/50 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">{draft.grnNo}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {draft.supplierName} · {draft.lines.length} item{draft.lines.length !== 1 ? "s" : ""} · Saved {draft.savedAt}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => resumeDraft(draft)}
+                            className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
+                            Resume
+                          </button>
+                          <button onClick={() => { deleteDraft(draft.id); toast({ title: "Draft deleted" }); }}
+                            className="p-1.5 rounded-md border border-border hover:bg-destructive/10 transition-all">
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stepper - show for entry/qc/done */}
+        {step !== "drafts" && (
         <div className="flex items-center gap-0 mb-4">
           {[
             { n: 1, label: "GRN header" },
@@ -278,6 +418,7 @@ const RMInward = () => {
             </div>
           ))}
         </div>
+        )}
 
         {/* STEP: Entry */}
         {step === "entry" && (
@@ -292,7 +433,7 @@ const RMInward = () => {
                     <input value={grnNo} onChange={e => setGrnNo(e.target.value)} />
                     {prevGRN && <span className="text-[10px] text-muted-foreground mt-0.5">Previous: {prevGRN}</span>}
                   </div>
-                  <div className="form-field"><label>GRN date</label><input type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div>
+                  <div className="form-field"><label>GRN date</label><input type="date" value={grnDate} onChange={e => setGrnDate(e.target.value)} /></div>
                   <div className="form-field">
                     <label>Supplier</label>
                     <select value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)}>
@@ -301,8 +442,8 @@ const RMInward = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="form-field"><label>Invoice / challan no.</label><input placeholder="INV-XXXX" /></div>
-                  <div className="form-field"><label>Invoice date</label><input type="date" /></div>
+                  <div className="form-field"><label>Invoice / challan no.</label><input placeholder="INV-XXXX" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} /></div>
+                  <div className="form-field"><label>Invoice date</label><input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} /></div>
                   <div className="form-field">
                     <label>Source type</label>
                     <input disabled value={suppliers.find(s => s.id === selectedSupplier)?.sourceType || "—"} className="bg-secondary" />
