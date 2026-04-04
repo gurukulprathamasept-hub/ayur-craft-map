@@ -433,7 +433,7 @@ const RMInward = () => {
                     <input value={grnNo} onChange={e => setGrnNo(e.target.value)} />
                     {prevGRN && <span className="text-[10px] text-muted-foreground mt-0.5">Previous: {prevGRN}</span>}
                   </div>
-                  <div className="form-field"><label>GRN date</label><input type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div>
+                  <div className="form-field"><label>GRN date</label><input type="date" value={grnDate} onChange={e => setGrnDate(e.target.value)} /></div>
                   <div className="form-field">
                     <label>Supplier</label>
                     <select value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)}>
