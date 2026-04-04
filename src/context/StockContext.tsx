@@ -339,10 +339,16 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const incrementGRN = () => setGrnCount(prev => prev + 1);
 
   const getStockForRM = (name: string) => {
-    const rm = rmData.find(r =>
-      r.name.toLowerCase().includes(name.toLowerCase()) ||
-      name.toLowerCase().includes(r.name.toLowerCase())
-    );
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean);
+    const searchTokens = normalize(name);
+    const rm = rmData.find(r => {
+      const rmTokens = normalize(r.name);
+      // Match if any search token appears in any rm token or vice versa
+      return searchTokens.some(st => rmTokens.some(rt => rt.includes(st) || st.includes(rt))) ||
+        r.name.toLowerCase().includes(name.toLowerCase()) ||
+        name.toLowerCase().includes(r.name.toLowerCase()) ||
+        r.code.toLowerCase() === name.toLowerCase();
+    });
     if (!rm) return null;
     const inwardTxns = rm.txns.filter(t => t.type === "Inward");
     const latestBatch = inwardTxns.length > 0 ? inwardTxns[inwardTxns.length - 1] : null;
