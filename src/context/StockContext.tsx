@@ -483,6 +483,8 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM,
       getNextGRN, grnCount, incrementGRN,
       pendingGRNs, submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN,
+      drafts, saveDraft, deleteDraft,
+    }}>
     }}>
       {children}
     </StockContext.Provider>
