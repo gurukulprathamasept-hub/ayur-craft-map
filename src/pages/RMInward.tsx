@@ -68,6 +68,28 @@ const RMInward = () => {
     setStep("entry");
   };
 
+  const handleEditGRN = (grn: PendingGRN) => {
+    // Reverse stock ledger entries for this GRN
+    reverseGRN(grn.grnNo);
+    // Load GRN data back into entry form
+    setGrnNo(grn.grnNo);
+    setDraftId(null);
+    setSelectedSupplier(suppliers.find(s => s.name === grn.supplier)?.id || "SUP-001");
+    setLines([
+      ...grn.lines.map(l => ({
+        rmCode: l.rmCode, rmName: l.rmName, botanical: l.botanical, uom: l.uom,
+        batch: l.batch, expiry: l.expiry, qty: l.qty, rate: l.rate,
+        searchOpen: false, searchTerm: "",
+      })),
+      emptyLine(),
+    ]);
+    setInvoiceNo("");
+    setInvoiceDate("");
+    setGrnDate(grn.date);
+    setStep("entry");
+    toast({ title: "GRN loaded for editing", description: `${grn.grnNo} — stock ledger reversed. Re-submit when done.` });
+  };
+
   const resumeDraft = (draft: GRNDraft) => {
     setDraftId(draft.id);
     setGrnNo(draft.grnNo);
