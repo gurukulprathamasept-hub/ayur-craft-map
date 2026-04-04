@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
-import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer, Download } from "lucide-react";
+import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer, Download, Edit, RotateCcw } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
@@ -150,7 +150,7 @@ const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIss
       });
     if (lines.length === 0) { toast.error("No quantities entered"); return; }
     const issRef = `ISS-${Date.now().toString().slice(-7)}`;
-    issueStock(issRef, lines);
+    issueStock(issRef, lines, { type: "single", source: "Ad-hoc" });
     
     // Report issued items to parent
     const issuedItems: IssuedItem[] = lines.map(l => {
@@ -265,7 +265,7 @@ const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBa
       .filter(i => i.issueChecked && i.qtyToIssue > 0)
       .map(i => ({ rmName: i.name, qty: i.qtyToIssue, batch: i.batch, expiry: i.expiry }));
     if (lines.length === 0) { toast.error("Nothing to issue"); return; }
-    issueStock(issRef, lines);
+    issueStock(issRef, lines, { type: "batch", source: bmrLabel });
     
     // Report issued items to parent
     const issuedItems: IssuedItem[] = lines.map(l => {
@@ -387,6 +387,7 @@ const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBa
 const RMOutward = () => {
   const navigate = useNavigate();
   const { bmrs } = useBMRs();
+  const { issuedRecords, reverseIssue } = useStock();
   const [view, setView] = useState<"list" | "batch" | "single">("list");
   const [selectedBMR, setSelectedBMR] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -396,6 +397,19 @@ const RMOutward = () => {
   const handleIssued = (items: IssuedItem[]) => {
     setIssuedItems(prev => [...prev, ...items]);
     setShowSummary(true);
+  };
+
+  const handleEditIssue = (issRef: string) => {
+    const record = issuedRecords.find(r => r.issRef === issRef);
+    if (!record) return;
+    reverseIssue(issRef);
+    if (record.type === "batch") {
+      setSelectedBMR(record.source);
+      setView("batch");
+    } else {
+      setView("single");
+    }
+    toast.success(`Issue ${issRef} reversed — stock restored. Re-issue when ready.`);
   };
 
   if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} />;
@@ -459,11 +473,67 @@ const RMOutward = () => {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by product, BMR no., or RM name..." className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-xs bg-background" />
         </div>
 
-        <Tabs defaultValue="batch" className="w-full">
+        <Tabs defaultValue="history" className="w-full">
           <TabsList className="mb-3">
+            <TabsTrigger value="history" className="text-xs">Issue History ({issuedRecords.filter(r => r.status === "issued").length})</TabsTrigger>
             <TabsTrigger value="batch" className="text-xs">Batch issue (BMR)</TabsTrigger>
             <TabsTrigger value="single" className="text-xs">Single drug issue</TabsTrigger>
           </TabsList>
+
+          {/* Issue History */}
+          <TabsContent value="history">
+            <div className="app-card">
+              <div className="app-card-head"><div className="app-card-title">All issued records</div></div>
+              <div className="divide-y divide-border">
+                <div className="grid grid-cols-[1fr_1.2fr_1.5fr_0.8fr_0.6fr_0.6fr_80px] gap-2 px-3.5 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <div>Issue Ref</div><div>Source</div><div>RM Items</div><div>Date</div><div>Total Qty</div><div>Status</div><div></div>
+                </div>
+                {(() => {
+                  const allRecords = issuedRecords.filter(r => {
+                    if (!search) return true;
+                    const s = search.toLowerCase();
+                    return r.issRef.toLowerCase().includes(s) || r.source.toLowerCase().includes(s) || r.lines.some(l => l.rmName.toLowerCase().includes(s));
+                  });
+                  if (allRecords.length === 0) return (
+                    <div className="p-6 text-center text-xs text-muted-foreground">
+                      <Package className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+                      No issue records yet. Issue materials via batch or single drug to see history here.
+                    </div>
+                  );
+                  return allRecords.map(record => {
+                    const totalQty = record.lines.reduce((s, l) => s + l.qty, 0);
+                    return (
+                      <div key={record.issRef} className="grid grid-cols-[1fr_1.2fr_1.5fr_0.8fr_0.6fr_0.6fr_80px] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 transition-colors">
+                        <div className="font-medium text-primary font-mono">{record.issRef}</div>
+                        <div>
+                          <div className="font-medium">{record.source}</div>
+                          <div className="text-[10px] text-muted-foreground">{record.type === "batch" ? "Batch issue" : "Ad-hoc"}</div>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">{record.lines.map(l => l.rmName).join(", ")}</div>
+                        <div>{record.date}</div>
+                        <div>{totalQty.toFixed(3)}</div>
+                        <div>
+                          {record.status === "issued" ? (
+                            <span className="app-badge app-badge-teal">Issued</span>
+                          ) : (
+                            <span className="app-badge app-badge-amber flex items-center gap-1"><RotateCcw className="w-3 h-3" /> Reversed</span>
+                          )}
+                        </div>
+                        <div>
+                          {record.status === "issued" && (
+                            <button onClick={() => handleEditIssue(record.issRef)}
+                              className="px-2.5 py-1 rounded-md border border-border text-[10px] font-medium hover:bg-secondary transition-all flex items-center gap-1">
+                              <Edit className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="batch">
             <div className="app-card">

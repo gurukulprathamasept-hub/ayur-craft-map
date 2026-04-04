@@ -95,6 +95,16 @@ export type GRNDraft = {
   savedAt: string;
 };
 
+
+export type IssuedRecord = {
+  issRef: string;
+  type: "batch" | "single";
+  source: string; // BMR label or "Ad-hoc"
+  date: string;
+  lines: { rmName: string; botanical?: string; qty: number; uom: string; batch: string; expiry: string }[];
+  status: "issued" | "reversed";
+};
+
 const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
@@ -250,7 +260,9 @@ type InwardLine = {
 type StockContextType = {
   rmData: RMEntry[];
   getStockForRM: (name: string) => { available: number; batch: string; batchColor: string; expiry: string; uom: string } | null;
-  issueStock: (issRef: string, lines: IssueLine[]) => void;
+  issueStock: (issRef: string, lines: IssueLine[], meta?: { type: "batch" | "single"; source: string }) => void;
+  reverseIssue: (issRef: string) => void;
+  issuedRecords: IssuedRecord[];
   inwardStock: (grnRef: string, lines: InwardLine[]) => void;
   addRM: (rm: Omit<RMEntry, "code" | "currentStock" | "txns">) => void;
   updateRM: (code: string, data: Partial<Omit<RMEntry, "code" | "currentStock" | "txns">>) => void;
@@ -292,6 +304,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [rmData, setRmData] = useState<RMEntry[]>(initialData);
   const [grnCount, setGrnCount] = useState(187);
   const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
+  const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>([]);
   const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
     try {
       const stored = localStorage.getItem("grn_drafts");
@@ -342,7 +355,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const issueStock = (issRef: string, lines: IssueLine[]) => {
+  const issueStock = (issRef: string, lines: IssueLine[], meta?: { type: "batch" | "single"; source: string }) => {
     setRmData(prev => {
       const updated = [...prev];
       for (const line of lines) {
@@ -364,6 +377,54 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       }
       return updated;
     });
+    // Record the issue
+    if (meta) {
+      const record: IssuedRecord = {
+        issRef,
+        type: meta.type,
+        source: meta.source,
+        date: today(),
+        lines: lines.map(l => {
+          const rm = rmData.find(r => r.name.toLowerCase().includes(l.rmName.toLowerCase()) || l.rmName.toLowerCase().includes(r.name.toLowerCase()));
+          return { rmName: l.rmName, botanical: rm?.botanical, qty: l.qty, uom: rm?.uom || "kg", batch: l.batch, expiry: l.expiry };
+        }),
+        status: "issued",
+      };
+      setIssuedRecords(prev => [...prev, record]);
+    }
+  };
+
+  const reverseIssue = (issRef: string) => {
+    const record = issuedRecords.find(r => r.issRef === issRef && r.status === "issued");
+    if (!record) return;
+    // Reverse outward txns
+    setRmData(prev => {
+      const updated = [...prev];
+      for (const line of record.lines) {
+        const idx = updated.findIndex(r =>
+          r.name.toLowerCase().includes(line.rmName.toLowerCase()) ||
+          line.rmName.toLowerCase().includes(r.name.toLowerCase())
+        );
+        if (idx === -1) continue;
+        const rm = { ...updated[idx] };
+        const removedTxns = rm.txns.filter(t => t.ref === issRef && t.type === "Outward");
+        const reversedQty = removedTxns.reduce((sum, t) => sum + parseFloat(t.qtyOut === "—" ? "0" : t.qtyOut), 0);
+        rm.txns = rm.txns.filter(t => !(t.ref === issRef && t.type === "Outward"));
+        rm.currentStock = parseFloat((rm.currentStock + reversedQty).toFixed(3));
+        // Recalculate running balances
+        let balance = 0;
+        rm.txns = rm.txns.map(t => {
+          const inAmt = t.qtyIn === "—" ? 0 : parseFloat(t.qtyIn);
+          const outAmt = t.qtyOut === "—" ? 0 : parseFloat(t.qtyOut);
+          balance = parseFloat((balance + inAmt - outAmt).toFixed(3));
+          return { ...t, balance: balance.toFixed(3) };
+        });
+        updated[idx] = rm;
+      }
+      return updated;
+    });
+    // Mark record as reversed
+    setIssuedRecords(prev => prev.map(r => r.issRef === issRef ? { ...r, status: "reversed" as const } : r));
   };
 
   // Direct inward (kept for backward compat but now only called after QC approval)
@@ -539,7 +600,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <StockContext.Provider value={{
-      rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM,
+      rmData, getStockForRM, issueStock, reverseIssue, issuedRecords, inwardStock, addRM, updateRM, deleteRM,
       getNextGRN, grnCount, incrementGRN,
       pendingGRNs, submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN,
       reverseGRN, updateGRNData,
