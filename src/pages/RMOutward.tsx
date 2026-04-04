@@ -544,7 +544,19 @@ const RMOutward = () => {
                   <div className="p-6 text-center text-xs text-muted-foreground">No batch issues found.</div>
                 )}
                 {filteredBatch.map((item, i) => (
-                  <div key={i} onClick={() => { setSelectedBMR(`${item.bmr} · ${item.product}`); setView("batch"); }} className="grid grid-cols-[1fr_1.5fr_0.8fr_0.8fr_0.6fr_0.5fr] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 cursor-pointer transition-colors">
+                  <div key={i} onClick={() => {
+                    setSelectedBMR(`${item.bmr} · ${item.product}`);
+                    // Find BMR and pass real ingredients
+                    const bmr = bmrs.find(b => b.batchNo === item.bmr);
+                    if (bmr) {
+                      setSelectedBMRIngredients(bmr.ingredients.map(ing => ({
+                        name: ing.name, botanical: undefined, req: ing.qty, unit: ing.unit,
+                      })));
+                    } else {
+                      setSelectedBMRIngredients(undefined);
+                    }
+                    setView("batch");
+                  }} className="grid grid-cols-[1fr_1.5fr_0.8fr_0.8fr_0.6fr_0.5fr] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 cursor-pointer transition-colors">
                     <div className="font-medium text-primary">{item.id}</div>
                     <div>
                       <div className="font-medium">{item.product}</div>
