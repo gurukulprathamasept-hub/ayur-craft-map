@@ -305,6 +305,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [grnCount, setGrnCount] = useState(187);
   const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
   const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>([]);
+  const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
     try {
       const stored = localStorage.getItem("grn_drafts");
       return stored ? JSON.parse(stored) : [];
