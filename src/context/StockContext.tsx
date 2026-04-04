@@ -163,6 +163,9 @@ type StockContextType = {
   addRM: (rm: Omit<RMEntry, "code" | "currentStock" | "txns">) => void;
   updateRM: (code: string, data: Partial<Omit<RMEntry, "code" | "currentStock" | "txns">>) => void;
   deleteRM: (code: string) => void;
+  getNextGRN: () => { nextGRN: string; prevGRN: string | null };
+  grnCount: number;
+  incrementGRN: () => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
