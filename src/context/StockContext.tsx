@@ -30,6 +30,33 @@ export type RMEntry = {
   txns: Txn[];
 };
 
+export type QCResult = {
+  parameter: string;
+  spec: string;
+  actual: string;
+  pass: boolean | null; // null = not tested yet
+};
+
+export type PendingGRNLine = {
+  rmCode: string;
+  rmName: string;
+  qty: number;
+  batch: string;
+  expiry: string;
+  rate: string;
+  uom: string;
+  qcResults: QCResult[];
+  qcStatus: "pending" | "approved" | "rejected";
+};
+
+export type PendingGRN = {
+  grnNo: string;
+  date: string;
+  supplier: string;
+  lines: PendingGRNLine[];
+  status: "pending_qc" | "approved" | "rejected" | "partial";
+};
+
 const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
@@ -166,6 +193,13 @@ type StockContextType = {
   getNextGRN: () => { nextGRN: string; prevGRN: string | null };
   grnCount: number;
   incrementGRN: () => void;
+  // QC workflow
+  pendingGRNs: PendingGRN[];
+  submitForQC: (grn: PendingGRN) => void;
+  updateQCResult: (grnNo: string, lineIdx: number, paramIdx: number, actual: string, pass: boolean) => void;
+  approveGRNLine: (grnNo: string, lineIdx: number) => void;
+  rejectGRNLine: (grnNo: string, lineIdx: number) => void;
+  finalApproveGRN: (grnNo: string) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
@@ -184,7 +218,8 @@ const today = () => {
 
 export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [rmData, setRmData] = useState<RMEntry[]>(initialData);
-  const [grnCount, setGrnCount] = useState(187); // start after existing GRN-2025-0187
+  const [grnCount, setGrnCount] = useState(187);
+  const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
 
   const getNextGRN = (): { nextGRN: string; prevGRN: string | null } => {
     const now = new Date();
@@ -240,6 +275,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // Direct inward (kept for backward compat but now only called after QC approval)
   const inwardStock = (grnRef: string, lines: InwardLine[]) => {
     setRmData(prev => {
       const updated = [...prev];
@@ -264,6 +300,65 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // QC Workflow
+  const submitForQC = (grn: PendingGRN) => {
+    setPendingGRNs(prev => [...prev, grn]);
+  };
+
+  const updateQCResult = (grnNo: string, lineIdx: number, paramIdx: number, actual: string, pass: boolean) => {
+    setPendingGRNs(prev => prev.map(g => {
+      if (g.grnNo !== grnNo) return g;
+      const lines = [...g.lines];
+      const line = { ...lines[lineIdx] };
+      const qcResults = [...line.qcResults];
+      qcResults[paramIdx] = { ...qcResults[paramIdx], actual, pass };
+      line.qcResults = qcResults;
+      lines[lineIdx] = line;
+      return { ...g, lines };
+    }));
+  };
+
+  const approveGRNLine = (grnNo: string, lineIdx: number) => {
+    setPendingGRNs(prev => prev.map(g => {
+      if (g.grnNo !== grnNo) return g;
+      const lines = [...g.lines];
+      lines[lineIdx] = { ...lines[lineIdx], qcStatus: "approved" };
+      // Update overall GRN status
+      const allDone = lines.every(l => l.qcStatus === "approved" || l.qcStatus === "rejected");
+      const allApproved = lines.every(l => l.qcStatus === "approved");
+      const status = allDone ? (allApproved ? "approved" : "partial") : "pending_qc";
+      return { ...g, lines, status };
+    }));
+  };
+
+  const rejectGRNLine = (grnNo: string, lineIdx: number) => {
+    setPendingGRNs(prev => prev.map(g => {
+      if (g.grnNo !== grnNo) return g;
+      const lines = [...g.lines];
+      lines[lineIdx] = { ...lines[lineIdx], qcStatus: "rejected" };
+      const allDone = lines.every(l => l.qcStatus === "approved" || l.qcStatus === "rejected");
+      const allApproved = lines.every(l => l.qcStatus === "approved");
+      const status = allDone ? (allApproved ? "approved" : "partial") : "pending_qc";
+      return { ...g, lines, status };
+    }));
+  };
+
+  const finalApproveGRN = (grnNo: string) => {
+    const grn = pendingGRNs.find(g => g.grnNo === grnNo);
+    if (!grn) return;
+    // Only inward approved lines
+    const approvedLines = grn.lines.filter(l => l.qcStatus === "approved");
+    if (approvedLines.length > 0) {
+      inwardStock(grnNo, approvedLines.map(l => ({
+        rmName: l.rmName, qty: l.qty, batch: l.batch, expiry: l.expiry, rate: l.rate,
+      })));
+    }
+    // Mark GRN as done
+    setPendingGRNs(prev => prev.map(g =>
+      g.grnNo === grnNo ? { ...g, status: "approved" } : g
+    ));
+  };
+
   const addRM = (rm: Omit<RMEntry, "code" | "currentStock" | "txns">) => {
     setRmData(prev => {
       const maxNum = prev.reduce((max, r) => {
@@ -284,7 +379,11 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <StockContext.Provider value={{ rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM, getNextGRN, grnCount, incrementGRN }}>
+    <StockContext.Provider value={{
+      rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM,
+      getNextGRN, grnCount, incrementGRN,
+      pendingGRNs, submitForQC, updateQCResult, approveGRNLine, rejectGRNLine, finalApproveGRN,
+    }}>
       {children}
     </StockContext.Provider>
   );
