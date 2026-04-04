@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useStock, type PendingGRN, type PendingGRNLine, type QCResult, type GRNDraft } from "@/context/StockContext";
 import { useSupplier } from "@/context/SupplierContext";
 import { toast } from "@/hooks/use-toast";
-import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX, RotateCcw, Info, ArrowLeft, FileText, Trash2, Clock } from "lucide-react";
+import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX, RotateCcw, Info, ArrowLeft, FileText, Trash2, Clock, Edit, Package } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type InwardLine = {
   rmCode: string;
