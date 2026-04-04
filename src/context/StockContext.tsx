@@ -259,7 +259,9 @@ type InwardLine = {
 type StockContextType = {
   rmData: RMEntry[];
   getStockForRM: (name: string) => { available: number; batch: string; batchColor: string; expiry: string; uom: string } | null;
-  issueStock: (issRef: string, lines: IssueLine[]) => void;
+  issueStock: (issRef: string, lines: IssueLine[], meta?: { type: "batch" | "single"; source: string }) => void;
+  reverseIssue: (issRef: string) => void;
+  issuedRecords: IssuedRecord[];
   inwardStock: (grnRef: string, lines: InwardLine[]) => void;
   addRM: (rm: Omit<RMEntry, "code" | "currentStock" | "txns">) => void;
   updateRM: (code: string, data: Partial<Omit<RMEntry, "code" | "currentStock" | "txns">>) => void;
