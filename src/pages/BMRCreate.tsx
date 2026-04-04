@@ -115,6 +115,12 @@ const BMRCreate = () => {
               <div className="form-field">
                 <label>Batch number</label>
                 <input value={batchNo} onChange={(e) => setBatchNo(e.target.value)} />
+                {mfr && (
+                  <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
+                    <Info className="w-3 h-3" />
+                    {prevBatchNo ? `Previous: ${prevBatchNo}` : "First batch for this product"}
+                  </div>
+                )}
               </div>
             </div>
             {mfr && (
