@@ -266,6 +266,8 @@ type StockContextType = {
   approveGRNLine: (grnNo: string, lineIdx: number) => void;
   rejectGRNLine: (grnNo: string, lineIdx: number) => void;
   finalApproveGRN: (grnNo: string) => void;
+  reverseGRN: (grnNo: string) => void;
+  updateGRNData: (grnNo: string, data: Partial<PendingGRN>) => void;
   // Draft management
   drafts: GRNDraft[];
   saveDraft: (draft: GRNDraft) => void;
