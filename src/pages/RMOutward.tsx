@@ -413,7 +413,7 @@ const RMOutward = () => {
     toast.success(`Issue ${issRef} reversed — stock restored. Re-issue when ready.`);
   };
 
-  if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} />;
+  if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} bmrIngredients={selectedBMRIngredients} />;
   if (view === "single") return <SingleDrugIssueDetail onBack={() => setView("list")} onIssued={handleIssued} />;
 
   const demoBatchIssues = [
