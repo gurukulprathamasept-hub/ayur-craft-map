@@ -442,10 +442,14 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     setRmData(prev => {
       const updated = [...prev];
       for (const line of lines) {
-        const idx = updated.findIndex(r =>
-          r.name.toLowerCase().includes(line.rmName.toLowerCase()) ||
-          line.rmName.toLowerCase().includes(r.name.toLowerCase())
-        );
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean);
+        const searchTokens = normalize(line.rmName);
+        const idx = updated.findIndex(r => {
+          const rmTokens = normalize(r.name);
+          return searchTokens.some(st => rmTokens.some(rt => rt.includes(st) || st.includes(rt))) ||
+            r.name.toLowerCase().includes(line.rmName.toLowerCase()) ||
+            line.rmName.toLowerCase().includes(r.name.toLowerCase());
+        });
         if (idx === -1 || line.qty <= 0) continue;
         const rm = { ...updated[idx] };
         const newStock = parseFloat((rm.currentStock + line.qty).toFixed(3));
