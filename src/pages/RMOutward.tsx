@@ -265,7 +265,7 @@ const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBa
       .filter(i => i.issueChecked && i.qtyToIssue > 0)
       .map(i => ({ rmName: i.name, qty: i.qtyToIssue, batch: i.batch, expiry: i.expiry }));
     if (lines.length === 0) { toast.error("Nothing to issue"); return; }
-    issueStock(issRef, lines);
+    issueStock(issRef, lines, { type: "batch", source: bmrLabel });
     
     // Report issued items to parent
     const issuedItems: IssuedItem[] = lines.map(l => {
