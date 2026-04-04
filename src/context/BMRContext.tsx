@@ -48,6 +48,7 @@ interface BMRContextType {
   addBMR: (bmr: BMRRecord) => void;
   updateBMR: (id: string, updates: Partial<BMRRecord>) => void;
   getBMR: (id: string) => BMRRecord | undefined;
+  getNextBatchNo: (productName: string, mfrId: string) => { nextBatchNo: string; prevBatchNo: string | null };
 }
 
 const BMRContext = createContext<BMRContextType | null>(null);
