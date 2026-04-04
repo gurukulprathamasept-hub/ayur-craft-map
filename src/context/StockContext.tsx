@@ -184,6 +184,20 @@ const today = () => {
 
 export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [rmData, setRmData] = useState<RMEntry[]>(initialData);
+  const [grnCount, setGrnCount] = useState(187); // start after existing GRN-2025-0187
+
+  const getNextGRN = (): { nextGRN: string; prevGRN: string | null } => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const nextSeq = String(grnCount + 1).padStart(4, "0");
+    const prevSeq = grnCount > 0 ? String(grnCount).padStart(4, "0") : null;
+    return {
+      nextGRN: `GRN-${year}-${nextSeq}`,
+      prevGRN: prevSeq ? `GRN-${year}-${prevSeq}` : null,
+    };
+  };
+
+  const incrementGRN = () => setGrnCount(prev => prev + 1);
 
   const getStockForRM = (name: string) => {
     const rm = rmData.find(r =>
