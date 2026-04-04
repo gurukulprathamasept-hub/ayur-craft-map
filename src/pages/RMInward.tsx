@@ -37,7 +37,7 @@ const RMInward = () => {
   const {
     rmData, getNextGRN, incrementGRN,
     submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
-    drafts, saveDraft, deleteDraft,
+    drafts, saveDraft, deleteDraft, reverseGRN,
   } = useStock();
   const { suppliers } = useSupplier();
   const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
@@ -49,6 +49,7 @@ const RMInward = () => {
   const [invoiceNo, setInvoiceNo] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
   const [grnDate, setGrnDate] = useState(new Date().toISOString().split("T")[0]);
+  const [grnSearch, setGrnSearch] = useState("");
 
   const { nextGRN, prevGRN } = getNextGRN();
   const [grnNo, setGrnNo] = useState(nextGRN);
