@@ -284,7 +284,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <StockContext.Provider value={{ rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM }}>
+    <StockContext.Provider value={{ rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM, getNextGRN, grnCount, incrementGRN }}>
       {children}
     </StockContext.Provider>
   );
