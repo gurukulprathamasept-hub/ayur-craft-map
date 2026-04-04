@@ -415,6 +415,7 @@ const RMOutward = () => {
   if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} />;
   if (view === "single") return <SingleDrugIssueDetail onBack={() => setView("list")} onIssued={handleIssued} />;
 
+  const demoBatchIssues = [
     { id: "ISS-2025-0094", bmr: "BMR-2025-0041", product: "Triphala Churna", batchSize: "10 kg", date: "14 Jun 2025", status: "Pending", items: 3 },
     { id: "ISS-2025-0091", bmr: "BMR-2025-0039", product: "Chyawanprash", batchSize: "50 kg", date: "12 Jun 2025", status: "Issued", items: 8 },
     { id: "ISS-2025-0088", bmr: "BMR-2025-0037", product: "Ashwagandharishta", batchSize: "100 L", date: "10 Jun 2025", status: "Issued", items: 5 },
