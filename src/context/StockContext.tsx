@@ -266,6 +266,10 @@ type StockContextType = {
   approveGRNLine: (grnNo: string, lineIdx: number) => void;
   rejectGRNLine: (grnNo: string, lineIdx: number) => void;
   finalApproveGRN: (grnNo: string) => void;
+  // Draft management
+  drafts: GRNDraft[];
+  saveDraft: (draft: GRNDraft) => void;
+  deleteDraft: (id: string) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
