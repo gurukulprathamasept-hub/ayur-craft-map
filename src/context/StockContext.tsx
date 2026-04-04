@@ -105,6 +105,7 @@ export type IssuedRecord = {
   status: "issued" | "reversed";
 };
 
+const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
     qcSpecs: [
