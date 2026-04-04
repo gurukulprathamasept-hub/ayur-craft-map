@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useStock, type PendingGRN, type PendingGRNLine, type QCResult, type GRNDraft } from "@/context/StockContext";
 import { useSupplier } from "@/context/SupplierContext";
 import { toast } from "@/hooks/use-toast";
-import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX, RotateCcw, Info, ArrowLeft, FileText, Trash2, Clock } from "lucide-react";
+import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX, RotateCcw, Info, ArrowLeft, FileText, Trash2, Clock, Edit, Package } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type InwardLine = {
   rmCode: string;
@@ -36,7 +37,7 @@ const RMInward = () => {
   const {
     rmData, getNextGRN, incrementGRN,
     submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
-    drafts, saveDraft, deleteDraft,
+    drafts, saveDraft, deleteDraft, reverseGRN,
   } = useStock();
   const { suppliers } = useSupplier();
   const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
@@ -48,6 +49,7 @@ const RMInward = () => {
   const [invoiceNo, setInvoiceNo] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
   const [grnDate, setGrnDate] = useState(new Date().toISOString().split("T")[0]);
+  const [grnSearch, setGrnSearch] = useState("");
 
   const { nextGRN, prevGRN } = getNextGRN();
   const [grnNo, setGrnNo] = useState(nextGRN);
@@ -64,6 +66,28 @@ const RMInward = () => {
     setInvoiceDate("");
     setGrnDate(new Date().toISOString().split("T")[0]);
     setStep("entry");
+  };
+
+  const handleEditGRN = (grn: PendingGRN) => {
+    // Reverse stock ledger entries for this GRN
+    reverseGRN(grn.grnNo);
+    // Load GRN data back into entry form
+    setGrnNo(grn.grnNo);
+    setDraftId(null);
+    setSelectedSupplier(suppliers.find(s => s.name === grn.supplier)?.id || "SUP-001");
+    setLines([
+      ...grn.lines.map(l => ({
+        rmCode: l.rmCode, rmName: l.rmName, botanical: l.botanical, uom: l.uom,
+        batch: l.batch, expiry: l.expiry, qty: l.qty, rate: l.rate,
+        searchOpen: false, searchTerm: "",
+      })),
+      emptyLine(),
+    ]);
+    setInvoiceNo("");
+    setInvoiceDate("");
+    setGrnDate(grn.date);
+    setStep("entry");
+    toast({ title: "GRN loaded for editing", description: `${grn.grnNo} — stock ledger reversed. Re-submit when done.` });
   };
 
   const resumeDraft = (draft: GRNDraft) => {
@@ -330,73 +354,152 @@ const RMInward = () => {
         {/* Drafts list */}
         {step === "drafts" && (
           <div>
-            {/* Pending QC section */}
-            {pendingGRNs.filter(g => g.status === "pending_qc").length > 0 && (
-              <div className="app-card mb-4">
-                <div className="app-card-head"><div className="app-card-title">Pending QC</div></div>
-                <div className="p-3.5 space-y-2">
-                  {pendingGRNs.filter(g => g.status === "pending_qc").map(grn => (
-                    <div key={grn.grnNo} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/50 transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
-                          <FlaskConical className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">{grn.grnNo}</div>
-                          <div className="text-[11px] text-muted-foreground">{grn.supplier} · {grn.date} · {grn.lines.length} item{grn.lines.length !== 1 ? "s" : ""}</div>
-                        </div>
-                      </div>
-                      <button onClick={() => { setGrnNo(grn.grnNo); setStep("qc"); setActiveRMTab(0); }}
-                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
-                        Continue QC
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input value={grnSearch} onChange={e => setGrnSearch(e.target.value)} placeholder="Search by GRN no., supplier, or RM name..." className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-xs bg-background" />
+            </div>
 
-            {/* Saved drafts */}
-            <div className="app-card">
-              <div className="app-card-head"><div className="app-card-title">Saved Drafts</div></div>
-              <div className="p-3.5">
-                {drafts.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
-                    <div className="text-sm text-muted-foreground">No saved drafts</div>
-                    <div className="text-[11px] text-muted-foreground mt-1">Click "+ New GRN" to start a new goods receipt</div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {drafts.sort((a, b) => b.savedAt.localeCompare(a.savedAt)).map(draft => (
-                      <div key={draft.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/50 transition-all">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
-                            <FileText className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">{draft.grnNo}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {draft.supplierName} · {draft.lines.length} item{draft.lines.length !== 1 ? "s" : ""} · Saved {draft.savedAt}
+            <Tabs defaultValue="history" className="w-full">
+              <TabsList className="mb-3">
+                <TabsTrigger value="history" className="text-xs">GRN History</TabsTrigger>
+                <TabsTrigger value="pending" className="text-xs">Pending QC ({pendingGRNs.filter(g => g.status === "pending_qc").length})</TabsTrigger>
+                <TabsTrigger value="drafts" className="text-xs">Drafts ({drafts.length})</TabsTrigger>
+              </TabsList>
+
+              {/* GRN History — completed/approved GRNs */}
+              <TabsContent value="history">
+                <div className="app-card">
+                  <div className="app-card-head"><div className="app-card-title">All GRNs</div></div>
+                  <div className="divide-y divide-border">
+                    <div className="grid grid-cols-[1fr_1.5fr_1fr_0.8fr_0.8fr_0.6fr_80px] gap-2 px-3.5 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
+                      <div>GRN No.</div><div>Supplier</div><div>RM Items</div><div>Date</div><div>Qty</div><div>Status</div><div></div>
+                    </div>
+                    {(() => {
+                      const completedGRNs = pendingGRNs
+                        .filter(g => g.status === "approved" || g.status === "partial" || g.status === "rejected")
+                        .filter(g => {
+                          if (!grnSearch) return true;
+                          const s = grnSearch.toLowerCase();
+                          return g.grnNo.toLowerCase().includes(s) || g.supplier.toLowerCase().includes(s) || g.lines.some(l => l.rmName.toLowerCase().includes(s));
+                        });
+                      if (completedGRNs.length === 0) return (
+                        <div className="p-6 text-center text-xs text-muted-foreground">
+                          <Package className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+                          No completed GRNs yet. Create a new GRN to get started.
+                        </div>
+                      );
+                      return completedGRNs.map(grn => {
+                        const totalQty = grn.lines.reduce((s, l) => s + l.qty, 0);
+                        const approvedCount = grn.lines.filter(l => l.qcStatus === "approved").length;
+                        const statusBadge = grn.status === "approved" ? "app-badge-teal" : grn.status === "partial" ? "app-badge-amber" : "app-badge-red";
+                        const statusLabel = grn.status === "approved" ? "Approved" : grn.status === "partial" ? "Partial" : "Rejected";
+                        return (
+                          <div key={grn.grnNo} className="grid grid-cols-[1fr_1.5fr_1fr_0.8fr_0.8fr_0.6fr_80px] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 transition-colors">
+                            <div className="font-medium text-primary font-mono">{grn.grnNo}</div>
+                            <div className="font-medium">{grn.supplier}</div>
+                            <div>
+                              <div className="text-[10px] text-muted-foreground">{grn.lines.map(l => l.rmName).join(", ")}</div>
+                            </div>
+                            <div>{grn.date}</div>
+                            <div>{totalQty.toFixed(3)}</div>
+                            <div>
+                              <span className={`app-badge ${statusBadge}`}>{statusLabel}</span>
+                              {grn.status === "partial" && <div className="text-[9px] text-muted-foreground mt-0.5">{approvedCount}/{grn.lines.length} approved</div>}
+                            </div>
+                            <div>
+                              <button onClick={() => handleEditGRN(grn)}
+                                className="px-2.5 py-1 rounded-md border border-border text-[10px] font-medium hover:bg-secondary transition-all flex items-center gap-1">
+                                <Edit className="w-3 h-3" /> Edit
+                              </button>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => resumeDraft(draft)}
-                            className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
-                            Resume
-                          </button>
-                          <button onClick={() => { deleteDraft(draft.id); toast({ title: "Draft deleted" }); }}
-                            className="p-1.5 rounded-md border border-border hover:bg-destructive/10 transition-all">
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                        );
+                      });
+                    })()}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </TabsContent>
+
+              {/* Pending QC */}
+              <TabsContent value="pending">
+                <div className="app-card">
+                  <div className="app-card-head"><div className="app-card-title">Pending QC</div></div>
+                  <div className="p-3.5">
+                    {pendingGRNs.filter(g => g.status === "pending_qc").length === 0 ? (
+                      <div className="text-center py-8">
+                        <FlaskConical className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+                        <div className="text-sm text-muted-foreground">No GRNs pending QC</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {pendingGRNs.filter(g => g.status === "pending_qc").map(grn => (
+                          <div key={grn.grnNo} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/50 transition-all">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
+                                <FlaskConical className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium">{grn.grnNo}</div>
+                                <div className="text-[11px] text-muted-foreground">{grn.supplier} · {grn.date} · {grn.lines.length} item{grn.lines.length !== 1 ? "s" : ""}</div>
+                              </div>
+                            </div>
+                            <button onClick={() => { setGrnNo(grn.grnNo); setStep("qc"); setActiveRMTab(0); }}
+                              className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
+                              Continue QC
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Saved Drafts */}
+              <TabsContent value="drafts">
+                <div className="app-card">
+                  <div className="app-card-head"><div className="app-card-title">Saved Drafts</div></div>
+                  <div className="p-3.5">
+                    {drafts.length === 0 ? (
+                      <div className="text-center py-8">
+                        <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+                        <div className="text-sm text-muted-foreground">No saved drafts</div>
+                        <div className="text-[11px] text-muted-foreground mt-1">Click "+ New GRN" to start a new goods receipt</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {drafts.sort((a, b) => b.savedAt.localeCompare(a.savedAt)).map(draft => (
+                          <div key={draft.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/50 transition-all">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
+                                <FileText className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium">{draft.grnNo}</div>
+                                <div className="text-[11px] text-muted-foreground">
+                                  {draft.supplierName} · {draft.lines.length} item{draft.lines.length !== 1 ? "s" : ""} · Saved {draft.savedAt}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => resumeDraft(draft)}
+                                className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
+                                Resume
+                              </button>
+                              <button onClick={() => { deleteDraft(draft.id); toast({ title: "Draft deleted" }); }}
+                                className="p-1.5 rounded-md border border-border hover:bg-destructive/10 transition-all">
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 

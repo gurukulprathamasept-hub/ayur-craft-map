@@ -266,6 +266,8 @@ type StockContextType = {
   approveGRNLine: (grnNo: string, lineIdx: number) => void;
   rejectGRNLine: (grnNo: string, lineIdx: number) => void;
   finalApproveGRN: (grnNo: string) => void;
+  reverseGRN: (grnNo: string) => void;
+  updateGRNData: (grnNo: string, data: Partial<PendingGRN>) => void;
   // Draft management
   drafts: GRNDraft[];
   saveDraft: (draft: GRNDraft) => void;
@@ -459,6 +461,63 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     ));
   };
 
+  // Reverse a finalized GRN — undo stock ledger entries
+  const reverseGRN = (grnNo: string) => {
+    const grn = pendingGRNs.find(g => g.grnNo === grnNo);
+    if (!grn) return;
+    // Remove inward txns for this GRN from rmData
+    setRmData(prev => {
+      const updated = [...prev];
+      for (const line of grn.lines.filter(l => l.qcStatus === "approved")) {
+        const idx = updated.findIndex(r =>
+          r.name.toLowerCase().includes(line.rmName.toLowerCase()) ||
+          line.rmName.toLowerCase().includes(r.name.toLowerCase())
+        );
+        if (idx === -1) continue;
+        const rm = { ...updated[idx] };
+        // Remove txns matching this GRN ref
+        const removedTxns = rm.txns.filter(t => t.ref === grnNo && t.type === "Inward");
+        const reversedQty = removedTxns.reduce((sum, t) => sum + parseFloat(t.qtyIn === "—" ? "0" : t.qtyIn), 0);
+        rm.txns = rm.txns.filter(t => !(t.ref === grnNo && t.type === "Inward"));
+        rm.currentStock = parseFloat((rm.currentStock - reversedQty).toFixed(3));
+        // Recalculate running balances
+        let balance = 0;
+        rm.txns = rm.txns.map(t => {
+          const inAmt = t.qtyIn === "—" ? 0 : parseFloat(t.qtyIn);
+          const outAmt = t.qtyOut === "—" ? 0 : parseFloat(t.qtyOut);
+          balance = parseFloat((balance + inAmt - outAmt).toFixed(3));
+          return { ...t, balance: balance.toFixed(3) };
+        });
+        updated[idx] = rm;
+      }
+      return updated;
+    });
+    // Reset GRN back to pending_qc so it can be re-edited
+    setPendingGRNs(prev => prev.map(g =>
+      g.grnNo === grnNo ? {
+        ...g,
+        status: "pending_qc" as const,
+        lines: g.lines.map(l => ({
+          ...l,
+          qcStatus: "pending" as const,
+          disposition: null,
+          dispositionReason: "",
+          analystSigned: false,
+          analystSignedAt: null,
+          approverSigned: false,
+          approverSignedAt: null,
+          qcResults: l.qcResults.map(r => ({ ...r, actual: "", pass: null })),
+        })),
+      } : g
+    ));
+  };
+
+  const updateGRNData = (grnNo: string, data: Partial<PendingGRN>) => {
+    setPendingGRNs(prev => prev.map(g =>
+      g.grnNo === grnNo ? { ...g, ...data } : g
+    ));
+  };
+
   const addRM = (rm: Omit<RMEntry, "code" | "currentStock" | "txns">) => {
     setRmData(prev => {
       const maxNum = prev.reduce((max, r) => {
@@ -483,6 +542,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       rmData, getStockForRM, issueStock, inwardStock, addRM, updateRM, deleteRM,
       getNextGRN, grnCount, incrementGRN,
       pendingGRNs, submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN,
+      reverseGRN, updateGRNData,
       drafts, saveDraft, deleteDraft,
     }}>
       {children}
