@@ -48,7 +48,7 @@ const RMInward = () => {
   const [grnNo, setGrnNo] = useState(nextGRN);
   const currentGRN = pendingGRNs.find(g => g.grnNo === grnNo);
 
-  useEffect(() => { setGrnNo(nextGRN); }, [nextGRN]);
+  useEffect(() => { if (step === "entry") setGrnNo(nextGRN); }, [nextGRN, step]);
 
   // Auto-add new line
   useEffect(() => {
