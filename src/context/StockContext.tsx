@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type QCSpec = { parameter: string; spec: string };
+export type QCSpec = { parameter: string; spec: string; section?: string; unit?: string };
 
 export type Txn = {
   date: string;
@@ -33,6 +33,8 @@ export type RMEntry = {
 export type QCResult = {
   parameter: string;
   spec: string;
+  section: string;
+  unit: string;
   actual: string;
   pass: boolean | null; // null = not tested yet
 };
@@ -40,13 +42,27 @@ export type QCResult = {
 export type PendingGRNLine = {
   rmCode: string;
   rmName: string;
+  botanical: string;
   qty: number;
   batch: string;
   expiry: string;
   rate: string;
   uom: string;
+  category: string;
+  part: string;
   qcResults: QCResult[];
-  qcStatus: "pending" | "approved" | "rejected";
+  qcStatus: "pending" | "in_test" | "approved" | "rejected" | "retest";
+  disposition: "approve" | "retest" | "reject" | null;
+  dispositionReason: string;
+  sampleQty: string;
+  sampleDrawnBy: string;
+  sampleDrawnOn: string;
+  arNo: string;
+  analystRemarks: string;
+  analystSigned: boolean;
+  analystSignedAt: string | null;
+  approverSigned: boolean;
+  approverSignedAt: string | null;
 };
 
 export type PendingGRN = {
