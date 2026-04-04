@@ -77,10 +77,31 @@ const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
     qcSpecs: [
-      { parameter: "Foreign matter", spec: "≤2%" },
-      { parameter: "Total ash", spec: "≤7%" },
-      { parameter: "Acid-insoluble ash", spec: "≤1%" },
-      { parameter: "Moisture", spec: "≤8%" },
+      // Organoleptic
+      { parameter: "Colour", spec: "Pale yellow to brown", section: "Organoleptic", unit: "" },
+      { parameter: "Odour", spec: "Characteristic, horse-like", section: "Organoleptic", unit: "" },
+      { parameter: "Taste", spec: "Bitter, acrid", section: "Organoleptic", unit: "" },
+      { parameter: "Texture / foreign matter", spec: "Free from foreign matter", section: "Organoleptic", unit: "" },
+      // Physicochemical
+      { parameter: "Moisture content", spec: "NMT 10.0%", section: "Physicochemical", unit: "%" },
+      { parameter: "Total ash", spec: "NMT 10.0%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "Acid-insoluble ash", spec: "NMT 1.0%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "Water-soluble extractive", spec: "NLT 15.0%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "Alcohol-soluble extractive", spec: "NLT 10.0%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "pH (10% aqueous)", spec: "4.5 – 6.5", section: "Physicochemical", unit: "" },
+      // Identity & assay
+      { parameter: "TLC fingerprint (withanolides)", spec: "Match reference standard", section: "Identity & Assay", unit: "Rf value" },
+      { parameter: "Withanolide content (HPLC)", spec: "NLT 0.3% w/w", section: "Identity & Assay", unit: "% w/w" },
+      { parameter: "Microscopic identification", spec: "Characteristic elements present", section: "Identity & Assay", unit: "" },
+      // Safety
+      { parameter: "Lead (Pb)", spec: "NMT 10 ppm", section: "Safety", unit: "ppm" },
+      { parameter: "Cadmium (Cd)", spec: "NMT 0.3 ppm", section: "Safety", unit: "ppm" },
+      { parameter: "Mercury (Hg)", spec: "NMT 1.0 ppm", section: "Safety", unit: "ppm" },
+      { parameter: "Arsenic (As)", spec: "NMT 3.0 ppm", section: "Safety", unit: "ppm" },
+      { parameter: "Total aerobic microbial count", spec: "NMT 10⁵ CFU/g", section: "Safety", unit: "CFU/g" },
+      { parameter: "Total yeast & mould count", spec: "NMT 10³ CFU/g", section: "Safety", unit: "CFU/g" },
+      { parameter: "E. coli / Salmonella", spec: "Absent per g", section: "Safety", unit: "" },
+      { parameter: "Pesticide residues (organochlorine)", spec: "NMT 1 ppm (WHO 2007)", section: "Safety", unit: "ppm" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "6.200", qtyOut: "—", balance: "6.200", rate: "—" },
@@ -94,10 +115,14 @@ const initialData: RMEntry[] = [
   {
     code: "RM-002", name: "Amalaki / Amla", botanical: "Emblica officinalis", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 10, shelf: "24 mo", active: true, currentStock: 14.5,
     qcSpecs: [
-      { parameter: "Foreign matter", spec: "≤2%" },
-      { parameter: "Total ash", spec: "≤5%" },
-      { parameter: "Moisture", spec: "≤9%" },
-      { parameter: "Vitamin C content", spec: "≥0.4%" },
+      { parameter: "Colour", spec: "Greenish-brown", section: "Organoleptic", unit: "" },
+      { parameter: "Odour", spec: "Characteristic sour", section: "Organoleptic", unit: "" },
+      { parameter: "Foreign matter", spec: "NMT 2%", section: "Physicochemical", unit: "%" },
+      { parameter: "Total ash", spec: "NMT 5%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "Moisture", spec: "NMT 9%", section: "Physicochemical", unit: "%" },
+      { parameter: "Vitamin C content", spec: "NLT 0.4%", section: "Identity & Assay", unit: "% w/w" },
+      { parameter: "Lead (Pb)", spec: "NMT 10 ppm", section: "Safety", unit: "ppm" },
+      { parameter: "Total aerobic microbial count", spec: "NMT 10⁵ CFU/g", section: "Safety", unit: "CFU/g" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "12.000", qtyOut: "—", balance: "12.000", rate: "—" },
@@ -109,9 +134,11 @@ const initialData: RMEntry[] = [
   {
     code: "RM-003", name: "Haritaki", botanical: "Terminalia chebula", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 8, shelf: "24 mo", active: true, currentStock: 6.0,
     qcSpecs: [
-      { parameter: "Foreign matter", spec: "≤2%" },
-      { parameter: "Total ash", spec: "≤5%" },
-      { parameter: "Moisture", spec: "≤10%" },
+      { parameter: "Colour", spec: "Dark brown", section: "Organoleptic", unit: "" },
+      { parameter: "Foreign matter", spec: "NMT 2%", section: "Physicochemical", unit: "%" },
+      { parameter: "Total ash", spec: "NMT 5%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "Moisture", spec: "NMT 10%", section: "Physicochemical", unit: "%" },
+      { parameter: "Lead (Pb)", spec: "NMT 10 ppm", section: "Safety", unit: "ppm" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "10.000", qtyOut: "—", balance: "10.000", rate: "—" },
@@ -121,9 +148,9 @@ const initialData: RMEntry[] = [
   {
     code: "RM-004", name: "Vibhitaki", botanical: "Terminalia bellirica", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 5, shelf: "24 mo", active: true, currentStock: 0,
     qcSpecs: [
-      { parameter: "Foreign matter", spec: "≤2%" },
-      { parameter: "Total ash", spec: "≤5%" },
-      { parameter: "Moisture", spec: "≤10%" },
+      { parameter: "Foreign matter", spec: "NMT 2%", section: "Physicochemical", unit: "%" },
+      { parameter: "Total ash", spec: "NMT 5%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "Moisture", spec: "NMT 10%", section: "Physicochemical", unit: "%" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "3.000", qtyOut: "—", balance: "3.000", rate: "—" },
@@ -133,9 +160,9 @@ const initialData: RMEntry[] = [
   {
     code: "RM-012", name: "Shuddha Guggulu", botanical: "Commiphora wightii", category: "Extract", part: "Purified resin", uom: "kg", reorder: 3, shelf: "60 mo", active: true, currentStock: 4.8,
     qcSpecs: [
-      { parameter: "Foreign matter", spec: "≤1%" },
-      { parameter: "Moisture", spec: "≤20%" },
-      { parameter: "Ethanol-soluble extractive", spec: "≥25%" },
+      { parameter: "Foreign matter", spec: "NMT 1%", section: "Physicochemical", unit: "%" },
+      { parameter: "Moisture", spec: "NMT 20%", section: "Physicochemical", unit: "%" },
+      { parameter: "Ethanol-soluble extractive", spec: "NLT 25%", section: "Physicochemical", unit: "%" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "3.000", qtyOut: "—", balance: "3.000", rate: "—" },
@@ -146,9 +173,9 @@ const initialData: RMEntry[] = [
   {
     code: "RM-027", name: "Abhraka (Shuddha)", botanical: "Mica / Biotite", category: "Metal/Mineral", part: "Shodhita flakes", uom: "kg", reorder: 0.5, shelf: "Indef.", active: true, currentStock: 0.35,
     qcSpecs: [
-      { parameter: "Loss on ignition", spec: "≤2%" },
-      { parameter: "Iron content", spec: "Pass" },
-      { parameter: "Particle size", spec: "All passes #120 mesh" },
+      { parameter: "Loss on ignition", spec: "NMT 2%", section: "Physicochemical", unit: "%" },
+      { parameter: "Iron content", spec: "Pass", section: "Identity & Assay", unit: "" },
+      { parameter: "Particle size", spec: "All passes #120 mesh", section: "Physicochemical", unit: "" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "0.500", qtyOut: "—", balance: "0.500", rate: "—" },
@@ -158,9 +185,9 @@ const initialData: RMEntry[] = [
   {
     code: "RM-031", name: "Cow ghee", botanical: "Clarified butter (Ghrita)", category: "Animal", part: "Clarified butter", uom: "L", reorder: 5, shelf: "16 mo", active: true, currentStock: 8.0,
     qcSpecs: [
-      { parameter: "Rancidity (Kreis test)", spec: "Negative" },
-      { parameter: "Butyro refractometer reading (40°C)", spec: "40–44" },
-      { parameter: "Moisture", spec: "≤0.5%" },
+      { parameter: "Rancidity (Kreis test)", spec: "Negative", section: "Physicochemical", unit: "" },
+      { parameter: "Butyro refractometer reading (40°C)", spec: "40–44", section: "Physicochemical", unit: "" },
+      { parameter: "Moisture", spec: "NMT 0.5%", section: "Physicochemical", unit: "%" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "4.000", qtyOut: "—", balance: "4.000", rate: "—" },
@@ -171,9 +198,9 @@ const initialData: RMEntry[] = [
   {
     code: "RM-044", name: "Dhataki Pushpa", botanical: "Woodfordia fruticosa", category: "Herb", part: "Flower", uom: "kg", reorder: 1, shelf: "18 mo", active: true, currentStock: 0.6,
     qcSpecs: [
-      { parameter: "Foreign matter", spec: "≤3%" },
-      { parameter: "Total ash", spec: "≤6%" },
-      { parameter: "Moisture", spec: "≤10%" },
+      { parameter: "Foreign matter", spec: "NMT 3%", section: "Physicochemical", unit: "%" },
+      { parameter: "Total ash", spec: "NMT 6%", section: "Physicochemical", unit: "% w/w" },
+      { parameter: "Moisture", spec: "NMT 10%", section: "Physicochemical", unit: "%" },
     ],
     txns: [
       { date: "01 Apr 2025", type: "Opening", typeBadge: "gray", ref: "—", batch: "—", expiry: "—", qtyIn: "1.200", qtyOut: "—", balance: "1.200", rate: "—" },
