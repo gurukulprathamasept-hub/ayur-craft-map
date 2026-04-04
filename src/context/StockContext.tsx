@@ -73,6 +73,28 @@ export type PendingGRN = {
   status: "pending_qc" | "approved" | "rejected" | "partial";
 };
 
+export type GRNDraft = {
+  id: string;
+  grnNo: string;
+  date: string;
+  supplierId: string;
+  supplierName: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  lines: {
+    rmCode: string;
+    rmName: string;
+    botanical: string;
+    uom: string;
+    batch: string;
+    expiry: string;
+    qty: number;
+    rate: string;
+  }[];
+  step: "entry" | "qc";
+  savedAt: string;
+};
+
 const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
