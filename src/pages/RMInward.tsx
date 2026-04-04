@@ -255,7 +255,7 @@ const RMInward = () => {
     );
   };
 
-  const stepNum = step === "entry" ? 2 : step === "qc" ? 3 : 4;
+  const stepNum = step === "drafts" ? 0 : step === "entry" ? 2 : step === "qc" ? 3 : 4;
 
   // QC helpers for current active RM tab
   const activeLine = currentGRN?.lines[activeRMTab];
