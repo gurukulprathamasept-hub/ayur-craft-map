@@ -442,8 +442,8 @@ const RMInward = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="form-field"><label>Invoice / challan no.</label><input placeholder="INV-XXXX" /></div>
-                  <div className="form-field"><label>Invoice date</label><input type="date" /></div>
+                  <div className="form-field"><label>Invoice / challan no.</label><input placeholder="INV-XXXX" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} /></div>
+                  <div className="form-field"><label>Invoice date</label><input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} /></div>
                   <div className="form-field">
                     <label>Source type</label>
                     <input disabled value={suppliers.find(s => s.id === selectedSupplier)?.sourceType || "—"} className="bg-secondary" />
