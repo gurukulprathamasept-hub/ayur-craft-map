@@ -290,6 +290,25 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [rmData, setRmData] = useState<RMEntry[]>(initialData);
   const [grnCount, setGrnCount] = useState(187);
   const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
+  const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
+    try {
+      const stored = localStorage.getItem("grn_drafts");
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  const persistDrafts = (d: GRNDraft[]) => {
+    setDrafts(d);
+    localStorage.setItem("grn_drafts", JSON.stringify(d));
+  };
+
+  const saveDraft = (draft: GRNDraft) => {
+    persistDrafts([...drafts.filter(d => d.id !== draft.id), { ...draft, savedAt: new Date().toLocaleString("en-IN") }]);
+  };
+
+  const deleteDraft = (id: string) => {
+    persistDrafts(drafts.filter(d => d.id !== id));
+  };
 
   const getNextGRN = (): { nextGRN: string; prevGRN: string | null } => {
     const now = new Date();
