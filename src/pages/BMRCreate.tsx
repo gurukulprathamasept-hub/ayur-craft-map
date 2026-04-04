@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Calculator } from "lucide-react";
+import { ArrowLeft, FileText, Calculator, Info } from "lucide-react";
 import { useFormulations } from "@/context/FormulationContext";
 import { useBMRs, BMRRecord } from "@/context/BMRContext";
 import { toast } from "sonner";
@@ -9,15 +9,27 @@ const BMRCreate = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { formulations } = useFormulations();
-  const { addBMR } = useBMRs();
+  const { addBMR, getNextBatchNo } = useBMRs();
 
   const preselectedId = searchParams.get("mfr");
   const [selectedMFR, setSelectedMFR] = useState<string>(preselectedId || "");
   const [batchSize, setBatchSize] = useState<number>(0);
-  const [batchNo, setBatchNo] = useState(`BMR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`);
+  const [batchNo, setBatchNo] = useState("");
+  const [prevBatchNo, setPrevBatchNo] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
 
   const mfr = formulations.find((f) => f.id === selectedMFR);
+
+  useEffect(() => {
+    if (mfr) {
+      const { nextBatchNo, prevBatchNo: prev } = getNextBatchNo(mfr.name, mfr.id);
+      setBatchNo(nextBatchNo);
+      setPrevBatchNo(prev);
+    } else {
+      setBatchNo("");
+      setPrevBatchNo(null);
+    }
+  }, [selectedMFR, mfr]);
 
   const scaleFactor = useMemo(() => {
     if (!mfr || !batchSize || !mfr.standardBatchSize) return 0;
@@ -103,6 +115,12 @@ const BMRCreate = () => {
               <div className="form-field">
                 <label>Batch number</label>
                 <input value={batchNo} onChange={(e) => setBatchNo(e.target.value)} />
+                {mfr && (
+                  <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
+                    <Info className="w-3 h-3" />
+                    {prevBatchNo ? `Previous: ${prevBatchNo}` : "First batch for this product"}
+                  </div>
+                )}
               </div>
             </div>
             {mfr && (

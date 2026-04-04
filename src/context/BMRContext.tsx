@@ -48,6 +48,7 @@ interface BMRContextType {
   addBMR: (bmr: BMRRecord) => void;
   updateBMR: (id: string, updates: Partial<BMRRecord>) => void;
   getBMR: (id: string) => BMRRecord | undefined;
+  getNextBatchNo: (productName: string, mfrId: string) => { nextBatchNo: string; prevBatchNo: string | null };
 }
 
 const BMRContext = createContext<BMRContextType | null>(null);
@@ -68,8 +69,38 @@ export const BMRProvider = ({ children }: { children: ReactNode }) => {
 
   const getBMR = (id: string) => bmrs.find((b) => b.id === id);
 
+  const getNextBatchNo = (productName: string, mfrId: string): { nextBatchNo: string; prevBatchNo: string | null } => {
+    const prefix = productName.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "BAT";
+    const now = new Date();
+    const yymm = `${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const pattern = new RegExp(`^${prefix}-${yymm}-(\\d+)$`);
+
+    const productBmrs = bmrs.filter((b) => b.mfrId === mfrId);
+    let maxSeq = 0;
+    let prevBatchNo: string | null = null;
+
+    for (const b of productBmrs) {
+      const match = b.batchNo.match(pattern);
+      if (match) {
+        const seq = parseInt(match[1], 10);
+        if (seq > maxSeq) {
+          maxSeq = seq;
+          prevBatchNo = b.batchNo;
+        }
+      }
+    }
+
+    // If no match in current month pattern, still show the latest batch as previous
+    if (!prevBatchNo && productBmrs.length > 0) {
+      prevBatchNo = productBmrs[productBmrs.length - 1].batchNo;
+    }
+
+    const nextSeq = String(maxSeq + 1).padStart(4, "0");
+    return { nextBatchNo: `${prefix}-${yymm}-${nextSeq}`, prevBatchNo };
+  };
+
   return (
-    <BMRContext.Provider value={{ bmrs, addBMR, updateBMR, getBMR }}>
+    <BMRContext.Provider value={{ bmrs, addBMR, updateBMR, getBMR, getNextBatchNo }}>
       {children}
     </BMRContext.Provider>
   );
