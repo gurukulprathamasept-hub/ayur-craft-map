@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useStock, type PendingGRN, type PendingGRNLine, type QCResult } from "@/context/StockContext";
 import { useSupplier } from "@/context/SupplierContext";
 import { toast } from "@/hooks/use-toast";
-import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX } from "lucide-react";
+import { X, Search, CheckCircle2, XCircle, AlertCircle, FlaskConical, ShieldCheck, ShieldX, RotateCcw, Info } from "lucide-react";
 
 type InwardLine = {
   rmCode: string;
@@ -24,17 +24,25 @@ const emptyLine = (): InwardLine => ({
   searchOpen: false, searchTerm: "",
 });
 
+const SECTION_META: Record<string, { label: string; badge: string; badgeClass: string }> = {
+  "Organoleptic": { label: "A. Organoleptic evaluation", badge: "Visual / sensory", badgeClass: "app-badge-blue" },
+  "Physicochemical": { label: "B. Physicochemical parameters", badge: "Lab measurements", badgeClass: "app-badge-purple" },
+  "Identity & Assay": { label: "C. Identity & assay", badge: "TLC / HPTLC / HPLC", badgeClass: "app-badge-teal" },
+  "Safety": { label: "D. Safety parameters", badge: "Heavy metals & microbiology", badgeClass: "app-badge-red" },
+};
+
 const RMInward = () => {
   const navigate = useNavigate();
   const {
     rmData, getNextGRN, incrementGRN,
-    submitForQC, updateQCResult, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
+    submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
   } = useStock();
   const { suppliers } = useSupplier();
   const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
   const [step, setStep] = useState<"entry" | "qc" | "done">("entry");
   const [lines, setLines] = useState<InwardLine[]>([emptyLine()]);
   const [selectedLineIdx, setSelectedLineIdx] = useState<number | null>(null);
+  const [activeRMTab, setActiveRMTab] = useState(0);
 
   const { nextGRN, prevGRN } = getNextGRN();
   const [grnNo, setGrnNo] = useState(nextGRN);
@@ -83,25 +91,40 @@ const RMInward = () => {
       return;
     }
 
-    // Build pending GRN with QC specs from RM master
-    const pendingLines: PendingGRNLine[] = validLines.map(l => {
+    const pendingLines: PendingGRNLine[] = validLines.map((l, idx) => {
       const rm = rmData.find(r => r.code === l.rmCode);
       const qcResults: QCResult[] = (rm?.qcSpecs || []).map(s => ({
         parameter: s.parameter,
         spec: s.spec,
+        section: s.section || "Physicochemical",
+        unit: s.unit || "",
         actual: "",
         pass: null,
       }));
       return {
         rmCode: l.rmCode,
         rmName: l.rmName,
+        botanical: rm?.botanical || l.botanical,
         qty: l.qty,
         batch: l.batch,
         expiry: l.expiry,
         rate: l.rate,
         uom: l.uom,
+        category: rm?.category || "Herb",
+        part: rm?.part || "",
         qcResults,
         qcStatus: "pending",
+        disposition: null,
+        dispositionReason: "",
+        sampleQty: "",
+        sampleDrawnBy: "",
+        sampleDrawnOn: new Date().toISOString().split("T")[0],
+        arNo: `AR/${new Date().getFullYear()}-${grnNo.split("-").pop()}-${String(idx + 1).padStart(2, "0")}`,
+        analystRemarks: "",
+        analystSigned: false,
+        analystSignedAt: null,
+        approverSigned: false,
+        approverSignedAt: null,
       };
     });
 
@@ -116,22 +139,51 @@ const RMInward = () => {
     submitForQC(grn);
     incrementGRN();
     setStep("qc");
+    setActiveRMTab(0);
     toast({ title: "Submitted for QC", description: "Complete QC sampling to update stock ledger." });
   };
 
-  const handleApproveAll = () => {
+  const handleFinalApprove = () => {
     if (!currentGRN) return;
-    // Check all lines have all params tested
-    const allTested = currentGRN.lines.every(l =>
-      l.qcResults.every(r => r.pass !== null)
-    );
-    if (!allTested) {
-      toast({ title: "Incomplete QC", description: "Fill all test results before approval.", variant: "destructive" });
+    // Check all lines have dispositions set
+    const allDisposed = currentGRN.lines.every(l => l.disposition !== null);
+    if (!allDisposed) {
+      toast({ title: "Set disposition for all items", description: "Select Approve, Retest, or Reject for each RM.", variant: "destructive" });
       return;
     }
+    // For approve dispositions, check all tests are passed
+    const approveLines = currentGRN.lines.filter(l => l.disposition === "approve");
+    for (const l of approveLines) {
+      const hasFails = l.qcResults.some(r => r.pass === false);
+      if (hasFails) {
+        toast({ title: "Cannot approve with failed tests", description: `${l.rmName} has failed tests. Select Reject or Retest instead.`, variant: "destructive" });
+        return;
+      }
+      const hasUntested = l.qcResults.some(r => r.pass === null);
+      if (hasUntested) {
+        toast({ title: "Incomplete QC", description: `${l.rmName} has untested parameters.`, variant: "destructive" });
+        return;
+      }
+    }
+
+    // Sign approver
+    currentGRN.lines.forEach((_, i) => {
+      const line = currentGRN.lines[i];
+      if (line.disposition === "approve") {
+        approveGRNLine(grnNo, i);
+        updateQCLineField(grnNo, i, {
+          approverSigned: true,
+          approverSignedAt: new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+        });
+      } else if (line.disposition === "reject") {
+        rejectGRNLine(grnNo, i);
+      }
+      // retest keeps status as pending
+    });
+
     finalApproveGRN(grnNo);
     setStep("done");
-    toast({ title: "GRN approved", description: "Stock ledger updated for approved items." });
+    toast({ title: "GRN finalised", description: "Stock ledger updated for approved items." });
   };
 
   const invoiceTotal = filledLines.reduce((s, l) => s + l.qty * (parseFloat(l.rate) || 0), 0);
@@ -148,13 +200,32 @@ const RMInward = () => {
 
   const stepNum = step === "entry" ? 2 : step === "qc" ? 3 : 4;
 
+  // QC helpers for current active RM tab
+  const activeLine = currentGRN?.lines[activeRMTab];
+  const activeQCResults = activeLine?.qcResults || [];
+  const sections = useMemo(() => {
+    const secs: string[] = [];
+    activeQCResults.forEach(r => { if (!secs.includes(r.section)) secs.push(r.section); });
+    return secs;
+  }, [activeQCResults]);
+
+  const passCount = activeQCResults.filter(r => r.pass === true).length;
+  const failCount = activeQCResults.filter(r => r.pass === false).length;
+  const pendingCount = activeQCResults.filter(r => r.pass === null).length;
+  const totalTests = activeQCResults.length;
+  const overallStatus = failCount > 0 ? "fail" : pendingCount > 0 ? "pending" : "pass";
+
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
         <div className="flex-1">
-          <div className="text-[15px] font-medium">RM inward — new GRN</div>
+          <div className="text-[15px] font-medium">
+            {step === "qc" ? `QC sampling & approval — ${grnNo}` : `RM inward — new GRN`}
+          </div>
           <div className="text-[11px] text-muted-foreground mt-px">
-            {grnNo} · {step === "entry" ? "Draft" : step === "qc" ? "Pending QC" : "Approved"} · Schedule U §II
+            {step === "qc"
+              ? `Step 3 of 4 · ${currentGRN?.supplier} · Received ${currentGRN?.date} · Schedule U §II-D`
+              : `${grnNo} · Draft · Schedule U §II`}
           </div>
         </div>
         <button onClick={() => navigate("/")} className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Cancel</button>
@@ -168,10 +239,13 @@ const RMInward = () => {
           </>
         )}
         {step === "qc" && (
-          <button onClick={handleApproveAll}
-            className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" /> Final Approve & Update Stock
-          </button>
+          <>
+            <button className="px-3.5 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">Save progress</button>
+            <button onClick={handleFinalApprove}
+              className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all">
+              Finalise & approve
+            </button>
+          </>
         )}
       </div>
 
@@ -179,10 +253,10 @@ const RMInward = () => {
         {/* Stepper */}
         <div className="flex items-center gap-0 mb-4">
           {[
-            { n: 1, label: "Header" },
+            { n: 1, label: "GRN header" },
             { n: 2, label: "Line items" },
             { n: 3, label: "QC sampling" },
-            { n: 4, label: "Approve" },
+            { n: 4, label: "Approve & release" },
           ].map((s, i) => (
             <div key={s.n} className="flex items-center flex-1 last:flex-initial">
               <div className="flex items-center gap-1.5 text-[11px]">
@@ -343,109 +417,331 @@ const RMInward = () => {
         {/* STEP: QC Sampling */}
         {step === "qc" && currentGRN && (
           <>
-            <div className="alert-strip alert-strip-info mb-3 flex items-center gap-2">
-              <FlaskConical className="w-4 h-4" />
-              <span>QC Sampling — Record test results for each RM. Stock ledger will update only after final approval.</span>
+            {/* GRN Summary stats */}
+            <div className="grid grid-cols-3 gap-2.5 mb-3">
+              <div className="bg-secondary rounded-md p-2.5">
+                <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">GRN no.</div>
+                <div className="text-sm font-medium font-mono">{grnNo}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Supplier: {currentGRN.supplier}</div>
+              </div>
+              <div className="bg-secondary rounded-md p-2.5">
+                <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">RM items</div>
+                <div className="text-lg font-medium">{currentGRN.lines.length}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{currentGRN.lines.map(l => l.rmName).join(" · ")}</div>
+              </div>
+              <div className="bg-secondary rounded-md p-2.5">
+                <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">QC status</div>
+                <div className="text-sm">
+                  {currentGRN.lines.some(l => l.qcStatus === "in_test")
+                    ? <span className="app-badge-amber text-[10px]">In progress</span>
+                    : currentGRN.lines.every(l => l.qcStatus === "pending")
+                    ? <span className="app-badge-gray text-[10px]">Pending</span>
+                    : <span className="app-badge-green text-[10px]">Complete</span>}
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">AR nos. assigned</div>
+              </div>
             </div>
 
-            {currentGRN.lines.map((line, lineIdx) => (
-              <div key={lineIdx} className="app-card mb-3">
-                <div className="app-card-head flex items-center justify-between">
-                  <div className="app-card-title flex items-center gap-2">
-                    <span>{line.rmName}</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">
-                      {line.rmCode} · Batch: {line.batch} · {line.qty} {line.uom}
-                    </span>
+            <div className="alert-strip alert-strip-info mb-3 flex items-center gap-2">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              <span>Tests shown are auto-loaded from RM master. Parameters and acceptance criteria follow API / Ayurvedic Pharmacopoeia of India standards.</span>
+            </div>
+
+            {/* RM Tabs */}
+            <div className="flex gap-1 mb-3 flex-wrap">
+              {currentGRN.lines.map((line, i) => {
+                const isActive = activeRMTab === i;
+                const dotColor = line.qcStatus === "approved" ? "bg-emerald-500" :
+                  line.qcStatus === "rejected" ? "bg-destructive" :
+                  line.qcStatus === "in_test" ? "bg-amber-500" : "bg-muted-foreground";
+                const statusLabel = line.qcStatus === "in_test" ? "In test" :
+                  line.qcStatus === "approved" ? "Approved" :
+                  line.qcStatus === "rejected" ? "Rejected" : "Pending";
+                const statusBadge = line.qcStatus === "in_test" ? "app-badge-amber" :
+                  line.qcStatus === "approved" ? "app-badge-green" :
+                  line.qcStatus === "rejected" ? "app-badge-red" : "app-badge-gray";
+                return (
+                  <button key={i} onClick={() => setActiveRMTab(i)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all ${
+                      isActive ? "bg-foreground text-background border-foreground" : "border-border text-muted-foreground hover:bg-secondary"
+                    }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                    {line.rmName} {line.part ? `(${line.part})` : ""}
+                    <span className={`${statusBadge} text-[9px] px-1.5 py-px`}>{statusLabel}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active RM Panel */}
+            {activeLine && (
+              <>
+                {/* Sample Identity */}
+                <div className="app-card mb-2.5">
+                  <div className="app-card-head">
+                    <div className="app-card-title">Sample identity</div>
+                    <span className="app-badge-green text-[10px]">{activeLine.category} · {activeLine.part}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {line.qcStatus === "approved" && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
-                        <CheckCircle2 className="w-3 h-3" /> Approved
-                      </span>
-                    )}
-                    {line.qcStatus === "rejected" && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
-                        <XCircle className="w-3 h-3" /> Rejected
-                      </span>
-                    )}
-                    {line.qcStatus === "pending" && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600">
-                        <AlertCircle className="w-3 h-3" /> Pending
-                      </span>
-                    )}
+                  <div className="p-3.5">
+                    <div className="grid grid-cols-4 gap-2.5 mb-2.5">
+                      <div className="form-field"><label>AR / control no.</label><input value={activeLine.arNo} readOnly className="bg-secondary" /></div>
+                      <div className="form-field"><label>RM name</label><input value={activeLine.rmName} readOnly className="bg-secondary" /></div>
+                      <div className="form-field"><label>Botanical name</label><input value={activeLine.botanical} readOnly className="bg-secondary" /></div>
+                      <div className="form-field"><label>Supplier batch no.</label><input value={activeLine.batch} readOnly className="bg-secondary" /></div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2.5 mb-2.5">
+                      <div className="form-field"><label>Qty received</label><input value={`${activeLine.qty.toFixed(3)} ${activeLine.uom}`} readOnly className="bg-secondary" /></div>
+                      <div className="form-field">
+                        <label>Sample qty drawn</label>
+                        <input type="number" step="0.001" value={activeLine.sampleQty}
+                          onChange={e => updateQCLineField(grnNo, activeRMTab, { sampleQty: e.target.value })} />
+                      </div>
+                      <div className="form-field">
+                        <label>Sample drawn by</label>
+                        <input value={activeLine.sampleDrawnBy}
+                          onChange={e => updateQCLineField(grnNo, activeRMTab, { sampleDrawnBy: e.target.value })} />
+                      </div>
+                      <div className="form-field">
+                        <label>Sample drawn on</label>
+                        <input type="date" value={activeLine.sampleDrawnOn}
+                          onChange={e => updateQCLineField(grnNo, activeRMTab, { sampleDrawnOn: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2.5">
+                      <div className="form-field"><label>Mfg. date (supplier)</label><input readOnly className="bg-secondary" value="—" /></div>
+                      <div className="form-field"><label>Expiry date</label><input value={activeLine.expiry} readOnly className="bg-secondary" /></div>
+                      <div className="form-field"><label>Storage (supplier label)</label><input readOnly className="bg-secondary" value="As per label" /></div>
+                    </div>
                   </div>
                 </div>
-                <div className="p-3.5">
-                  {/* QC Results table */}
-                  <div className="grid grid-cols-[1.5fr_1fr_1fr_80px] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
-                    <div>Parameter</div><div>Specification</div><div>Actual result</div><div>Pass / Fail</div>
-                  </div>
-                  {line.qcResults.map((result, paramIdx) => (
-                    <div key={paramIdx} className="grid grid-cols-[1.5fr_1fr_1fr_80px] gap-2 py-2 items-center border-b border-border last:border-b-0">
-                      <div className="text-xs font-medium">{result.parameter}</div>
-                      <div className="text-xs text-muted-foreground">{result.spec}</div>
-                      <div>
-                        <input
-                          className="w-full px-2 py-1 border border-border rounded-md text-[11px]"
-                          placeholder="Enter result…"
-                          value={result.actual}
-                          onChange={e => updateQCResult(grnNo, lineIdx, paramIdx, e.target.value, result.pass ?? false)}
-                          disabled={line.qcStatus !== "pending"}
+
+                {/* Test Sections */}
+                {sections.map(section => {
+                  const meta = SECTION_META[section] || { label: section, badge: "", badgeClass: "app-badge-gray" };
+                  const sectionResults = activeQCResults
+                    .map((r, idx) => ({ ...r, _idx: idx }))
+                    .filter(r => r.section === section);
+
+                  return (
+                    <div key={section} className="app-card mb-2.5">
+                      <div className="app-card-head">
+                        <div className="app-card-title">{meta.label}</div>
+                        <span className={`${meta.badgeClass} text-[10px]`}>{meta.badge}</span>
+                      </div>
+                      <div className="p-3.5">
+                        {/* Header row */}
+                        <div className="grid grid-cols-[2fr_1.2fr_1.2fr_1.5fr_90px] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
+                          <div>Parameter</div>
+                          <div>{section === "Organoleptic" ? "Acceptance criteria (API)" : "Limit (API / WHO)"}</div>
+                          <div>{section === "Organoleptic" ? "Observed value" : "Measured value"}</div>
+                          <div>{section === "Organoleptic" ? "Result" : "Unit"}</div>
+                          <div>Pass / Fail</div>
+                        </div>
+
+                        {sectionResults.map(result => (
+                          <div key={result._idx} className="grid grid-cols-[2fr_1.2fr_1.2fr_1.5fr_90px] gap-2 py-2 items-center border-b border-border last:border-b-0 text-xs">
+                            <div className="font-medium">{result.parameter}</div>
+                            <div className="text-muted-foreground">{result.spec}</div>
+                            <div>
+                              <input
+                                className="w-full px-2 py-1 border border-border rounded-md text-[11px] focus:outline-none focus:border-primary"
+                                placeholder="Enter result…"
+                                value={result.actual}
+                                onChange={e => updateQCResult(grnNo, activeRMTab, result._idx, e.target.value, result.pass)}
+                              />
+                            </div>
+                            <div className="text-muted-foreground text-[11px]">
+                              {section === "Organoleptic"
+                                ? (result.pass === true ? "Within range" : result.pass === false ? "Out of range" : "—")
+                                : result.unit || "—"}
+                            </div>
+                            <div>
+                              <select
+                                className={`w-[80px] px-2 py-1 border rounded-md text-[11px] font-medium transition-all ${
+                                  result.pass === true ? "border-primary bg-primary/10 text-primary" :
+                                  result.pass === false ? "border-destructive bg-destructive/10 text-destructive" :
+                                  "border-border"
+                                }`}
+                                value={result.pass === true ? "pass" : result.pass === false ? "fail" : ""}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  updateQCResult(grnNo, activeRMTab, result._idx, result.actual, val === "pass" ? true : val === "fail" ? false : null);
+                                }}
+                              >
+                                <option value="">—</option>
+                                <option value="pass">Pass</option>
+                                <option value="fail">Fail</option>
+                              </select>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Test Summary & Overall Result */}
+                <div className="app-card mb-2.5">
+                  <div className="app-card-head"><div className="app-card-title">E. Test summary & overall result</div></div>
+                  <div className="p-3.5">
+                    {/* Counter cards */}
+                    <div className="grid grid-cols-4 gap-2 mb-3">
+                      <div className="bg-secondary rounded-md p-2.5 text-center">
+                        <div className="text-[10px] text-muted-foreground mb-0.5">Total tests</div>
+                        <div className="text-xl font-medium">{totalTests}</div>
+                      </div>
+                      <div className="rounded-md p-2.5 text-center" style={{ background: "hsl(var(--success) / 0.1)" }}>
+                        <div className="text-[10px] mb-0.5" style={{ color: "hsl(var(--success))" }}>Pass</div>
+                        <div className="text-xl font-medium" style={{ color: "hsl(var(--success))" }}>{passCount}</div>
+                      </div>
+                      <div className="rounded-md p-2.5 text-center" style={{ background: "hsl(var(--destructive) / 0.1)" }}>
+                        <div className="text-[10px] mb-0.5" style={{ color: "hsl(var(--destructive))" }}>Fail</div>
+                        <div className="text-xl font-medium" style={{ color: "hsl(var(--destructive))" }}>{failCount}</div>
+                      </div>
+                      <div className="bg-secondary rounded-md p-2.5 text-center">
+                        <div className="text-[10px] text-muted-foreground mb-0.5">Pending</div>
+                        <div className="text-xl font-medium">{pendingCount}</div>
+                      </div>
+                    </div>
+
+                    {/* Overall result banner */}
+                    <div className={`rounded-md p-3 flex items-center gap-3 mb-3 border ${
+                      overallStatus === "pass" ? "border-primary/40 bg-primary/5" :
+                      overallStatus === "fail" ? "border-destructive/40 bg-destructive/5" :
+                      "border-border bg-secondary"
+                    }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        overallStatus === "pass" ? "bg-primary" :
+                        overallStatus === "fail" ? "bg-destructive" : "bg-border"
+                      }`}>
+                        {overallStatus === "pass" && <CheckCircle2 className="w-4 h-4 text-primary-foreground" />}
+                        {overallStatus === "fail" && <XCircle className="w-4 h-4 text-destructive-foreground" />}
+                        {overallStatus === "pending" && <AlertCircle className="w-4 h-4 text-background" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[13px] font-medium">
+                          {overallStatus === "pass" && "All tests passed — material is of standard quality"}
+                          {overallStatus === "fail" && `${failCount} test(s) failed — material not of standard quality`}
+                          {overallStatus === "pending" && `${pendingCount} test(s) still pending — result not yet determinable`}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {overallStatus === "pass" && "Eligible for approval and release to store"}
+                          {overallStatus === "fail" && "Review failed parameters and select disposition below"}
+                          {overallStatus === "pending" && "Complete all test entries to determine overall result"}
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${
+                        overallStatus === "pass" ? "app-badge-green" :
+                        overallStatus === "fail" ? "app-badge-red" : "app-badge-amber"
+                      }`}>
+                        {overallStatus === "pass" ? "Standard quality" : overallStatus === "fail" ? "Not of standard quality" : "Incomplete"}
+                      </span>
+                    </div>
+
+                    {/* AR details */}
+                    <div className="section-divider">Analytical report details</div>
+                    <div className="grid grid-cols-3 gap-2.5 mb-2.5">
+                      <div className="form-field"><label>AR report number</label><input value={activeLine.arNo} readOnly className="bg-secondary" /></div>
+                      <div className="form-field"><label>Date of analysis</label><input type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div>
+                      <div className="form-field"><label>Report valid until</label><input type="date" /></div>
+                    </div>
+                    <div className="form-field mb-2.5">
+                      <label>Analyst remarks</label>
+                      <textarea
+                        value={activeLine.analystRemarks}
+                        onChange={e => updateQCLineField(grnNo, activeRMTab, { analystRemarks: e.target.value })}
+                        placeholder="Enter observations, compliance notes, and recommendations…"
+                      />
+                    </div>
+
+                    {/* Signatures */}
+                    <div className="section-divider">Signatures</div>
+                    <div className="grid grid-cols-2 gap-2.5 mb-3">
+                      <div
+                        className="border border-border rounded-md p-2.5 flex items-center gap-2.5 bg-secondary cursor-pointer hover:border-primary transition-all"
+                        onClick={() => {
+                          if (!activeLine.analystSigned) {
+                            updateQCLineField(grnNo, activeRMTab, {
+                              analystSigned: true,
+                              analystSignedAt: new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+                            });
+                          }
+                        }}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-[11px] font-medium flex items-center justify-center shrink-0">QA</div>
+                        <div className="flex-1">
+                          <div className="text-xs font-medium">QC Analyst</div>
+                          <div className="text-[10px] text-muted-foreground">Analyst</div>
+                          {activeLine.analystSigned ? (
+                            <div className="text-[10px] font-medium mt-0.5" style={{ color: "hsl(var(--success))" }}>✓ Signed — {activeLine.analystSignedAt}</div>
+                          ) : (
+                            <div className="text-[10px] text-muted-foreground mt-0.5">Click to sign</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="border border-border rounded-md p-2.5 flex items-center gap-2.5 bg-secondary">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-600 text-[11px] font-medium flex items-center justify-center shrink-0">AQ</div>
+                        <div className="flex-1">
+                          <div className="text-xs font-medium">Approved QC Analyst</div>
+                          <div className="text-[10px] text-muted-foreground">Countersignature</div>
+                          {activeLine.approverSigned ? (
+                            <div className="text-[10px] font-medium mt-0.5" style={{ color: "hsl(var(--success))" }}>✓ Countersigned — {activeLine.approverSignedAt}</div>
+                          ) : (
+                            <div className="text-[10px] text-muted-foreground mt-0.5">Pending countersignature</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Disposition */}
+                    <div className="section-divider">Disposition decision</div>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      <button
+                        onClick={() => updateQCLineField(grnNo, activeRMTab, { disposition: "approve" })}
+                        className={`border rounded-md p-3 text-center cursor-pointer transition-all ${
+                          activeLine.disposition === "approve" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <CheckCircle2 className={`w-6 h-6 mx-auto mb-1 ${activeLine.disposition === "approve" ? "text-primary" : "text-muted-foreground"}`} />
+                        <div className={`text-xs font-medium ${activeLine.disposition === "approve" ? "text-primary" : ""}`}>Approve</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">Release to store, update stock</div>
+                      </button>
+                      <button
+                        onClick={() => updateQCLineField(grnNo, activeRMTab, { disposition: "retest" })}
+                        className={`border rounded-md p-3 text-center cursor-pointer transition-all ${
+                          activeLine.disposition === "retest" ? "border-amber-500 bg-amber-500/5" : "border-border hover:border-amber-500/40"
+                        }`}
+                      >
+                        <RotateCcw className={`w-6 h-6 mx-auto mb-1 ${activeLine.disposition === "retest" ? "text-amber-600" : "text-muted-foreground"}`} />
+                        <div className={`text-xs font-medium ${activeLine.disposition === "retest" ? "text-amber-600" : ""}`}>Retest</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">Hold, repeat specific tests</div>
+                      </button>
+                      <button
+                        onClick={() => updateQCLineField(grnNo, activeRMTab, { disposition: "reject" })}
+                        className={`border rounded-md p-3 text-center cursor-pointer transition-all ${
+                          activeLine.disposition === "reject" ? "border-destructive bg-destructive/5" : "border-border hover:border-destructive/40"
+                        }`}
+                      >
+                        <XCircle className={`w-6 h-6 mx-auto mb-1 ${activeLine.disposition === "reject" ? "text-destructive" : "text-muted-foreground"}`} />
+                        <div className={`text-xs font-medium ${activeLine.disposition === "reject" ? "text-destructive" : ""}`}>Reject</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">Return to supplier</div>
+                      </button>
+                    </div>
+
+                    {/* Reason textarea for reject/retest */}
+                    {(activeLine.disposition === "reject" || activeLine.disposition === "retest") && (
+                      <div className="form-field mt-2.5">
+                        <label>{activeLine.disposition === "reject" ? "Rejection reason" : "Retest reason"}</label>
+                        <textarea
+                          placeholder="State specific failing parameters and action to be taken…"
+                          value={activeLine.dispositionReason}
+                          onChange={e => updateQCLineField(grnNo, activeRMTab, { dispositionReason: e.target.value })}
                         />
                       </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => updateQCResult(grnNo, lineIdx, paramIdx, result.actual, true)}
-                          disabled={line.qcStatus !== "pending"}
-                          className={`p-1 rounded transition-all ${result.pass === true ? "bg-emerald-500/20 text-emerald-600" : "hover:bg-secondary text-muted-foreground"}`}>
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => updateQCResult(grnNo, lineIdx, paramIdx, result.actual, false)}
-                          disabled={line.qcStatus !== "pending"}
-                          className={`p-1 rounded transition-all ${result.pass === false ? "bg-destructive/20 text-destructive" : "hover:bg-secondary text-muted-foreground"}`}>
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Line approve/reject buttons */}
-                  {line.qcStatus === "pending" && (
-                    <div className="flex gap-2 mt-3 pt-2 border-t border-border">
-                      <button
-                        onClick={() => {
-                          const allTested = line.qcResults.every(r => r.pass !== null);
-                          if (!allTested) {
-                            toast({ title: "Incomplete", description: "Test all parameters first.", variant: "destructive" });
-                            return;
-                          }
-                          approveGRNLine(grnNo, lineIdx);
-                        }}
-                        className="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs font-medium hover:opacity-90 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3 h-3" /> Approve RM
-                      </button>
-                      <button
-                        onClick={() => rejectGRNLine(grnNo, lineIdx)}
-                        className="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 flex items-center gap-1.5">
-                        <XCircle className="w-3 h-3" /> Reject RM
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-
-            {/* Summary */}
-            {currentGRN.lines.every(l => l.qcStatus !== "pending") && (
-              <div className="alert-strip alert-strip-info mt-1 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                <span>
-                  All items tested — {currentGRN.lines.filter(l => l.qcStatus === "approved").length} approved,{" "}
-                  {currentGRN.lines.filter(l => l.qcStatus === "rejected").length} rejected.
-                  Click "Final Approve & Update Stock" to update the ledger.
-                </span>
-              </div>
+              </>
             )}
           </>
         )}
@@ -463,29 +759,31 @@ const RMInward = () => {
                 <div className="app-card-head flex items-center justify-between">
                   <div className="app-card-title">{line.rmName}</div>
                   {line.qcStatus === "approved" ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                       <CheckCircle2 className="w-3 h-3" /> Approved — +{line.qty} {line.uom} added to ledger
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
-                      <ShieldX className="w-3 h-3" /> Rejected — not added
+                      <ShieldX className="w-3 h-3" /> {line.disposition === "retest" ? "Held for retest" : "Rejected — not added"}
                     </span>
                   )}
                 </div>
                 <div className="p-3.5">
-                  <div className="grid grid-cols-[1.5fr_1fr_1fr_80px] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <div className="grid grid-cols-[2fr_1.2fr_1.2fr_90px] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
                     <div>Parameter</div><div>Spec</div><div>Actual</div><div>Result</div>
                   </div>
                   {line.qcResults.map((r, j) => (
-                    <div key={j} className="grid grid-cols-[1.5fr_1fr_1fr_80px] gap-2 py-1.5 items-center border-b border-border last:border-b-0 text-xs">
+                    <div key={j} className="grid grid-cols-[2fr_1.2fr_1.2fr_90px] gap-2 py-1.5 items-center border-b border-border last:border-b-0 text-xs">
                       <div>{r.parameter}</div>
                       <div className="text-muted-foreground">{r.spec}</div>
                       <div className="font-medium">{r.actual || "—"}</div>
                       <div>
-                        {r.pass ? (
-                          <span className="text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Pass</span>
-                        ) : (
+                        {r.pass === true ? (
+                          <span className="text-primary flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Pass</span>
+                        ) : r.pass === false ? (
                           <span className="text-destructive flex items-center gap-1"><XCircle className="w-3 h-3" /> Fail</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </div>
                     </div>
