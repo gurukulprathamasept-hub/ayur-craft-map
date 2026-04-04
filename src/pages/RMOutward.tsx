@@ -390,6 +390,7 @@ const RMOutward = () => {
   const { issuedRecords, reverseIssue } = useStock();
   const [view, setView] = useState<"list" | "batch" | "single">("list");
   const [selectedBMR, setSelectedBMR] = useState<string>("");
+  const [selectedBMRIngredients, setSelectedBMRIngredients] = useState<{ name: string; botanical?: string; req: number; unit: string }[] | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [issuedItems, setIssuedItems] = useState<IssuedItem[]>([]);
   const [showSummary, setShowSummary] = useState(false);
@@ -412,7 +413,7 @@ const RMOutward = () => {
     toast.success(`Issue ${issRef} reversed — stock restored. Re-issue when ready.`);
   };
 
-  if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} />;
+  if (view === "batch") return <BatchIssueDetail onBack={() => setView("list")} onIssued={handleIssued} bmrLabel={selectedBMR} bmrIngredients={selectedBMRIngredients} />;
   if (view === "single") return <SingleDrugIssueDetail onBack={() => setView("list")} onIssued={handleIssued} />;
 
   const demoBatchIssues = [
@@ -543,7 +544,19 @@ const RMOutward = () => {
                   <div className="p-6 text-center text-xs text-muted-foreground">No batch issues found.</div>
                 )}
                 {filteredBatch.map((item, i) => (
-                  <div key={i} onClick={() => { setSelectedBMR(`${item.bmr} · ${item.product}`); setView("batch"); }} className="grid grid-cols-[1fr_1.5fr_0.8fr_0.8fr_0.6fr_0.5fr] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 cursor-pointer transition-colors">
+                  <div key={i} onClick={() => {
+                    setSelectedBMR(`${item.bmr} · ${item.product}`);
+                    // Find BMR and pass real ingredients
+                    const bmr = bmrs.find(b => b.batchNo === item.bmr);
+                    if (bmr) {
+                      setSelectedBMRIngredients(bmr.ingredients.map(ing => ({
+                        name: ing.name, botanical: undefined, req: ing.requiredQty, unit: ing.unit,
+                      })));
+                    } else {
+                      setSelectedBMRIngredients(undefined);
+                    }
+                    setView("batch");
+                  }} className="grid grid-cols-[1fr_1.5fr_0.8fr_0.8fr_0.6fr_0.5fr] gap-2 px-3.5 py-2.5 items-center text-xs hover:bg-secondary/50 cursor-pointer transition-colors">
                     <div className="font-medium text-primary">{item.id}</div>
                     <div>
                       <div className="font-medium">{item.product}</div>
