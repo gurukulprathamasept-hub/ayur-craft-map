@@ -52,7 +52,7 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
                 <th>Expiry</th>
                 <th>Reqd. qty</th>
                 <th>Actual used</th>
-                <th>Variance</th>
+                
                 <th>Weighed by</th>
                 <th>Checked by</th>
                 <th>Flag</th>
@@ -87,11 +87,6 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
                         onChange={e => updateIngredient(i, { actualQty: Number(e.target.value) })} />
                     </td>
                     <td>
-                      <span className={`app-badge ${v.cls}`}>
-                        {ing.actualQty ? (v.diff >= 0 ? "+" : "") + v.diff.toFixed(3) : "—"}
-                      </span>
-                    </td>
-                    <td>
                       <input className="form-input-sm w-16" value={ing.weighedBy || ""} onChange={e => updateIngredient(i, { weighedBy: e.target.value })} />
                     </td>
                     <td>
@@ -110,17 +105,6 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
         </div>
       </div>
 
-      <div className="app-card">
-        <div className="app-card-head">
-          <div className="app-card-title">Dispensing checklist</div>
-          <span className="app-badge app-badge-gray">Schedule U §I-A.7</span>
-        </div>
-        <div className="p-3.5 grid grid-cols-3 gap-2.5">
-          <div className="form-field"><label>Dispensing room</label><input placeholder="e.g. DR-01" /></div>
-          <div className="form-field"><label>Dispensing date & time</label><input type="datetime-local" /></div>
-          <div className="form-field"><label>Balance used (calibrated)</label><input placeholder="e.g. Sartorius E-202" /></div>
-        </div>
-      </div>
     </>
   );
 };
