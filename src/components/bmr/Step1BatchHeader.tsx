@@ -68,10 +68,6 @@ const Step1BatchHeader = ({ bmr, onChange, prevBatchNo }: Props) => {
               <label>Mfg. licence no.</label>
               <input value={bmr.licenceNo} onChange={e => onChange({ licenceNo: e.target.value })} />
             </div>
-            <div className="form-field">
-              <label>Product code</label>
-              <input value={bmr.productCode} onChange={e => onChange({ productCode: e.target.value })} />
-            </div>
           </div>
         </div>
       </div>
@@ -93,10 +89,6 @@ const Step1BatchHeader = ({ bmr, onChange, prevBatchNo }: Props) => {
             <div className="form-field">
               <label>Scale factor</label>
               <input value={bmr.scaleFactor ? `${bmr.scaleFactor.toFixed(2)}×` : "—"} readOnly className="bg-secondary" />
-            </div>
-            <div className="form-field">
-              <label>Lot number</label>
-              <input value={bmr.lotNumber} onChange={e => onChange({ lotNumber: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-4 gap-2.5">
@@ -144,14 +136,6 @@ const Step1BatchHeader = ({ bmr, onChange, prevBatchNo }: Props) => {
             <div className="form-field">
               <label>Production supervisor</label>
               <input value={bmr.personnel.productionSupervisor} onChange={e => updatePersonnel("productionSupervisor", e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Room / plant no.</label>
-              <input value={bmr.personnel.roomPlant} onChange={e => updatePersonnel("roomPlant", e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Equipment used</label>
-              <input value={bmr.personnel.equipmentUsed} onChange={e => updatePersonnel("equipmentUsed", e.target.value)} />
             </div>
           </div>
         </div>
