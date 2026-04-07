@@ -21,11 +21,30 @@ const Step3ProcessLog = ({ bmr, onChange }: Props) => {
     });
   };
 
+  const updatePersonnel = (key: string, value: string) =>
+    onChange({ personnel: { ...bmr.personnel, [key]: value } });
+
   return (
     <>
       <div className="alert-box alert-info mb-3">
         <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
         <span>Schedule U §I-A.9 & 10: Date, time and duration of each process step with operator details.</span>
+      </div>
+
+      <div className="app-card mb-2.5">
+        <div className="app-card-head">
+          <div className="app-card-title">Room & equipment details</div>
+        </div>
+        <div className="p-3.5 grid grid-cols-2 gap-2.5">
+          <div className="form-field">
+            <label>Room / plant no.</label>
+            <input value={bmr.personnel.roomPlant} onChange={e => updatePersonnel("roomPlant", e.target.value)} placeholder="e.g. Room 201-A" />
+          </div>
+          <div className="form-field">
+            <label>Equipment used</label>
+            <input value={bmr.personnel.equipmentUsed} onChange={e => updatePersonnel("equipmentUsed", e.target.value)} placeholder="e.g. Multi-mill, Blender" />
+          </div>
+        </div>
       </div>
 
       <div className="app-card">
@@ -36,7 +55,6 @@ const Step3ProcessLog = ({ bmr, onChange }: Props) => {
           </button>
         </div>
         <div className="p-3.5 overflow-x-auto">
-          {/* Header */}
           <div className="grid grid-cols-[28px_1.6fr_1fr_1fr_100px_100px] gap-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
             <div></div><div>Step</div><div>Start</div><div>End</div><div>Operator</div><div>Status</div>
           </div>
