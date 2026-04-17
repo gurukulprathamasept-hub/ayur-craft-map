@@ -192,7 +192,7 @@ const MFRCreate = () => {
                     value={rm.name}
                     onSelect={(sel) => {
                       const validCats = ["herb","extract","mineral","animal","base","process"];
-                      const cat = validCats.includes(sel.category) ? sel.category : rm.cat;
+                      const cat = (validCats.includes(sel.category) ? sel.category : rm.cat) as RMItem["cat"];
                       const validUnits = ["kg","g","L","ml","units","q.s."];
                       const unit = validUnits.includes(sel.uom) ? sel.uom : rm.unit;
                       setIngredients((prev) => prev.map((it, idx) => idx === i ? { ...it, name: sel.name, cat, part: sel.part || it.part, unit } : it));
