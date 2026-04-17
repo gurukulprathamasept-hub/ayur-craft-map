@@ -188,7 +188,18 @@ const MFRCreate = () => {
               </div>
               {ingredients.map((rm, i) => (
                 <div key={i} className="grid grid-cols-[2fr_120px_80px_60px_1.5fr_32px] gap-2 py-1.5 items-center border-b border-border last:border-b-0">
-                  <input className="form-field-input" value={rm.name} onChange={(e) => updateIngredient(i, "name", e.target.value)} placeholder="e.g. Amalaki" />
+                  <RMSearchInput
+                    value={rm.name}
+                    onSelect={(sel) => {
+                      const validCats = ["herb","extract","mineral","animal","base","process"];
+                      const cat = validCats.includes(sel.category) ? sel.category : rm.cat;
+                      const validUnits = ["kg","g","L","ml","units","q.s."];
+                      const unit = validUnits.includes(sel.uom) ? sel.uom : rm.unit;
+                      setIngredients((prev) => prev.map((it, idx) => idx === i ? { ...it, name: sel.name, cat, part: sel.part || it.part, unit } : it));
+                    }}
+                    placeholder="Search RM (name / botanical / code)..."
+                  />
+
                   <select className="form-field-input" value={rm.cat} onChange={(e) => updateIngredient(i, "cat", e.target.value)}>
                     {rmCategories.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
                   </select>
