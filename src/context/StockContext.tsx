@@ -306,6 +306,13 @@ type StockContextType = {
   drafts: GRNDraft[];
   saveDraft: (draft: GRNDraft) => void;
   deleteDraft: (id: string) => void;
+  // Lots & FIFO
+  lots: RMLot[];
+  getNextRMBatchNo: (rmCode: string, rmName: string) => { batchNo: string; prevBatchNo: string | null };
+  getActiveLotsForRM: (rmCode: string) => RMLot[];
+  consumeFromLots: (rmCode: string, qty: number) => { allocations: LotAllocation[]; shortfall: number };
+  commitConsumption: (issRef: string, source: string, rmCode: string, rmName: string, allocations: LotAllocation[]) => void;
+  reverseConsumption: (issRef: string) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
@@ -327,6 +334,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [grnCount, setGrnCount] = useState(187);
   const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
   const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>([]);
+  const [lots, setLots] = useState<RMLot[]>([]);
   const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
     try {
       const stored = localStorage.getItem("grn_drafts");
