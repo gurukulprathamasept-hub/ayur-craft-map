@@ -20,10 +20,11 @@ function computeKpis(rm: RMEntry) {
 }
 
 const StockLedger = () => {
-  const { rmData } = useStock();
+  const { rmData, lots } = useStock();
   const [selectedRM, setSelectedRM] = useState<string | null>(null);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"txns" | "lots">("txns");
 
   const activeRM = rmData.find((r) => r.code === selectedRM);
 
