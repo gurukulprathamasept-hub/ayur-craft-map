@@ -583,6 +583,15 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
 
   // Reverse a finalized GRN — undo stock ledger entries
   const reverseGRN = (grnNo: string) => {
+    // Block reversal if any lot from this GRN has been consumed
+    const grnLots = lots.filter(l => l.grnRef === grnNo);
+    const partiallyConsumed = grnLots.some(l => l.qtyRemaining < l.qtyReceived);
+    if (partiallyConsumed) {
+      console.warn(`Cannot reverse GRN ${grnNo}: some lots already consumed in BMRs.`);
+      return;
+    }
+    // Remove lots from this GRN
+    setLots(prev => prev.filter(l => l.grnRef !== grnNo));
     const grn = pendingGRNs.find(g => g.grnNo === grnNo);
     if (!grn) return;
     // Remove inward txns for this GRN from rmData
