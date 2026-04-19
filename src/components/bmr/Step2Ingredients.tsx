@@ -83,14 +83,14 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
                       {ing.unit === "q.s." ? "q.s." : ing.requiredQty.toFixed(3)}
                     </td>
                     <td>
-                      <input type="number" className="form-input-sm w-20" value={ing.actualQty || ""} step="0.001"
+                      <input type="number" className="form-input-sm w-24" value={ing.actualQty || ""} step="0.001"
                         onChange={e => updateIngredient(i, { actualQty: Number(e.target.value) })} />
                     </td>
                     <td>
-                      <input className="form-input-sm w-16" value={ing.weighedBy || ""} onChange={e => updateIngredient(i, { weighedBy: e.target.value })} />
+                      <input className="form-input-sm w-24" value={ing.weighedBy || ""} onChange={e => updateIngredient(i, { weighedBy: e.target.value })} />
                     </td>
                     <td>
-                      <input className="form-input-sm w-16" value={ing.checkedBy || ""} onChange={e => updateIngredient(i, { checkedBy: e.target.value })} />
+                      <input className="form-input-sm w-24" value={ing.checkedBy || ""} onChange={e => updateIngredient(i, { checkedBy: e.target.value })} />
                     </td>
                     <td><span className={`app-badge ${v.cls}`}>{v.label}</span></td>
                   </tr>
