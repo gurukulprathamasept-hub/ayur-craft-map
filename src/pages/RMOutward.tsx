@@ -336,7 +336,7 @@ const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBa
                   <div>{isOut ? "—" : item.expiry}</div>
                   <div>
                     {isOut ? <span className="text-[10px] text-muted-foreground">—</span>
-                      : <input type="number" className="w-[70px] px-2 py-1 border border-border rounded-md text-[11px]" value={item.qtyToIssue} onChange={e => updateQty(i, parseFloat(e.target.value) || 0)} max={item.available} disabled={!item.issueChecked} />}
+                      : <input type="number" className="w-[96px] px-2 py-1 border border-border rounded-md text-[11px]" value={item.qtyToIssue} onChange={e => updateQty(i, parseFloat(e.target.value) || 0)} max={item.available} disabled={!item.issueChecked} />}
                   </div>
                   <div>
                     {isOut ? (
