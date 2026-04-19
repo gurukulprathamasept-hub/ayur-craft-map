@@ -175,7 +175,7 @@ const MFRCreate = () => {
 
         {/* Step 1: Ingredients */}
         {activeStep === 1 && (
-          <div className="app-card">
+          <div className="app-card !overflow-visible">
             <div className="app-card-head">
               <div className="app-card-title">Ingredients for {batchSize} {batchUnit} standard batch</div>
               <button onClick={() => setIngredients((p) => [...p, emptyRM()])} className="px-2.5 py-1 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1">
