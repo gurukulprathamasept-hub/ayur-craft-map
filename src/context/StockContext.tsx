@@ -559,6 +559,21 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       inwardStock(grnNo, approvedLines.map(l => ({
         rmName: l.rmName, qty: l.qty, batch: l.batch, expiry: l.expiry, rate: l.rate,
       })));
+      // Create RMLot per approved line for FIFO tracking
+      const newLots: RMLot[] = approvedLines.map(l => ({
+        lotId: crypto.randomUUID(),
+        batchNo: l.batch || `${l.rmName.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase()}-AUTO-${Date.now()}`,
+        rmCode: l.rmCode,
+        rmName: l.rmName,
+        grnRef: grnNo,
+        receivedDate: new Date().toISOString(),
+        expiry: l.expiry,
+        rate: l.rate,
+        qtyReceived: l.qty,
+        qtyRemaining: l.qty,
+        status: "active" as const,
+      }));
+      setLots(prev => [...prev, ...newLots]);
     }
     // Mark GRN as done
     setPendingGRNs(prev => prev.map(g =>
