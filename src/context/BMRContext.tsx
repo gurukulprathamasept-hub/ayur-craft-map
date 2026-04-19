@@ -1,7 +1,16 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export interface BMRLotAllocation {
+  lotId: string;
+  batchNo: string;
+  expiry: string;
+  rate: string;
+  qty: number;
+}
+
 export interface BMRIngredient {
   name: string;
+  rmCode?: string;
   cat: string;
   requiredQty: number;
   actualQty: number;
@@ -15,6 +24,9 @@ export interface BMRIngredient {
   expiry?: string;
   weighedBy?: string;
   checkedBy?: string;
+  allocations?: BMRLotAllocation[];
+  shortfall?: number;
+  consumed?: boolean;
 }
 
 export interface BMRProcessStep {

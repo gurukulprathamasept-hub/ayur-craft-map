@@ -12,6 +12,7 @@ type InwardLine = {
   botanical: string;
   uom: string;
   batch: string;
+  prevBatch?: string | null;
   expiry: string;
   qty: number;
   rate: string;
@@ -21,7 +22,7 @@ type InwardLine = {
 
 const emptyLine = (): InwardLine => ({
   rmCode: "", rmName: "", botanical: "", uom: "",
-  batch: "", expiry: "", qty: 0, rate: "",
+  batch: "", prevBatch: null, expiry: "", qty: 0, rate: "",
   searchOpen: false, searchTerm: "",
 });
 
@@ -37,7 +38,7 @@ const RMInward = () => {
   const {
     rmData, getNextGRN, incrementGRN,
     submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
-    drafts, saveDraft, deleteDraft, reverseGRN,
+    drafts, saveDraft, deleteDraft, reverseGRN, getNextRMBatchNo,
   } = useStock();
   const { suppliers } = useSupplier();
   const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
@@ -147,8 +148,10 @@ const RMInward = () => {
   const selectRM = (i: number, rmCode: string) => {
     const rm = rmData.find(r => r.code === rmCode);
     if (!rm) return;
+    const { batchNo, prevBatchNo } = getNextRMBatchNo(rm.code, rm.name);
     setLines(prev => prev.map((l, idx) => idx === i ? {
       ...l, rmCode: rm.code, rmName: rm.name, botanical: rm.botanical, uom: rm.uom,
+      batch: l.batch || batchNo, prevBatch: prevBatchNo,
       searchOpen: false, searchTerm: "",
     } : l));
   };
@@ -608,6 +611,11 @@ const RMInward = () => {
                     <div onClick={e => e.stopPropagation()}>
                       <input className="w-full px-2 py-1 border border-border rounded-md text-[11px]" placeholder="Batch"
                         value={line.batch} onChange={e => updateLine(i, "batch", e.target.value)} disabled={!line.rmCode} />
+                      {line.rmCode && (
+                        <div className="text-[9px] text-muted-foreground mt-0.5 truncate">
+                          {line.prevBatch ? `Prev: ${line.prevBatch}` : "First batch for this RM"}
+                        </div>
+                      )}
                     </div>
                     <div onClick={e => e.stopPropagation()}>
                       <input type="date" className="w-full px-2 py-1 border border-border rounded-md text-[11px]"

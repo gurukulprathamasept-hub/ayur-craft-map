@@ -105,6 +105,28 @@ export type IssuedRecord = {
   status: "issued" | "reversed";
 };
 
+export type RMLot = {
+  lotId: string;
+  batchNo: string;       // e.g. VIB-2504-0001
+  rmCode: string;
+  rmName: string;
+  grnRef: string;
+  receivedDate: string;
+  expiry: string;
+  rate: string;
+  qtyReceived: number;
+  qtyRemaining: number;
+  status: "active" | "exhausted" | "reversed";
+};
+
+export type LotAllocation = {
+  lotId: string;
+  batchNo: string;
+  expiry: string;
+  rate: string;
+  qty: number;
+};
+
 const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
@@ -284,6 +306,13 @@ type StockContextType = {
   drafts: GRNDraft[];
   saveDraft: (draft: GRNDraft) => void;
   deleteDraft: (id: string) => void;
+  // Lots & FIFO
+  lots: RMLot[];
+  getNextRMBatchNo: (rmCode: string, rmName: string) => { batchNo: string; prevBatchNo: string | null };
+  getActiveLotsForRM: (rmCode: string) => RMLot[];
+  consumeFromLots: (rmCode: string, qty: number) => { allocations: LotAllocation[]; shortfall: number };
+  commitConsumption: (issRef: string, source: string, rmCode: string, rmName: string, allocations: LotAllocation[]) => void;
+  reverseConsumption: (issRef: string) => void;
 };
 
 const StockContext = createContext<StockContextType | null>(null);
@@ -305,6 +334,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [grnCount, setGrnCount] = useState(187);
   const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
   const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>([]);
+  const [lots, setLots] = useState<RMLot[]>([]);
   const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
     try {
       const stored = localStorage.getItem("grn_drafts");
@@ -529,6 +559,21 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       inwardStock(grnNo, approvedLines.map(l => ({
         rmName: l.rmName, qty: l.qty, batch: l.batch, expiry: l.expiry, rate: l.rate,
       })));
+      // Create RMLot per approved line for FIFO tracking
+      const newLots: RMLot[] = approvedLines.map(l => ({
+        lotId: crypto.randomUUID(),
+        batchNo: l.batch || `${l.rmName.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase()}-AUTO-${Date.now()}`,
+        rmCode: l.rmCode,
+        rmName: l.rmName,
+        grnRef: grnNo,
+        receivedDate: new Date().toISOString(),
+        expiry: l.expiry,
+        rate: l.rate,
+        qtyReceived: l.qty,
+        qtyRemaining: l.qty,
+        status: "active" as const,
+      }));
+      setLots(prev => [...prev, ...newLots]);
     }
     // Mark GRN as done
     setPendingGRNs(prev => prev.map(g =>
@@ -538,6 +583,15 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
 
   // Reverse a finalized GRN — undo stock ledger entries
   const reverseGRN = (grnNo: string) => {
+    // Block reversal if any lot from this GRN has been consumed
+    const grnLots = lots.filter(l => l.grnRef === grnNo);
+    const partiallyConsumed = grnLots.some(l => l.qtyRemaining < l.qtyReceived);
+    if (partiallyConsumed) {
+      console.warn(`Cannot reverse GRN ${grnNo}: some lots already consumed in BMRs.`);
+      return;
+    }
+    // Remove lots from this GRN
+    setLots(prev => prev.filter(l => l.grnRef !== grnNo));
     const grn = pendingGRNs.find(g => g.grnNo === grnNo);
     if (!grn) return;
     // Remove inward txns for this GRN from rmData
@@ -612,6 +666,105 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     setRmData(prev => prev.filter(r => r.code !== code));
   };
 
+  // ==== Lot / FIFO management ====
+
+  const getNextRMBatchNo = (rmCode: string, rmName: string): { batchNo: string; prevBatchNo: string | null } => {
+    const prefix = rmName.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "RM";
+    const now = new Date();
+    const yymm = `${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const pattern = new RegExp(`^${prefix}-${yymm}-(\\d+)$`);
+    const rmLots = lots.filter(l => l.rmCode === rmCode);
+    let maxSeq = 0;
+    let prevBatchNo: string | null = null;
+    for (const lot of rmLots) {
+      const m = lot.batchNo.match(pattern);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > maxSeq) { maxSeq = n; prevBatchNo = lot.batchNo; }
+      }
+    }
+    if (!prevBatchNo && rmLots.length > 0) prevBatchNo = rmLots[rmLots.length - 1].batchNo;
+    const seq = String(maxSeq + 1).padStart(4, "0");
+    return { batchNo: `${prefix}-${yymm}-${seq}`, prevBatchNo };
+  };
+
+  const getActiveLotsForRM = (rmCode: string): RMLot[] => {
+    return lots
+      .filter(l => l.rmCode === rmCode && l.status === "active" && l.qtyRemaining > 0)
+      .sort((a, b) => a.receivedDate.localeCompare(b.receivedDate));
+  };
+
+  const consumeFromLots = (rmCode: string, qty: number): { allocations: LotAllocation[]; shortfall: number } => {
+    const active = getActiveLotsForRM(rmCode);
+    const allocations: LotAllocation[] = [];
+    let need = qty;
+    for (const lot of active) {
+      if (need <= 0.0001) break;
+      const take = Math.min(lot.qtyRemaining, need);
+      allocations.push({ lotId: lot.lotId, batchNo: lot.batchNo, expiry: lot.expiry, rate: lot.rate, qty: parseFloat(take.toFixed(3)) });
+      need = parseFloat((need - take).toFixed(3));
+    }
+    return { allocations, shortfall: Math.max(0, parseFloat(need.toFixed(3))) };
+  };
+
+  const commitConsumption = (issRef: string, source: string, rmCode: string, rmName: string, allocations: LotAllocation[]) => {
+    if (!allocations.length) return;
+    // Drawdown lots
+    setLots(prev => prev.map(l => {
+      const a = allocations.find(x => x.lotId === l.lotId);
+      if (!a) return l;
+      const remaining = parseFloat((l.qtyRemaining - a.qty).toFixed(3));
+      return { ...l, qtyRemaining: Math.max(0, remaining), status: remaining <= 0.0001 ? "exhausted" as const : l.status };
+    }));
+    // Outward txn per lot on RMEntry
+    setRmData(prev => prev.map(rm => {
+      if (rm.code !== rmCode) return rm;
+      let stock = rm.currentStock;
+      const newTxns: Txn[] = allocations.map(a => {
+        stock = parseFloat((stock - a.qty).toFixed(3));
+        return {
+          date: today(), type: "Outward", typeBadge: "amber", ref: issRef,
+          batch: a.batchNo, expiry: a.expiry, qtyIn: "—",
+          qtyOut: a.qty.toFixed(3), balance: stock.toFixed(3), rate: a.rate || "—",
+        };
+      });
+      return { ...rm, currentStock: Math.max(0, stock), txns: [...rm.txns, ...newTxns] };
+    }));
+    // Append to issuedRecords
+    setIssuedRecords(prev => [...prev, {
+      issRef, type: "batch", source, date: today(),
+      lines: allocations.map(a => ({ rmName, qty: a.qty, uom: "", batch: a.batchNo, expiry: a.expiry })),
+      status: "issued",
+    }]);
+  };
+
+  const reverseConsumption = (issRef: string) => {
+    // Restore lot qtyRemaining by summing allocations from txns matching ref
+    setRmData(prev => prev.map(rm => {
+      const outs = rm.txns.filter(t => t.ref === issRef && t.type === "Outward");
+      if (!outs.length) return rm;
+      const restored = outs.reduce((s, t) => s + parseFloat(t.qtyOut === "—" ? "0" : t.qtyOut), 0);
+      const txns = rm.txns.filter(t => !(t.ref === issRef && t.type === "Outward"));
+      let bal = 0;
+      const recalced = txns.map(t => {
+        const i = t.qtyIn === "—" ? 0 : parseFloat(t.qtyIn);
+        const o = t.qtyOut === "—" ? 0 : parseFloat(t.qtyOut);
+        bal = parseFloat((bal + i - o).toFixed(3));
+        return { ...t, balance: bal.toFixed(3) };
+      });
+      // restore lots
+      setLots(prevLots => prevLots.map(l => {
+        const matched = outs.find(t => t.batch === l.batchNo);
+        if (!matched) return l;
+        const back = parseFloat(matched.qtyOut === "—" ? "0" : matched.qtyOut);
+        const newRemaining = parseFloat((l.qtyRemaining + back).toFixed(3));
+        return { ...l, qtyRemaining: newRemaining, status: newRemaining > 0 ? "active" as const : l.status };
+      }));
+      return { ...rm, currentStock: parseFloat((rm.currentStock + restored).toFixed(3)), txns: recalced };
+    }));
+    setIssuedRecords(prev => prev.map(r => r.issRef === issRef ? { ...r, status: "reversed" as const } : r));
+  };
+
   return (
     <StockContext.Provider value={{
       rmData, getStockForRM, issueStock, reverseIssue, issuedRecords, inwardStock, addRM, updateRM, deleteRM,
@@ -619,6 +772,7 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       pendingGRNs, submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN,
       reverseGRN, updateGRNData,
       drafts, saveDraft, deleteDraft,
+      lots, getNextRMBatchNo, getActiveLotsForRM, consumeFromLots, commitConsumption, reverseConsumption,
     }}>
       {children}
     </StockContext.Provider>
