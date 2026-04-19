@@ -556,11 +556,11 @@ const RMInward = () => {
             </div>
 
             {/* Line items */}
-            <div className="app-card">
+            <div className="app-card !overflow-visible">
               <div className="app-card-head">
                 <div className="app-card-title">Line items ({filledLines.length})</div>
               </div>
-              <div className="p-3.5">
+              <div className="p-3.5 overflow-visible">
                 <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px_32px] gap-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border">
                   <div>RM name</div><div>Batch no.</div><div>Expiry</div><div>Qty recd.</div><div>Unit rate (₹)</div><div>Value (₹)</div><div></div>
                 </div>
@@ -588,7 +588,7 @@ const RMInward = () => {
                             />
                           </div>
                           {line.searchOpen && (
-                            <div className="absolute left-0 top-full mt-1 w-72 bg-background border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                            <div className="absolute left-0 top-full mt-1 w-72 bg-popover border border-border rounded-lg shadow-lg z-[9999] max-h-64 overflow-y-auto overscroll-contain">
                               {getFilteredRM(line.searchTerm).map(rm => (
                                 <button key={rm.code} onClick={() => selectRM(i, rm.code)}
                                   className="w-full text-left px-2.5 py-1.5 rounded hover:bg-secondary text-xs">
