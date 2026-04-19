@@ -12,7 +12,7 @@ type InwardLine = {
   botanical: string;
   uom: string;
   batch: string;
-  prevBatch: string | null;
+  prevBatch?: string | null;
   expiry: string;
   qty: number;
   rate: string;
