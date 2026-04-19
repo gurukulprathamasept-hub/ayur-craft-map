@@ -12,6 +12,7 @@ type InwardLine = {
   botanical: string;
   uom: string;
   batch: string;
+  prevBatch: string | null;
   expiry: string;
   qty: number;
   rate: string;
@@ -21,7 +22,7 @@ type InwardLine = {
 
 const emptyLine = (): InwardLine => ({
   rmCode: "", rmName: "", botanical: "", uom: "",
-  batch: "", expiry: "", qty: 0, rate: "",
+  batch: "", prevBatch: null, expiry: "", qty: 0, rate: "",
   searchOpen: false, searchTerm: "",
 });
 
