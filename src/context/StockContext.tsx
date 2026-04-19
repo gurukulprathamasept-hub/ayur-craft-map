@@ -105,6 +105,28 @@ export type IssuedRecord = {
   status: "issued" | "reversed";
 };
 
+export type RMLot = {
+  lotId: string;
+  batchNo: string;       // e.g. VIB-2504-0001
+  rmCode: string;
+  rmName: string;
+  grnRef: string;
+  receivedDate: string;
+  expiry: string;
+  rate: string;
+  qtyReceived: number;
+  qtyRemaining: number;
+  status: "active" | "exhausted" | "reversed";
+};
+
+export type LotAllocation = {
+  lotId: string;
+  batchNo: string;
+  expiry: string;
+  rate: string;
+  qty: number;
+};
+
 const initialData: RMEntry[] = [
   {
     code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
