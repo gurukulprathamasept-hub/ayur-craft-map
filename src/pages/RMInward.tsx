@@ -611,6 +611,11 @@ const RMInward = () => {
                     <div onClick={e => e.stopPropagation()}>
                       <input className="w-full px-2 py-1 border border-border rounded-md text-[11px]" placeholder="Batch"
                         value={line.batch} onChange={e => updateLine(i, "batch", e.target.value)} disabled={!line.rmCode} />
+                      {line.rmCode && (
+                        <div className="text-[9px] text-muted-foreground mt-0.5 truncate">
+                          {line.prevBatch ? `Prev: ${line.prevBatch}` : "First batch for this RM"}
+                        </div>
+                      )}
                     </div>
                     <div onClick={e => e.stopPropagation()}>
                       <input type="date" className="w-full px-2 py-1 border border-border rounded-md text-[11px]"
