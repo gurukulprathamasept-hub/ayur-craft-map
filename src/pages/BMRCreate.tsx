@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, FileText, Info } from "lucide-react";
 import { useFormulations } from "@/context/FormulationContext";
 import { useBMRs, createDefaultBMR } from "@/context/BMRContext";
+import { useStock } from "@/context/StockContext";
 import { toast } from "sonner";
 
 const BMRCreate = () => {
@@ -10,6 +11,7 @@ const BMRCreate = () => {
   const [searchParams] = useSearchParams();
   const { formulations } = useFormulations();
   const { addBMR, getNextBatchNo } = useBMRs();
+  const { rmData } = useStock();
 
   const preselectedId = searchParams.get("mfr");
   const [selectedMFR, setSelectedMFR] = useState<string>(preselectedId || "");
@@ -59,16 +61,27 @@ const BMRCreate = () => {
       startDate,
       mfrRef: `${mfr.name} / ${mfr.ref}`,
       pharmacopoeiaRef: mfr.ref,
-      ingredients: mfr.rm.map((rm) => ({
-        name: rm.name,
-        cat: rm.cat,
-        requiredQty: rm.unit === "q.s." ? 0 : Number((rm.qty * scaleFactor).toFixed(3)),
-        actualQty: 0,
-        unit: rm.unit,
-        part: rm.part,
-        lot: "",
-        cost: 0,
-      })),
+      ingredients: mfr.rm.map((rm) => {
+        const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean);
+        const tokens = norm(rm.name);
+        const match = rmData.find(r => {
+          const rt = norm(r.name);
+          return tokens.some(t => rt.some(x => x.includes(t) || t.includes(x))) ||
+            r.name.toLowerCase().includes(rm.name.toLowerCase()) ||
+            rm.name.toLowerCase().includes(r.name.toLowerCase());
+        });
+        return {
+          name: rm.name,
+          rmCode: match?.code,
+          cat: rm.cat,
+          requiredQty: rm.unit === "q.s." ? 0 : Number((rm.qty * scaleFactor).toFixed(3)),
+          actualQty: 0,
+          unit: rm.unit,
+          part: rm.part,
+          lot: "",
+          cost: 0,
+        };
+      }),
       steps: mfr.steps.map((s, i) => ({
         step: s.step,
         description: s.equipment || "",
