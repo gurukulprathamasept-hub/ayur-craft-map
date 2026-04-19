@@ -159,8 +159,8 @@ const MFRCreate = () => {
                 <div className="form-field">
                   <label>Standard batch size *</label>
                   <div className="flex gap-2">
-                    <input type="number" value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="flex-1 min-w-0" min={0} />
-                    <select value={batchUnit} onChange={(e) => setBatchUnit(e.target.value)} className="w-[72px] shrink-0">
+                    <input type="number" value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="flex-1 min-w-[120px]" min={0} />
+                    <select value={batchUnit} onChange={(e) => setBatchUnit(e.target.value)} className="w-[80px] shrink-0">
                       <option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option><option value="units">units</option>
                     </select>
                   </div>
