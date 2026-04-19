@@ -183,11 +183,11 @@ const MFRCreate = () => {
               </button>
             </div>
             <div className="p-3.5">
-              <div className="grid grid-cols-[2fr_120px_80px_60px_1.5fr_32px] gap-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border mb-2">
+              <div className="grid grid-cols-[minmax(220px,3fr)_110px_70px_70px_minmax(140px,1.5fr)_32px] gap-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border mb-2">
                 <div>Raw material name</div><div>Category</div><div>Qty</div><div>Unit</div><div>Part used</div><div></div>
               </div>
               {ingredients.map((rm, i) => (
-                <div key={i} className="grid grid-cols-[2fr_120px_80px_60px_1.5fr_32px] gap-2 py-1.5 items-center border-b border-border last:border-b-0">
+                <div key={i} className="grid grid-cols-[minmax(220px,3fr)_110px_70px_70px_minmax(140px,1.5fr)_32px] gap-2 py-1.5 items-center border-b border-border last:border-b-0">
                   <RMSearchInput
                     value={rm.name}
                     onSelect={(sel) => {
