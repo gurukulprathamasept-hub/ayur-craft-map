@@ -200,7 +200,7 @@ const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIss
                 <div>
                   <input
                     type="number"
-                    className="w-[70px] px-2 py-1 border border-border rounded-md text-[11px]"
+                    className="w-[96px] px-2 py-1 border border-border rounded-md text-[11px]"
                     placeholder="0.000"
                     disabled={item.available === 0}
                     onChange={e => setQuantities(prev => ({ ...prev, [item.name]: parseFloat(e.target.value) || 0 }))}
