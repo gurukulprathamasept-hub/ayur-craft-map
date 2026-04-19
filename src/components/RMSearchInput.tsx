@@ -49,7 +49,7 @@ const RMSearchInput = ({ value, onSelect, placeholder }: Props) => {
         <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
       </div>
       {open && (
-        <div className="absolute z-50 mt-1 w-[320px] max-h-64 overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
+        <div className="absolute z-50 mt-1 left-0 min-w-full w-[420px] max-w-[90vw] max-h-64 overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
           {matches.length === 0 ? (
             <div className="px-3 py-2 text-[11px] text-muted-foreground">
               No match in RM master. Add it first in RM Master.
