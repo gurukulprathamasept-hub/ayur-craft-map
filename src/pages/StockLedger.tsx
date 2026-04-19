@@ -160,9 +160,11 @@ const StockLedger = () => {
 
         <div className="app-card">
           <div className="app-card-head">
-            <div className="app-card-title">Transaction history</div>
+            <div className="app-card-title">{view === "txns" ? "Transaction history" : "Stock lots (FIFO order)"}</div>
             <div className="flex gap-1.5">
-              {["All", "Inward", "Outward"].map((f) => (
+              <button onClick={() => setView("txns")} className={`filter-chip ${view === "txns" ? "filter-chip-active" : ""}`}>Transactions</button>
+              <button onClick={() => setView("lots")} className={`filter-chip ${view === "lots" ? "filter-chip-active" : ""}`}>Lots</button>
+              {view === "txns" && ["All", "Inward", "Outward"].map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
@@ -174,28 +176,84 @@ const StockLedger = () => {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="app-table">
-              <thead>
-                <tr>
-                  <th>Date</th><th>Type</th><th>Reference</th><th>Batch / AR no.</th><th>Expiry</th><th>Qty in</th><th>Qty out</th><th>Balance</th><th>Rate (₹/{activeRM.uom})</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((t, i) => (
-                  <tr key={i}>
-                    <td>{t.date}</td>
-                    <td><span className={`app-badge app-badge-${t.typeBadge}`}>{t.type}</span></td>
-                    <td>{t.ref}</td>
-                    <td>{t.batch}</td>
-                    <td>{t.expiry}</td>
-                    <td className={t.qtyIn !== "—" ? "text-ledger-in font-medium" : ""}>{t.qtyIn}</td>
-                    <td className={t.qtyOut !== "—" ? "text-ledger-out font-medium" : ""}>{t.qtyOut}</td>
-                    <td>{t.balance}</td>
-                    <td>{t.rate}</td>
+            {view === "txns" ? (
+              <table className="app-table">
+                <thead>
+                  <tr>
+                    <th>Date</th><th>Type</th><th>Reference</th><th>Batch / AR no.</th><th>Expiry</th><th>Qty in</th><th>Qty out</th><th>Balance</th><th>Rate (₹/{activeRM.uom})</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((t, i) => (
+                    <tr key={i}>
+                      <td>{t.date}</td>
+                      <td><span className={`app-badge app-badge-${t.typeBadge}`}>{t.type}</span></td>
+                      <td>{t.ref}</td>
+                      <td>{t.batch}</td>
+                      <td>{t.expiry}</td>
+                      <td className={t.qtyIn !== "—" ? "text-ledger-in font-medium" : ""}>{t.qtyIn}</td>
+                      <td className={t.qtyOut !== "—" ? "text-ledger-out font-medium" : ""}>{t.qtyOut}</td>
+                      <td>{t.balance}</td>
+                      <td>{t.rate}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              (() => {
+                const rmLots = lots
+                  .filter(l => l.rmCode === activeRM.code)
+                  .sort((a, b) => a.receivedDate.localeCompare(b.receivedDate));
+                if (rmLots.length === 0) {
+                  return (
+                    <div className="p-8 text-center text-xs text-muted-foreground">
+                      No lots tracked yet for this RM. Lots are created when a GRN is finalised after QC approval.
+                    </div>
+                  );
+                }
+                const totalRemaining = rmLots.reduce((s, l) => s + l.qtyRemaining, 0);
+                return (
+                  <table className="app-table">
+                    <thead>
+                      <tr>
+                        <th>Batch no.</th><th>GRN ref</th><th>Received</th><th>Expiry</th>
+                        <th className="text-right">Qty received</th><th className="text-right">Qty remaining</th>
+                        <th className="text-right">Consumed</th><th>Status</th><th>Rate (₹/{activeRM.uom})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rmLots.map(l => {
+                        const consumed = parseFloat((l.qtyReceived - l.qtyRemaining).toFixed(3));
+                        const recDate = new Date(l.receivedDate);
+                        const recStr = isNaN(recDate.getTime()) ? l.receivedDate :
+                          `${String(recDate.getDate()).padStart(2, "0")} ${recDate.toLocaleString("en", { month: "short" })} ${recDate.getFullYear()}`;
+                        const badge = l.status === "active" ? "app-badge-teal" : l.status === "exhausted" ? "app-badge-gray" : "app-badge-red";
+                        return (
+                          <tr key={l.lotId}>
+                            <td className="font-mono text-[11px] font-medium text-primary">{l.batchNo}</td>
+                            <td className="text-[11px]">{l.grnRef}</td>
+                            <td>{recStr}</td>
+                            <td>{l.expiry || "—"}</td>
+                            <td className="text-right">{l.qtyReceived.toFixed(3)} {activeRM.uom}</td>
+                            <td className={`text-right font-medium ${l.qtyRemaining > 0 ? "text-ledger-in" : "text-muted-foreground"}`}>
+                              {l.qtyRemaining.toFixed(3)} {activeRM.uom}
+                            </td>
+                            <td className="text-right text-ledger-out">{consumed.toFixed(3)} {activeRM.uom}</td>
+                            <td><span className={`app-badge ${badge}`}>{l.status}</span></td>
+                            <td>{l.rate || "—"}</td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="bg-secondary/40 font-medium">
+                        <td colSpan={5} className="text-right text-xs text-muted-foreground">Total active stock across lots</td>
+                        <td className="text-right text-ledger-in">{totalRemaining.toFixed(3)} {activeRM.uom}</td>
+                        <td colSpan={3}></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                );
+              })()
+            )}
           </div>
         </div>
       </div>
