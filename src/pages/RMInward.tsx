@@ -38,7 +38,7 @@ const RMInward = () => {
   const {
     rmData, getNextGRN, incrementGRN,
     submitForQC, updateQCResult, updateQCLineField, approveGRNLine, rejectGRNLine, finalApproveGRN, pendingGRNs,
-    drafts, saveDraft, deleteDraft, reverseGRN,
+    drafts, saveDraft, deleteDraft, reverseGRN, getNextRMBatchNo,
   } = useStock();
   const { suppliers } = useSupplier();
   const [selectedSupplier, setSelectedSupplier] = useState("SUP-001");
@@ -148,8 +148,10 @@ const RMInward = () => {
   const selectRM = (i: number, rmCode: string) => {
     const rm = rmData.find(r => r.code === rmCode);
     if (!rm) return;
+    const { batchNo, prevBatchNo } = getNextRMBatchNo(rm.code, rm.name);
     setLines(prev => prev.map((l, idx) => idx === i ? {
       ...l, rmCode: rm.code, rmName: rm.name, botanical: rm.botanical, uom: rm.uom,
+      batch: l.batch || batchNo, prevBatch: prevBatchNo,
       searchOpen: false, searchTerm: "",
     } : l));
   };
