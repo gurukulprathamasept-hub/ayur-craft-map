@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { useFormulations, RMItem, ProcessStep, QCParam } from "@/context/FormulationContext";
+import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
+import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec } from "@/context/FormulationContext";
 import RMSearchInput from "@/components/RMSearchInput";
 import { toast } from "sonner";
 
@@ -9,11 +9,18 @@ const dosageForms = ["Churna", "Arishta/Asava", "Avaleha", "Taila", "Ghrita", "V
 const rmCategories = ["herb", "extract", "mineral", "animal", "base", "process"] as const;
 const CAT_LABELS: Record<string, string> = { herb: "Herb", extract: "Extract", mineral: "Mineral", animal: "Animal", base: "Base / Excipient", process: "Process agent" };
 
-const STEPS = ["Basic info", "Ingredients", "Process steps", "QC & IPC"];
+const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging", "QC & IPC"];
 
 const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
+const emptyPackaging = (): PackagingSpec => ({
+  primaryPackSize: "100 g HDPE jar",
+  defaultPrimaryPacks: 0,
+  qcRetainSample: "20",
+  secondaryPack: "",
+  defaultShippers: 0,
+});
 
 const MFRCreate = () => {
   const navigate = useNavigate();
