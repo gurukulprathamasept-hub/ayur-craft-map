@@ -145,7 +145,7 @@ const MFRCreate = () => {
       ipc,
       expectedYieldPct,
       yieldLossNote,
-      packaging,
+      packaging: { ...packaging, packSizes: packaging.packSizes.filter((p) => p.label.trim()) },
       createdAt: editId ? (getFormulation(editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
     };
     if (editId) {
