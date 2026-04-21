@@ -186,6 +186,33 @@ const BMRCreate = () => {
                 </div>
               </div>
             )}
+            {mfr && packSizes.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="form-field">
+                  <label>Pack size for this batch *</label>
+                  <select value={selectedPackIdx} onChange={(e) => setSelectedPackIdx(Number(e.target.value))}>
+                    {packSizes.map((ps: any, i: number) => (
+                      <option key={i} value={i}>
+                        {ps.label} — {ps.primaryPacksPerStdBatch} packs / std batch
+                        {ps.secondaryPack ? ` (${ps.secondaryPack})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {scaleFactor > 0 && packSizes[selectedPackIdx] && (
+                  <div className="flex items-end pb-1">
+                    <div className="kpi-card flex-1 !p-2.5">
+                      <div className="text-[10px] text-muted-foreground">Scaled packing</div>
+                      <div className="text-sm font-semibold">
+                        {Math.round((packSizes[selectedPackIdx].primaryPacksPerStdBatch || 0) * scaleFactor)} primary packs
+                        {packSizes[selectedPackIdx].shippersPerStdBatch ? ` · ${Math.round(packSizes[selectedPackIdx].shippersPerStdBatch * scaleFactor)} shippers` : ""}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">Pre-fills BMR Step 5</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
