@@ -303,8 +303,10 @@ const BMRCreate = () => {
       </div>
 
       {mfr && scaleFactor > 0 && (
-        <div className="flex items-center justify-end px-5 py-3 border-t border-border bg-secondary shrink-0">
-          <button onClick={handleCreate} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1.5">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-secondary shrink-0">
+          {!allocationOk && <div className="text-[11px] text-destructive">Allocate full batch qty across pack sizes to continue</div>}
+          <button onClick={handleCreate} disabled={!allocationOk}
+            className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
             <FileText className="w-3 h-3" /> Create BMR & open wizard
           </button>
         </div>
