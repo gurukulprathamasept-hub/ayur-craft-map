@@ -21,7 +21,8 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
 
   const passCount = bmr.qcParams.filter(q => q.compliance === "pass").length;
   const failCount = bmr.qcParams.filter(q => q.compliance === "fail").length;
-  const allPass = bmr.qcParams.length > 0 && failCount === 0 && passCount === bmr.qcParams.length;
+  const noQCDefined = bmr.qcParams.length === 0;
+  const allPass = noQCDefined || (failCount === 0 && passCount === bmr.qcParams.length);
 
   const updateSignature = (idx: number, updates: Partial<BMRSignature>) => {
     const signatures = bmr.signatures.map((s, i) => i === idx ? { ...s, ...updates } : s);
@@ -180,12 +181,13 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
              <AlertTriangle className="w-5 h-5 text-muted-foreground shrink-0" />}
             <div className="flex-1">
               <div className="font-medium text-[13px]">
-                {allPass ? "All QC tests compliant — batch is of standard quality" :
+                {noQCDefined ? "No QC tests defined for this batch" :
+                 allPass ? "All QC tests compliant — batch is of standard quality" :
                  failCount > 0 ? `${failCount} test(s) failed — batch not eligible for release` :
                  "QC testing incomplete"}
               </div>
               <div className="text-[11px] text-muted-foreground mt-0.5">
-                {passCount} / {bmr.qcParams.length} tests pass
+                {noQCDefined ? "Add QC parameters in the MFR template to enable testing" : `${passCount} / ${bmr.qcParams.length} tests pass`}
               </div>
             </div>
             {allPass && <span className="app-badge app-badge-green">Standard quality</span>}
