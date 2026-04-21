@@ -23,12 +23,22 @@ export interface QCParam {
   spec: string;
 }
 
+export interface PackSizeOption {
+  label: string;                       // e.g. "100 g HDPE jar"
+  primaryPacksPerStdBatch: number;     // packs per standard batch
+  secondaryPack: string;               // e.g. "Corrugated shipper x 24"
+  shippersPerStdBatch: number;
+}
+
 export interface PackagingSpec {
-  primaryPackSize: string;       // e.g. "100 g HDPE jar"
-  defaultPrimaryPacks: number;   // suggested no. of primary packs per std batch
-  qcRetainSample: string;        // grams retained for QC
-  secondaryPack: string;         // e.g. "Corrugated shipper x 24"
-  defaultShippers: number;
+  // Multiple pack-size options per formulation
+  packSizes: PackSizeOption[];
+  qcRetainSample: string;              // grams retained for QC (shared)
+  // Legacy single-pack fields (kept optional for backwards compatibility)
+  primaryPackSize?: string;
+  defaultPrimaryPacks?: number;
+  secondaryPack?: string;
+  defaultShippers?: number;
 }
 
 export interface Formulation {

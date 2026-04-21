@@ -19,14 +19,32 @@ const BMRCreate = () => {
   const [batchNo, setBatchNo] = useState("");
   const [prevBatchNo, setPrevBatchNo] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedPackIdx, setSelectedPackIdx] = useState<number>(0);
 
   const mfr = formulations.find((f) => f.id === selectedMFR);
+
+  // Resolve pack sizes (handle legacy single-pack shape)
+  const packSizes = useMemo(() => {
+    if (!mfr?.packaging) return [];
+    const pk: any = mfr.packaging;
+    if (Array.isArray(pk.packSizes) && pk.packSizes.length > 0) return pk.packSizes;
+    if (pk.primaryPackSize) {
+      return [{
+        label: pk.primaryPackSize,
+        primaryPacksPerStdBatch: pk.defaultPrimaryPacks || 0,
+        secondaryPack: pk.secondaryPack || "",
+        shippersPerStdBatch: pk.defaultShippers || 0,
+      }];
+    }
+    return [];
+  }, [mfr]);
 
   useEffect(() => {
     if (mfr) {
       const { nextBatchNo, prevBatchNo: prev } = getNextBatchNo(mfr.name, mfr.id);
       setBatchNo(nextBatchNo);
       setPrevBatchNo(prev);
+      setSelectedPackIdx(0);
     } else {
       setBatchNo("");
       setPrevBatchNo(null);
@@ -95,16 +113,19 @@ const BMRCreate = () => {
       qcParams: mfr.qc.map((q) => ({ parameter: q.parameter, spec: q.spec, result: "", compliance: "" as const })),
       theoreticalYield: Number((batchSize * ((mfr.expectedYieldPct ?? 98) / 100)).toFixed(3)),
       blendWeight: { theoreticalBlendWt: String(batchSize), actualBlendWt: "", lossOnBlending: "", yieldAtBlendStage: "" },
-      packing: mfr.packaging ? {
-        primaryPackSize: mfr.packaging.primaryPackSize || "100 g HDPE jar",
-        noOfPrimaryPacks: Math.round((mfr.packaging.defaultPrimaryPacks || 0) * scaleFactor),
-        totalQtyPacked: "",
-        qcRetainSample: mfr.packaging.qcRetainSample || "20",
-        secondaryPack: mfr.packaging.secondaryPack || "",
-        noOfShippers: Math.round((mfr.packaging.defaultShippers || 0) * scaleFactor),
-        labellingBatchCode: "",
-        packingDate: "",
-      } : undefined,
+      packing: packSizes.length > 0 ? (() => {
+        const ps = packSizes[selectedPackIdx] || packSizes[0];
+        return {
+          primaryPackSize: ps.label || "100 g HDPE jar",
+          noOfPrimaryPacks: Math.round((ps.primaryPacksPerStdBatch || 0) * scaleFactor),
+          totalQtyPacked: "",
+          qcRetainSample: mfr.packaging?.qcRetainSample || "20",
+          secondaryPack: ps.secondaryPack || "",
+          noOfShippers: Math.round((ps.shippersPerStdBatch || 0) * scaleFactor),
+          labellingBatchCode: "",
+          packingDate: "",
+        };
+      })() : undefined,
     });
 
     addBMR(bmr);
@@ -163,6 +184,33 @@ const BMRCreate = () => {
                     <div className="text-[10px] text-muted-foreground">Std batch: {mfr.standardBatchSize} {mfr.standardBatchUnit}</div>
                   </div>
                 </div>
+              </div>
+            )}
+            {mfr && packSizes.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="form-field">
+                  <label>Pack size for this batch *</label>
+                  <select value={selectedPackIdx} onChange={(e) => setSelectedPackIdx(Number(e.target.value))}>
+                    {packSizes.map((ps: any, i: number) => (
+                      <option key={i} value={i}>
+                        {ps.label} — {ps.primaryPacksPerStdBatch} packs / std batch
+                        {ps.secondaryPack ? ` (${ps.secondaryPack})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {scaleFactor > 0 && packSizes[selectedPackIdx] && (
+                  <div className="flex items-end pb-1">
+                    <div className="kpi-card flex-1 !p-2.5">
+                      <div className="text-[10px] text-muted-foreground">Scaled packing</div>
+                      <div className="text-sm font-semibold">
+                        {Math.round((packSizes[selectedPackIdx].primaryPacksPerStdBatch || 0) * scaleFactor)} primary packs
+                        {packSizes[selectedPackIdx].shippersPerStdBatch ? ` · ${Math.round(packSizes[selectedPackIdx].shippersPerStdBatch * scaleFactor)} shippers` : ""}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">Pre-fills BMR Step 5</div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

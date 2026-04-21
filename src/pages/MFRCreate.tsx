@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
-import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec } from "@/context/FormulationContext";
+import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec, PackSizeOption } from "@/context/FormulationContext";
 import RMSearchInput from "@/components/RMSearchInput";
 import { toast } from "sonner";
 
@@ -14,12 +14,15 @@ const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging"
 const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
-const emptyPackaging = (): PackagingSpec => ({
-  primaryPackSize: "100 g HDPE jar",
-  defaultPrimaryPacks: 0,
-  qcRetainSample: "20",
+const emptyPackSize = (): PackSizeOption => ({
+  label: "",
+  primaryPacksPerStdBatch: 0,
   secondaryPack: "",
-  defaultShippers: 0,
+  shippersPerStdBatch: 0,
+});
+const emptyPackaging = (): PackagingSpec => ({
+  packSizes: [{ label: "100 g HDPE jar", primaryPacksPerStdBatch: 0, secondaryPack: "", shippersPerStdBatch: 0 }],
+  qcRetainSample: "20",
 });
 
 const MFRCreate = () => {
@@ -77,7 +80,21 @@ const MFRCreate = () => {
         setIpc(existing.ipc);
         setExpectedYieldPct(existing.expectedYieldPct ?? 98);
         setYieldLossNote(existing.yieldLossNote || "");
-        setPackaging(existing.packaging || emptyPackaging());
+        // Migrate legacy single-pack shape into new packSizes array
+        const pk: any = existing.packaging || emptyPackaging();
+        if (!pk.packSizes || !Array.isArray(pk.packSizes) || pk.packSizes.length === 0) {
+          setPackaging({
+            packSizes: [{
+              label: pk.primaryPackSize || "100 g HDPE jar",
+              primaryPacksPerStdBatch: pk.defaultPrimaryPacks || 0,
+              secondaryPack: pk.secondaryPack || "",
+              shippersPerStdBatch: pk.defaultShippers || 0,
+            }],
+            qcRetainSample: pk.qcRetainSample || "20",
+          });
+        } else {
+          setPackaging({ packSizes: pk.packSizes, qcRetainSample: pk.qcRetainSample || "20" });
+        }
       }
     }
   }, [editId]);
@@ -94,6 +111,17 @@ const MFRCreate = () => {
   const updatePack = <K extends keyof PackagingSpec>(field: K, value: PackagingSpec[K]) => {
     setPackaging((prev) => ({ ...prev, [field]: value }));
   };
+  const updatePackSize = <K extends keyof PackSizeOption>(i: number, field: K, value: PackSizeOption[K]) => {
+    setPackaging((prev) => ({
+      ...prev,
+      packSizes: prev.packSizes.map((p, idx) => (idx === i ? { ...p, [field]: value } : p)),
+    }));
+  };
+  const addPackSize = () => setPackaging((prev) => ({ ...prev, packSizes: [...prev.packSizes, emptyPackSize()] }));
+  const removePackSize = (i: number) => setPackaging((prev) => ({
+    ...prev,
+    packSizes: prev.packSizes.length > 1 ? prev.packSizes.filter((_, idx) => idx !== i) : prev.packSizes,
+  }));
 
   const theoreticalYield = batchSize * (expectedYieldPct / 100);
 
@@ -101,7 +129,7 @@ const MFRCreate = () => {
     if (activeStep === 0) return name.trim() && batchSize > 0;
     if (activeStep === 1) return ingredients.some((r) => r.name.trim() && r.qty > 0);
     if (activeStep === 2) return steps.some((s) => s.step.trim());
-    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.primaryPackSize.trim().length > 0;
+    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.packSizes.some((p) => p.label.trim().length > 0);
     return true;
   };
 
@@ -117,7 +145,7 @@ const MFRCreate = () => {
       ipc,
       expectedYieldPct,
       yieldLossNote,
-      packaging,
+      packaging: { ...packaging, packSizes: packaging.packSizes.filter((p) => p.label.trim()) },
       createdAt: editId ? (getFormulation(editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
     };
     if (editId) {
@@ -309,27 +337,46 @@ const MFRCreate = () => {
             <div className="app-card">
               <div className="app-card-head">
                 <div className="app-card-title">Packaging template (Schedule U §I-A.19)</div>
+                <button onClick={addPackSize} className="px-2.5 py-1 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1">
+                  <Plus className="w-3 h-3" /> Add pack size
+                </button>
               </div>
-              <div className="p-3.5 grid grid-cols-2 gap-3">
-                <div className="form-field">
-                  <label>Primary pack size *</label>
-                  <input value={packaging.primaryPackSize} onChange={(e) => updatePack("primaryPackSize", e.target.value)} placeholder="e.g. 100 g HDPE jar" />
-                </div>
-                <div className="form-field">
-                  <label>Default no. of primary packs / std batch</label>
-                  <input type="number" min={0} value={packaging.defaultPrimaryPacks || ""} onChange={(e) => updatePack("defaultPrimaryPacks", Number(e.target.value))} />
-                </div>
-                <div className="form-field">
-                  <label>QC retain sample (g)</label>
+              <div className="p-3.5 space-y-3">
+                {packaging.packSizes.map((ps, i) => (
+                  <div key={i} className="border border-border rounded-md p-3 relative">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-medium">Pack size {i + 1}</span>
+                      <button
+                        onClick={() => removePackSize(i)}
+                        disabled={packaging.packSizes.length <= 1}
+                        className="ml-auto text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:hover:text-muted-foreground"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="form-field">
+                        <label>Pack size label *</label>
+                        <input value={ps.label} onChange={(e) => updatePackSize(i, "label", e.target.value)} placeholder="e.g. 100 g HDPE jar" />
+                      </div>
+                      <div className="form-field">
+                        <label>Default primary packs / std batch</label>
+                        <input type="number" min={0} value={ps.primaryPacksPerStdBatch || ""} onChange={(e) => updatePackSize(i, "primaryPacksPerStdBatch", Number(e.target.value))} />
+                      </div>
+                      <div className="form-field">
+                        <label>Secondary pack</label>
+                        <input value={ps.secondaryPack} onChange={(e) => updatePackSize(i, "secondaryPack", e.target.value)} placeholder="e.g. Corrugated shipper x 24" />
+                      </div>
+                      <div className="form-field">
+                        <label>Default shippers / std batch</label>
+                        <input type="number" min={0} value={ps.shippersPerStdBatch || ""} onChange={(e) => updatePackSize(i, "shippersPerStdBatch", Number(e.target.value))} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="form-field max-w-xs pt-1">
+                  <label>QC retain sample (g) — shared across all pack sizes</label>
                   <input value={packaging.qcRetainSample} onChange={(e) => updatePack("qcRetainSample", e.target.value)} placeholder="e.g. 20" />
-                </div>
-                <div className="form-field">
-                  <label>Secondary pack</label>
-                  <input value={packaging.secondaryPack} onChange={(e) => updatePack("secondaryPack", e.target.value)} placeholder="e.g. Corrugated shipper x 24" />
-                </div>
-                <div className="form-field">
-                  <label>Default no. of shippers / std batch</label>
-                  <input type="number" min={0} value={packaging.defaultShippers || ""} onChange={(e) => updatePack("defaultShippers", Number(e.target.value))} />
                 </div>
               </div>
             </div>
