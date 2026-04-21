@@ -113,16 +113,19 @@ const BMRCreate = () => {
       qcParams: mfr.qc.map((q) => ({ parameter: q.parameter, spec: q.spec, result: "", compliance: "" as const })),
       theoreticalYield: Number((batchSize * ((mfr.expectedYieldPct ?? 98) / 100)).toFixed(3)),
       blendWeight: { theoreticalBlendWt: String(batchSize), actualBlendWt: "", lossOnBlending: "", yieldAtBlendStage: "" },
-      packing: mfr.packaging ? {
-        primaryPackSize: mfr.packaging.primaryPackSize || "100 g HDPE jar",
-        noOfPrimaryPacks: Math.round((mfr.packaging.defaultPrimaryPacks || 0) * scaleFactor),
-        totalQtyPacked: "",
-        qcRetainSample: mfr.packaging.qcRetainSample || "20",
-        secondaryPack: mfr.packaging.secondaryPack || "",
-        noOfShippers: Math.round((mfr.packaging.defaultShippers || 0) * scaleFactor),
-        labellingBatchCode: "",
-        packingDate: "",
-      } : undefined,
+      packing: packSizes.length > 0 ? (() => {
+        const ps = packSizes[selectedPackIdx] || packSizes[0];
+        return {
+          primaryPackSize: ps.label || "100 g HDPE jar",
+          noOfPrimaryPacks: Math.round((ps.primaryPacksPerStdBatch || 0) * scaleFactor),
+          totalQtyPacked: "",
+          qcRetainSample: mfr.packaging?.qcRetainSample || "20",
+          secondaryPack: ps.secondaryPack || "",
+          noOfShippers: Math.round((ps.shippersPerStdBatch || 0) * scaleFactor),
+          labellingBatchCode: "",
+          packingDate: "",
+        };
+      })() : undefined,
     });
 
     addBMR(bmr);
