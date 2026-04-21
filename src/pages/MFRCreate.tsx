@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { useFormulations, RMItem, ProcessStep, QCParam } from "@/context/FormulationContext";
+import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
+import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec } from "@/context/FormulationContext";
 import RMSearchInput from "@/components/RMSearchInput";
 import { toast } from "sonner";
 
@@ -9,11 +9,18 @@ const dosageForms = ["Churna", "Arishta/Asava", "Avaleha", "Taila", "Ghrita", "V
 const rmCategories = ["herb", "extract", "mineral", "animal", "base", "process"] as const;
 const CAT_LABELS: Record<string, string> = { herb: "Herb", extract: "Extract", mineral: "Mineral", animal: "Animal", base: "Base / Excipient", process: "Process agent" };
 
-const STEPS = ["Basic info", "Ingredients", "Process steps", "QC & IPC"];
+const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging", "QC & IPC"];
 
 const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
+const emptyPackaging = (): PackagingSpec => ({
+  primaryPackSize: "100 g HDPE jar",
+  defaultPrimaryPacks: 0,
+  qcRetainSample: "20",
+  secondaryPack: "",
+  defaultShippers: 0,
+});
 
 const MFRCreate = () => {
   const navigate = useNavigate();
@@ -44,6 +51,11 @@ const MFRCreate = () => {
   const [qcParams, setQcParams] = useState<QCParam[]>([emptyQC()]);
   const [ipc, setIpc] = useState("");
 
+  // Yield & Packaging
+  const [expectedYieldPct, setExpectedYieldPct] = useState<number>(98);
+  const [yieldLossNote, setYieldLossNote] = useState("");
+  const [packaging, setPackaging] = useState<PackagingSpec>(emptyPackaging());
+
   // Load existing formulation for editing
   useEffect(() => {
     if (editId) {
@@ -63,6 +75,9 @@ const MFRCreate = () => {
         setSteps(existing.steps.length ? existing.steps : [emptyStep()]);
         setQcParams(existing.qc.length ? existing.qc : [emptyQC()]);
         setIpc(existing.ipc);
+        setExpectedYieldPct(existing.expectedYieldPct ?? 98);
+        setYieldLossNote(existing.yieldLossNote || "");
+        setPackaging(existing.packaging || emptyPackaging());
       }
     }
   }, [editId]);
@@ -76,11 +91,17 @@ const MFRCreate = () => {
   const updateQC = (i: number, field: keyof QCParam, value: string) => {
     setQcParams((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   };
+  const updatePack = <K extends keyof PackagingSpec>(field: K, value: PackagingSpec[K]) => {
+    setPackaging((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const theoreticalYield = batchSize * (expectedYieldPct / 100);
 
   const canProceed = () => {
     if (activeStep === 0) return name.trim() && batchSize > 0;
     if (activeStep === 1) return ingredients.some((r) => r.name.trim() && r.qty > 0);
     if (activeStep === 2) return steps.some((s) => s.step.trim());
+    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.primaryPackSize.trim().length > 0;
     return true;
   };
 
@@ -94,6 +115,9 @@ const MFRCreate = () => {
       steps: steps.filter((s) => s.step.trim()),
       qc: qcParams.filter((q) => q.parameter.trim()),
       ipc,
+      expectedYieldPct,
+      yieldLossNote,
+      packaging,
       createdAt: editId ? (getFormulation(editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
     };
     if (editId) {
@@ -249,8 +273,71 @@ const MFRCreate = () => {
           </div>
         )}
 
-        {/* Step 3: QC & IPC */}
+        {/* Step 3: Yield & Packaging */}
         {activeStep === 3 && (
+          <>
+            <div className="alert-box alert-info mb-3">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>These defaults pre-fill every BMR for this formulation. Theoretical yield = standard batch size × expected yield %. Packaging values can still be overridden per batch.</span>
+            </div>
+
+            <div className="app-card mb-2.5">
+              <div className="app-card-head">
+                <div className="app-card-title">Expected yield (Schedule U §I-A.18)</div>
+              </div>
+              <div className="p-3.5 grid grid-cols-3 gap-3">
+                <div className="form-field">
+                  <label>Expected yield % *</label>
+                  <input type="number" min={0} max={100} step="0.1" value={expectedYieldPct}
+                    onChange={(e) => setExpectedYieldPct(Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Theoretical yield (auto)</label>
+                  <input value={`${theoreticalYield.toFixed(3)} ${batchUnit}`} readOnly className="bg-secondary" />
+                </div>
+                <div className="form-field">
+                  <label>Expected loss</label>
+                  <input value={`${(batchSize - theoreticalYield).toFixed(3)} ${batchUnit}`} readOnly className="bg-secondary" />
+                </div>
+                <div className="form-field col-span-3">
+                  <label>Loss explanation (optional)</label>
+                  <textarea value={yieldLossNote} onChange={(e) => setYieldLossNote(e.target.value)} placeholder="e.g. Drying loss ~1.5%, sieving rejects ~0.5%" />
+                </div>
+              </div>
+            </div>
+
+            <div className="app-card">
+              <div className="app-card-head">
+                <div className="app-card-title">Packaging template (Schedule U §I-A.19)</div>
+              </div>
+              <div className="p-3.5 grid grid-cols-2 gap-3">
+                <div className="form-field">
+                  <label>Primary pack size *</label>
+                  <input value={packaging.primaryPackSize} onChange={(e) => updatePack("primaryPackSize", e.target.value)} placeholder="e.g. 100 g HDPE jar" />
+                </div>
+                <div className="form-field">
+                  <label>Default no. of primary packs / std batch</label>
+                  <input type="number" min={0} value={packaging.defaultPrimaryPacks || ""} onChange={(e) => updatePack("defaultPrimaryPacks", Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>QC retain sample (g)</label>
+                  <input value={packaging.qcRetainSample} onChange={(e) => updatePack("qcRetainSample", e.target.value)} placeholder="e.g. 20" />
+                </div>
+                <div className="form-field">
+                  <label>Secondary pack</label>
+                  <input value={packaging.secondaryPack} onChange={(e) => updatePack("secondaryPack", e.target.value)} placeholder="e.g. Corrugated shipper x 24" />
+                </div>
+                <div className="form-field">
+                  <label>Default no. of shippers / std batch</label>
+                  <input type="number" min={0} value={packaging.defaultShippers || ""} onChange={(e) => updatePack("defaultShippers", Number(e.target.value))} />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Step 4: QC & IPC */}
+        {activeStep === 4 && (
           <div className="app-card">
             <div className="app-card-head">
               <div className="app-card-title">QC parameters & IPC checks</div>

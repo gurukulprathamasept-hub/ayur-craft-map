@@ -23,6 +23,14 @@ export interface QCParam {
   spec: string;
 }
 
+export interface PackagingSpec {
+  primaryPackSize: string;       // e.g. "100 g HDPE jar"
+  defaultPrimaryPacks: number;   // suggested no. of primary packs per std batch
+  qcRetainSample: string;        // grams retained for QC
+  secondaryPack: string;         // e.g. "Corrugated shipper x 24"
+  defaultShippers: number;
+}
+
 export interface Formulation {
   id: string;
   name: string;
@@ -39,6 +47,11 @@ export interface Formulation {
   qc: QCParam[];
   ipc: string;
   dosha: string;
+  // Yield expectations (Schedule U §I-A.18)
+  expectedYieldPct: number;      // theoretical yield as % of batch size, e.g. 98
+  yieldLossNote?: string;        // explanation of expected loss (drying, sieving, etc.)
+  // Packaging template (Schedule U §I-A.19)
+  packaging: PackagingSpec;
   createdAt: string;
   isReference?: boolean; // true for pre-loaded reference data
 }
