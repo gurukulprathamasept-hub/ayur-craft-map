@@ -4,19 +4,27 @@ interface Props {
   bmr: BMRRecord;
 }
 
+const hasVal = (v: any) => v !== undefined && v !== null && String(v).trim() !== "" && v !== 0;
+
+const Cell = ({ value, height = "22pt" }: { value?: any; height?: string }) => {
+  const cellStyle: React.CSSProperties = { border: "1px solid #000", padding: "4pt 6pt", fontSize: "10pt", verticalAlign: "top", height };
+  return <td style={cellStyle}>{hasVal(value) ? String(value) : "\u00A0"}</td>;
+};
+
 const Blank = ({ value, width = "100%", solid = false }: { value?: string | number; width?: string; solid?: boolean }) => (
   <span
     className="print-blank"
     style={{
       display: "inline-block",
       width,
-      borderBottom: solid ? "1px solid #000" : "1px dotted #000",
+      borderBottom: hasVal(value) ? "none" : (solid ? "1px solid #000" : "1px dotted #000"),
       minHeight: "1.2em",
       paddingLeft: "2px",
       verticalAlign: "bottom",
+      fontWeight: hasVal(value) ? 500 : 400,
     }}
   >
-    {value !== undefined && value !== null && value !== "" ? String(value) : "\u00A0"}
+    {hasVal(value) ? String(value) : "\u00A0"}
   </span>
 );
 
@@ -40,6 +48,8 @@ const BMRPrintable = ({ bmr }: Props) => {
   const cellStyle: React.CSSProperties = { border: "1px solid #000", padding: "4pt 6pt", fontSize: "10pt", verticalAlign: "top" };
   const headerCell: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: "#eee" };
 
+  const isFilled = bmr.released || bmr.status === "Released" || bmr.status === "QC pending";
+
   return (
     <div className="bmr-printable" style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: "11pt", color: "#000", lineHeight: 1.4 }}>
       {/* Header / Title page */}
@@ -48,6 +58,9 @@ const BMRPrintable = ({ bmr }: Props) => {
           <h1 style={{ fontSize: "18pt", fontWeight: 700, margin: 0 }}>BATCH MANUFACTURING RECORD</h1>
           <div style={{ fontSize: "10pt", marginTop: "4pt" }}>
             As per Schedule U / Schedule T — Ayurvedic Pharmacopoeia of India
+          </div>
+          <div style={{ fontSize: "9pt", marginTop: "2pt", fontStyle: "italic" }}>
+            Status: {bmr.status} {isFilled ? "· Completed copy" : "· Working copy for shop floor"}
           </div>
         </div>
 
@@ -129,15 +142,15 @@ const BMRPrintable = ({ bmr }: Props) => {
             ) : (
               bmr.ingredients.map((ing, i) => (
                 <tr key={i}>
-                  <td style={cellStyle}>{i + 1}</td>
-                  <td style={cellStyle}>{ing.name}{ing.botanicalName ? ` (${ing.botanicalName})` : ""}</td>
-                  <td style={cellStyle}>{ing.cat}</td>
-                  <td style={cellStyle}>{ing.requiredQty}</td>
-                  <td style={cellStyle}>&nbsp;</td>
-                  <td style={cellStyle}>{ing.unit}</td>
-                  <td style={cellStyle}>&nbsp;</td>
-                  <td style={cellStyle}>&nbsp;</td>
-                  <td style={cellStyle}>&nbsp;</td>
+                  <Cell value={i + 1} />
+                  <Cell value={`${ing.name}${ing.botanicalName ? ` (${ing.botanicalName})` : ""}`} />
+                  <Cell value={ing.cat} />
+                  <Cell value={ing.requiredQty} />
+                  <Cell value={ing.actualQty} />
+                  <Cell value={ing.unit} />
+                  <Cell value={ing.arControlNo || ing.lot || ing.grnRef} />
+                  <Cell value={ing.weighedBy} />
+                  <Cell value={ing.checkedBy} />
                 </tr>
               ))
             )}
@@ -169,13 +182,13 @@ const BMRPrintable = ({ bmr }: Props) => {
           <tbody>
             {(bmr.steps.length === 0 ? Array.from({ length: 6 }) : bmr.steps).map((s: any, i: number) => (
               <tr key={i}>
-                <td style={cellStyle}>{i + 1}</td>
-                <td style={cellStyle}>{s?.step || ""}{s?.description ? ` — ${s.description}` : ""}</td>
-                <td style={cellStyle}>{s?.equipment || ""}</td>
-                <td style={{ ...cellStyle, height: "22pt" }}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
+                <Cell value={i + 1} />
+                <Cell value={`${s?.step || ""}${s?.description ? ` — ${s.description}` : ""}`} />
+                <Cell value={s?.equipment} />
+                <Cell value={s?.startTime} />
+                <Cell value={s?.endTime} />
+                <Cell value={s?.operator} />
+                <Cell value={s?.remarks} />
               </tr>
             ))}
           </tbody>
@@ -199,13 +212,13 @@ const BMRPrintable = ({ bmr }: Props) => {
           <tbody>
             {(bmr.ipcChecks.length === 0 ? Array.from({ length: 6 }) : bmr.ipcChecks).map((c: any, i: number) => (
               <tr key={i}>
-                <td style={cellStyle}>{i + 1}</td>
-                <td style={cellStyle}>{c?.check || ""}</td>
-                <td style={cellStyle}>{c?.specification || ""}</td>
-                <td style={{ ...cellStyle, height: "22pt" }}>&nbsp;</td>
-                <td style={cellStyle}>{c?.unit || ""}</td>
-                <td style={cellStyle}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
+                <Cell value={i + 1} />
+                <Cell value={c?.check} />
+                <Cell value={c?.specification} />
+                <Cell value={c?.observedValue} />
+                <Cell value={c?.unit} />
+                <Cell value={c?.checkedAt} />
+                <Cell value={c?.result ? c.result.toUpperCase() : ""} />
               </tr>
             ))}
           </tbody>
@@ -216,14 +229,14 @@ const BMRPrintable = ({ bmr }: Props) => {
       <Section title="5. Yield & Packing">
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginBottom: "6pt" }}>Blend Weights</h3>
         <Row label="Theoretical Blend Wt." value={bmr.blendWeight.theoreticalBlendWt} />
-        <Row label="Actual Blend Wt." />
-        <Row label="Loss on Blending" />
-        <Row label="Yield at Blend Stage (%)" />
+        <Row label="Actual Blend Wt." value={bmr.blendWeight.actualBlendWt} />
+        <Row label="Loss on Blending" value={bmr.blendWeight.lossOnBlending} />
+        <Row label="Yield at Blend Stage (%)" value={bmr.blendWeight.yieldAtBlendStage} />
 
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginTop: "12pt", marginBottom: "6pt" }}>Yield</h3>
         <Row label="Theoretical Yield" value={bmr.theoreticalYield} />
-        <Row label="Actual Yield" />
-        <Row label="Yield %" />
+        <Row label="Actual Yield" value={bmr.actualYield} />
+        <Row label="Yield %" value={bmr.yieldPct} />
 
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginTop: "12pt", marginBottom: "6pt" }}>Pack Sizes</h3>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -239,14 +252,14 @@ const BMRPrintable = ({ bmr }: Props) => {
           <tbody>
             {(bmr.packing.packEntries && bmr.packing.packEntries.length > 0
               ? bmr.packing.packEntries
-              : [{ primaryPackSize: bmr.packing.primaryPackSize, qtyAllocated: 0, noOfPrimaryPacks: 0, secondaryPack: bmr.packing.secondaryPack, noOfShippers: 0 } as any]
+              : [{ primaryPackSize: bmr.packing.primaryPackSize, qtyAllocated: 0, noOfPrimaryPacks: bmr.packing.noOfPrimaryPacks, secondaryPack: bmr.packing.secondaryPack, noOfShippers: bmr.packing.noOfShippers } as any]
             ).map((p: any, i: number) => (
               <tr key={i}>
-                <td style={cellStyle}>{p.primaryPackSize}</td>
-                <td style={cellStyle}>{p.qtyAllocated || ""} {bmr.batchUnit}</td>
-                <td style={{ ...cellStyle, height: "22pt" }}>&nbsp;</td>
-                <td style={cellStyle}>{p.secondaryPack || ""}</td>
-                <td style={cellStyle}>&nbsp;</td>
+                <Cell value={p.primaryPackSize} />
+                <Cell value={hasVal(p.qtyAllocated) ? `${p.qtyAllocated} ${bmr.batchUnit}` : ""} />
+                <Cell value={p.noOfPrimaryPacks} />
+                <Cell value={p.secondaryPack} />
+                <Cell value={p.noOfShippers} />
               </tr>
             ))}
           </tbody>
@@ -254,20 +267,20 @@ const BMRPrintable = ({ bmr }: Props) => {
 
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginTop: "12pt", marginBottom: "6pt" }}>Labelling & Warehouse</h3>
         <Row label="QC Retain Sample" value={bmr.packing.qcRetainSample} />
-        <Row label="Labelling Batch Code" />
-        <Row label="Packing Date" />
-        <Row label="MRP" />
-        <Row label="Qty Transferred to Warehouse" />
-        <Row label="Warehouse Location" />
-        <Row label="Transfer Date" />
-        <Row label="Acknowledged By" />
+        <Row label="Labelling Batch Code" value={bmr.packing.labellingBatchCode} />
+        <Row label="Packing Date" value={bmr.packing.packingDate} />
+        <Row label="MRP" value={bmr.label.mrp} />
+        <Row label="Qty Transferred to Warehouse" value={bmr.warehouseTransfer.qtyToWarehouse} />
+        <Row label="Warehouse Location" value={bmr.warehouseTransfer.warehouseLocation} />
+        <Row label="Transfer Date" value={bmr.warehouseTransfer.transferDate} />
+        <Row label="Acknowledged By" value={bmr.warehouseTransfer.transferAcknowledgedBy} />
       </Section>
 
       {/* QC */}
       <Section title="6. QC Analytical Report & Release">
-        <Row label="AR Report No." />
-        <Row label="Date Sample Sent to QC" />
-        <Row label="Date of Analysis" />
+        <Row label="AR Report No." value={bmr.arReportNo} />
+        <Row label="Date Sample Sent to QC" value={bmr.dateSampleSentToQC} />
+        <Row label="Date of Analysis" value={bmr.dateOfAnalysis} />
 
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginTop: "12pt", marginBottom: "6pt" }}>Analytical Tests</h3>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -283,20 +296,20 @@ const BMRPrintable = ({ bmr }: Props) => {
           <tbody>
             {(bmr.qcParams.length === 0 ? Array.from({ length: 6 }) : bmr.qcParams).map((q: any, i: number) => (
               <tr key={i}>
-                <td style={cellStyle}>{i + 1}</td>
-                <td style={cellStyle}>{q?.parameter || ""}</td>
-                <td style={cellStyle}>{q?.spec || ""}</td>
-                <td style={{ ...cellStyle, height: "22pt" }}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
+                <Cell value={i + 1} />
+                <Cell value={q?.parameter} />
+                <Cell value={q?.spec} />
+                <Cell value={q?.result} />
+                <Cell value={q?.compliance ? q.compliance.toUpperCase() : ""} />
               </tr>
             ))}
           </tbody>
         </table>
 
-        <Row label="Overall Result" />
-        <Row label="Analyst Remarks" />
-        <Row label="Rejection in Batch" />
-        <Row label="Disposal Reference" />
+        <Row label="Overall Result" value={bmr.analystOverallResult} />
+        <Row label="Analyst Remarks" value={bmr.analystRemarks} />
+        <Row label="Rejection in Batch" value={bmr.rejectionInBatch} />
+        <Row label="Disposal Reference" value={bmr.disposalRef} />
 
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginTop: "16pt", marginBottom: "6pt" }}>Signatures</h3>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -312,11 +325,11 @@ const BMRPrintable = ({ bmr }: Props) => {
           <tbody>
             {bmr.signatures.map((s, i) => (
               <tr key={i}>
-                <td style={cellStyle}>{s.role}</td>
-                <td style={{ ...cellStyle, height: "32pt" }}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
-                <td style={cellStyle}>&nbsp;</td>
+                <Cell value={s.role} />
+                <Cell value={s.name} height="32pt" />
+                <Cell value={s.initials} />
+                <Cell value={s.signedAt} />
+                <Cell value={s.signed ? "✓ Signed" : ""} />
               </tr>
             ))}
           </tbody>
