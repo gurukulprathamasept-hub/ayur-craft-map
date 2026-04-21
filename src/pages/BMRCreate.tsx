@@ -223,31 +223,79 @@ const BMRCreate = () => {
                 </div>
               </div>
             )}
-            {mfr && packSizes.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <div className="form-field">
-                  <label>Pack size for this batch *</label>
-                  <select value={selectedPackIdx} onChange={(e) => setSelectedPackIdx(Number(e.target.value))}>
-                    {packSizes.map((ps: any, i: number) => (
-                      <option key={i} value={i}>
-                        {ps.label} — {ps.primaryPacksPerStdBatch} packs / std batch
-                        {ps.secondaryPack ? ` (${ps.secondaryPack})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {scaleFactor > 0 && packSizes[selectedPackIdx] && (
-                  <div className="flex items-end pb-1">
-                    <div className="kpi-card flex-1 !p-2.5">
-                      <div className="text-[10px] text-muted-foreground">Scaled packing</div>
-                      <div className="text-sm font-semibold">
-                        {Math.round((packSizes[selectedPackIdx].primaryPacksPerStdBatch || 0) * scaleFactor)} primary packs
-                        {packSizes[selectedPackIdx].shippersPerStdBatch ? ` · ${Math.round(packSizes[selectedPackIdx].shippersPerStdBatch * scaleFactor)} shippers` : ""}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">Pre-fills BMR Step 5</div>
-                    </div>
+            {mfr && packSizes.length > 0 && batchSize > 0 && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-medium">Pack sizes for this batch * <span className="text-muted-foreground font-normal">(select one or more & allocate qty)</span></label>
+                  <div className="text-[10px] text-muted-foreground">
+                    Allocated: <span className={allocationOk ? "text-primary font-semibold" : "text-destructive font-semibold"}>{totalAllocated.toFixed(3)}</span> / {batchSize} {mfr.standardBatchUnit}
                   </div>
-                )}
+                </div>
+                <div className="border border-border rounded-md overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-secondary">
+                      <tr className="text-left">
+                        <th className="px-2 py-1.5 w-8"></th>
+                        <th className="px-2 py-1.5">Pack size</th>
+                        <th className="px-2 py-1.5 w-32">Qty allocated ({mfr.standardBatchUnit})</th>
+                        <th className="px-2 py-1.5 w-32">Primary packs</th>
+                        <th className="px-2 py-1.5">Secondary / shippers</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {packSizes.map((ps: any, i: number) => {
+                        const checked = packAllocations[i] !== undefined;
+                        const qty = packAllocations[i] || 0;
+                        const w = parsePackWeight(ps.label, mfr.standardBatchUnit);
+                        const noOfPacks = w > 0 ? Math.floor(qty / w) : Math.round((ps.primaryPacksPerStdBatch || 0) * (qty / mfr.standardBatchSize));
+                        const shippers = Math.round((ps.shippersPerStdBatch || 0) * (qty / mfr.standardBatchSize));
+                        return (
+                          <tr key={i} className="border-t border-border">
+                            <td className="px-2 py-1.5">
+                              <input type="checkbox" checked={checked} onChange={(e) => {
+                                setPackAllocations(prev => {
+                                  const next = { ...prev };
+                                  if (e.target.checked) next[i] = 0;
+                                  else delete next[i];
+                                  return next;
+                                });
+                              }} />
+                            </td>
+                            <td className="px-2 py-1.5">{ps.label}</td>
+                            <td className="px-2 py-1.5">
+                              <input type="number" disabled={!checked} value={checked ? (qty || "") : ""} min={0} step="0.001"
+                                onChange={(e) => setPackAllocations(prev => ({ ...prev, [i]: Number(e.target.value) }))}
+                                className="form-input-sm w-full" />
+                            </td>
+                            <td className="px-2 py-1.5">{checked && qty > 0 ? `${noOfPacks} packs` : "—"}</td>
+                            <td className="px-2 py-1.5 text-muted-foreground">
+                              {ps.secondaryPack || "—"}{checked && qty > 0 && ps.shippersPerStdBatch ? ` · ${shippers} shippers` : ""}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <button type="button" onClick={() => {
+                    // auto-fill: split remaining equally across selected, or assign full to first if none
+                    const selectedIdx = Object.keys(packAllocations).map(Number);
+                    if (selectedIdx.length === 0) {
+                      setPackAllocations({ 0: batchSize });
+                    } else {
+                      const each = batchSize / selectedIdx.length;
+                      const next: Record<number, number> = {};
+                      selectedIdx.forEach(i => { next[i] = Number(each.toFixed(3)); });
+                      setPackAllocations(next);
+                    }
+                  }} className="text-[10px] px-2 py-1 rounded border border-border hover:bg-secondary">
+                    Auto-distribute
+                  </button>
+                  {!allocationOk && (
+                    <div className="text-[10px] text-destructive">Total must equal {batchSize} {mfr.standardBatchUnit}</div>
+                  )}
+                </div>
               </div>
             )}
           </div>
