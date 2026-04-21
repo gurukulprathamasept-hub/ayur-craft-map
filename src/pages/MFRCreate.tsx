@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
-import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec } from "@/context/FormulationContext";
+import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec, PackSizeOption } from "@/context/FormulationContext";
 import RMSearchInput from "@/components/RMSearchInput";
 import { toast } from "sonner";
 
@@ -14,12 +14,15 @@ const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging"
 const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
-const emptyPackaging = (): PackagingSpec => ({
-  primaryPackSize: "100 g HDPE jar",
-  defaultPrimaryPacks: 0,
-  qcRetainSample: "20",
+const emptyPackSize = (): PackSizeOption => ({
+  label: "",
+  primaryPacksPerStdBatch: 0,
   secondaryPack: "",
-  defaultShippers: 0,
+  shippersPerStdBatch: 0,
+});
+const emptyPackaging = (): PackagingSpec => ({
+  packSizes: [{ label: "100 g HDPE jar", primaryPacksPerStdBatch: 0, secondaryPack: "", shippersPerStdBatch: 0 }],
+  qcRetainSample: "20",
 });
 
 const MFRCreate = () => {
@@ -77,7 +80,21 @@ const MFRCreate = () => {
         setIpc(existing.ipc);
         setExpectedYieldPct(existing.expectedYieldPct ?? 98);
         setYieldLossNote(existing.yieldLossNote || "");
-        setPackaging(existing.packaging || emptyPackaging());
+        // Migrate legacy single-pack shape into new packSizes array
+        const pk: any = existing.packaging || emptyPackaging();
+        if (!pk.packSizes || !Array.isArray(pk.packSizes) || pk.packSizes.length === 0) {
+          setPackaging({
+            packSizes: [{
+              label: pk.primaryPackSize || "100 g HDPE jar",
+              primaryPacksPerStdBatch: pk.defaultPrimaryPacks || 0,
+              secondaryPack: pk.secondaryPack || "",
+              shippersPerStdBatch: pk.defaultShippers || 0,
+            }],
+            qcRetainSample: pk.qcRetainSample || "20",
+          });
+        } else {
+          setPackaging({ packSizes: pk.packSizes, qcRetainSample: pk.qcRetainSample || "20" });
+        }
       }
     }
   }, [editId]);
