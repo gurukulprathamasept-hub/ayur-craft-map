@@ -69,44 +69,115 @@ const Step5YieldPacking = ({ bmr, onChange }: Props) => {
           <span className="app-badge app-badge-gray">§I-A.18 & 19</span>
         </div>
         <div className="p-3.5">
-          <div className="grid grid-cols-4 gap-2.5 mb-2.5">
-            <div className="form-field">
-              <label>Primary pack size</label>
-              <select value={bmr.packing.primaryPackSize} onChange={e => updatePacking("primaryPackSize", e.target.value)}>
-                <option>100 g HDPE jar</option><option>200 g HDPE jar</option><option>500 g HDPE jar</option><option>1 kg pouch</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label>No. of primary packs</label>
-              <input type="number" value={bmr.packing.noOfPrimaryPacks || ""} onChange={e => updatePacking("noOfPrimaryPacks", Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>Total qty packed ({bmr.batchUnit})</label>
-              <input value={bmr.packing.totalQtyPacked} readOnly className="bg-secondary" />
-            </div>
-            <div className="form-field">
-              <label>QC retain sample (g)</label>
-              <input value={bmr.packing.qcRetainSample} onChange={e => updatePacking("qcRetainSample", e.target.value)} />
-            </div>
-          </div>
-          <div className="grid grid-cols-4 gap-2.5">
-            <div className="form-field">
-              <label>Secondary pack</label>
-              <input value={bmr.packing.secondaryPack} onChange={e => updatePacking("secondaryPack", e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>No. of shippers</label>
-              <input type="number" value={bmr.packing.noOfShippers || ""} onChange={e => updatePacking("noOfShippers", Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>Labelling / batch code</label>
-              <input value={bmr.packing.labellingBatchCode} onChange={e => updatePacking("labellingBatchCode", e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Packing done on</label>
-              <input type="date" value={bmr.packing.packingDate} onChange={e => updatePacking("packingDate", e.target.value)} />
-            </div>
-          </div>
+          {bmr.packing.packEntries && bmr.packing.packEntries.length > 0 ? (
+            <>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1.5">Pack sizes for this batch</div>
+              <div className="border border-border rounded-md overflow-hidden mb-2.5">
+                <table className="w-full text-xs">
+                  <thead className="bg-secondary">
+                    <tr className="text-left">
+                      <th className="px-2 py-1.5">Pack size</th>
+                      <th className="px-2 py-1.5 w-28">Qty allocated ({bmr.batchUnit})</th>
+                      <th className="px-2 py-1.5 w-28">Primary packs</th>
+                      <th className="px-2 py-1.5">Secondary pack</th>
+                      <th className="px-2 py-1.5 w-24">Shippers</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bmr.packing.packEntries.map((pe, idx) => (
+                      <tr key={idx} className="border-t border-border">
+                        <td className="px-2 py-1.5">{pe.primaryPackSize}</td>
+                        <td className="px-2 py-1.5">
+                          <input type="number" step="0.001" value={pe.qtyAllocated || ""}
+                            onChange={e => {
+                              const next = [...(bmr.packing.packEntries || [])];
+                              next[idx] = { ...next[idx], qtyAllocated: Number(e.target.value) };
+                              onChange({ packing: { ...bmr.packing, packEntries: next } });
+                            }} className="form-input-sm w-full" />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <input type="number" value={pe.noOfPrimaryPacks || ""}
+                            onChange={e => {
+                              const next = [...(bmr.packing.packEntries || [])];
+                              next[idx] = { ...next[idx], noOfPrimaryPacks: Number(e.target.value) };
+                              onChange({ packing: { ...bmr.packing, packEntries: next } });
+                            }} className="form-input-sm w-full" />
+                        </td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{pe.secondaryPack || "—"}</td>
+                        <td className="px-2 py-1.5">
+                          <input type="number" value={pe.noOfShippers || ""}
+                            onChange={e => {
+                              const next = [...(bmr.packing.packEntries || [])];
+                              next[idx] = { ...next[idx], noOfShippers: Number(e.target.value) };
+                              onChange({ packing: { ...bmr.packing, packEntries: next } });
+                            }} className="form-input-sm w-full" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="form-field">
+                  <label>Total qty packed ({bmr.batchUnit})</label>
+                  <input value={bmr.packing.totalQtyPacked} onChange={e => updatePacking("totalQtyPacked", e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>QC retain sample (g)</label>
+                  <input value={bmr.packing.qcRetainSample} onChange={e => updatePacking("qcRetainSample", e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Labelling / batch code</label>
+                  <input value={bmr.packing.labellingBatchCode} onChange={e => updatePacking("labellingBatchCode", e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Packing done on</label>
+                  <input type="date" value={bmr.packing.packingDate} onChange={e => updatePacking("packingDate", e.target.value)} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-4 gap-2.5 mb-2.5">
+                <div className="form-field">
+                  <label>Primary pack size</label>
+                  <select value={bmr.packing.primaryPackSize} onChange={e => updatePacking("primaryPackSize", e.target.value)}>
+                    <option>100 g HDPE jar</option><option>200 g HDPE jar</option><option>500 g HDPE jar</option><option>1 kg pouch</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label>No. of primary packs</label>
+                  <input type="number" value={bmr.packing.noOfPrimaryPacks || ""} onChange={e => updatePacking("noOfPrimaryPacks", Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Total qty packed ({bmr.batchUnit})</label>
+                  <input value={bmr.packing.totalQtyPacked} readOnly className="bg-secondary" />
+                </div>
+                <div className="form-field">
+                  <label>QC retain sample (g)</label>
+                  <input value={bmr.packing.qcRetainSample} onChange={e => updatePacking("qcRetainSample", e.target.value)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-2.5">
+                <div className="form-field">
+                  <label>Secondary pack</label>
+                  <input value={bmr.packing.secondaryPack} onChange={e => updatePacking("secondaryPack", e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>No. of shippers</label>
+                  <input type="number" value={bmr.packing.noOfShippers || ""} onChange={e => updatePacking("noOfShippers", Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Labelling / batch code</label>
+                  <input value={bmr.packing.labellingBatchCode} onChange={e => updatePacking("labellingBatchCode", e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Packing done on</label>
+                  <input type="date" value={bmr.packing.packingDate} onChange={e => updatePacking("packingDate", e.target.value)} />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
