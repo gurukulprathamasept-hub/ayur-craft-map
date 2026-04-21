@@ -77,7 +77,16 @@ export interface BMRBlendWeight {
   yieldAtBlendStage: string;
 }
 
+export interface BMRPackEntry {
+  primaryPackSize: string;
+  noOfPrimaryPacks: number;
+  secondaryPack: string;
+  noOfShippers: number;
+  qtyAllocated: number; // batch quantity allocated to this pack size (in batchUnit)
+}
+
 export interface BMRPacking {
+  // Legacy single-pack fields (kept for backwards compatibility / label code)
   primaryPackSize: string;
   noOfPrimaryPacks: number;
   totalQtyPacked: string;
@@ -86,6 +95,8 @@ export interface BMRPacking {
   noOfShippers: number;
   labellingBatchCode: string;
   packingDate: string;
+  // New: multiple pack sizes per batch
+  packEntries?: BMRPackEntry[];
 }
 
 export interface BMRLabel {

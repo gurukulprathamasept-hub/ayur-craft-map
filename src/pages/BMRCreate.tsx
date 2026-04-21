@@ -19,7 +19,8 @@ const BMRCreate = () => {
   const [batchNo, setBatchNo] = useState("");
   const [prevBatchNo, setPrevBatchNo] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [selectedPackIdx, setSelectedPackIdx] = useState<number>(0);
+  // Multi-select: map of packSize index -> qty (in batchUnit) allocated to that pack
+  const [packAllocations, setPackAllocations] = useState<Record<number, number>>({});
 
   const mfr = formulations.find((f) => f.id === selectedMFR);
 
@@ -44,7 +45,7 @@ const BMRCreate = () => {
       const { nextBatchNo, prevBatchNo: prev } = getNextBatchNo(mfr.name, mfr.id);
       setBatchNo(nextBatchNo);
       setPrevBatchNo(prev);
-      setSelectedPackIdx(0);
+      setPackAllocations({});
     } else {
       setBatchNo("");
       setPrevBatchNo(null);
@@ -55,6 +56,25 @@ const BMRCreate = () => {
     if (!mfr || !batchSize || !mfr.standardBatchSize) return 0;
     return batchSize / mfr.standardBatchSize;
   }, [mfr, batchSize]);
+
+  // Parse pack size label like "100 g HDPE jar" / "1 kg pouch" / "500 ml" → qty in batchUnit
+  const parsePackWeight = (label: string, batchUnit: string): number => {
+    if (!label) return 0;
+    const m = label.match(/(\d+(?:\.\d+)?)\s*(kg|g|mg|l|ml)\b/i);
+    if (!m) return 0;
+    const val = parseFloat(m[1]);
+    const unit = m[2].toLowerCase();
+    const toBase: Record<string, number> = { mg: 0.000001, g: 0.001, kg: 1, ml: 0.001, l: 1 };
+    const base = val * (toBase[unit] ?? 0); // in kg or l
+    const targetFactor: Record<string, number> = { mg: 1_000_000, g: 1000, kg: 1, ml: 1000, l: 1 };
+    return base * (targetFactor[batchUnit.toLowerCase()] ?? 1);
+  };
+
+  const totalAllocated = useMemo(
+    () => Object.values(packAllocations).reduce((s, v) => s + (Number(v) || 0), 0),
+    [packAllocations]
+  );
+  const allocationOk = packSizes.length === 0 || (totalAllocated > 0 && Math.abs(totalAllocated - batchSize) < 0.001);
 
   const handleCreate = () => {
     if (!mfr || scaleFactor <= 0) return;
@@ -114,16 +134,33 @@ const BMRCreate = () => {
       theoreticalYield: Number((batchSize * ((mfr.expectedYieldPct ?? 98) / 100)).toFixed(3)),
       blendWeight: { theoreticalBlendWt: String(batchSize), actualBlendWt: "", lossOnBlending: "", yieldAtBlendStage: "" },
       packing: packSizes.length > 0 ? (() => {
-        const ps = packSizes[selectedPackIdx] || packSizes[0];
+        const entries = packSizes
+          .map((ps: any, i: number) => {
+            const qty = Number(packAllocations[i] || 0);
+            if (qty <= 0) return null;
+            const w = parsePackWeight(ps.label, mfr.standardBatchUnit);
+            const noOfPacks = w > 0 ? Math.floor(qty / w) : Math.round((ps.primaryPacksPerStdBatch || 0) * (qty / mfr.standardBatchSize));
+            const shippers = Math.round((ps.shippersPerStdBatch || 0) * (qty / mfr.standardBatchSize));
+            return {
+              primaryPackSize: ps.label,
+              noOfPrimaryPacks: noOfPacks,
+              secondaryPack: ps.secondaryPack || "",
+              noOfShippers: shippers,
+              qtyAllocated: qty,
+            };
+          })
+          .filter(Boolean) as any[];
+        const first = entries[0] || { primaryPackSize: "100 g HDPE jar", noOfPrimaryPacks: 0, secondaryPack: "", noOfShippers: 0 };
         return {
-          primaryPackSize: ps.label || "100 g HDPE jar",
-          noOfPrimaryPacks: Math.round((ps.primaryPacksPerStdBatch || 0) * scaleFactor),
+          primaryPackSize: first.primaryPackSize,
+          noOfPrimaryPacks: first.noOfPrimaryPacks,
           totalQtyPacked: "",
           qcRetainSample: mfr.packaging?.qcRetainSample || "20",
-          secondaryPack: ps.secondaryPack || "",
-          noOfShippers: Math.round((ps.shippersPerStdBatch || 0) * scaleFactor),
+          secondaryPack: first.secondaryPack,
+          noOfShippers: first.noOfShippers,
           labellingBatchCode: "",
           packingDate: "",
+          packEntries: entries,
         };
       })() : undefined,
     });
@@ -186,31 +223,79 @@ const BMRCreate = () => {
                 </div>
               </div>
             )}
-            {mfr && packSizes.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <div className="form-field">
-                  <label>Pack size for this batch *</label>
-                  <select value={selectedPackIdx} onChange={(e) => setSelectedPackIdx(Number(e.target.value))}>
-                    {packSizes.map((ps: any, i: number) => (
-                      <option key={i} value={i}>
-                        {ps.label} — {ps.primaryPacksPerStdBatch} packs / std batch
-                        {ps.secondaryPack ? ` (${ps.secondaryPack})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {scaleFactor > 0 && packSizes[selectedPackIdx] && (
-                  <div className="flex items-end pb-1">
-                    <div className="kpi-card flex-1 !p-2.5">
-                      <div className="text-[10px] text-muted-foreground">Scaled packing</div>
-                      <div className="text-sm font-semibold">
-                        {Math.round((packSizes[selectedPackIdx].primaryPacksPerStdBatch || 0) * scaleFactor)} primary packs
-                        {packSizes[selectedPackIdx].shippersPerStdBatch ? ` · ${Math.round(packSizes[selectedPackIdx].shippersPerStdBatch * scaleFactor)} shippers` : ""}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">Pre-fills BMR Step 5</div>
-                    </div>
+            {mfr && packSizes.length > 0 && batchSize > 0 && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-medium">Pack sizes for this batch * <span className="text-muted-foreground font-normal">(select one or more & allocate qty)</span></label>
+                  <div className="text-[10px] text-muted-foreground">
+                    Allocated: <span className={allocationOk ? "text-primary font-semibold" : "text-destructive font-semibold"}>{totalAllocated.toFixed(3)}</span> / {batchSize} {mfr.standardBatchUnit}
                   </div>
-                )}
+                </div>
+                <div className="border border-border rounded-md overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-secondary">
+                      <tr className="text-left">
+                        <th className="px-2 py-1.5 w-8"></th>
+                        <th className="px-2 py-1.5">Pack size</th>
+                        <th className="px-2 py-1.5 w-32">Qty allocated ({mfr.standardBatchUnit})</th>
+                        <th className="px-2 py-1.5 w-32">Primary packs</th>
+                        <th className="px-2 py-1.5">Secondary / shippers</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {packSizes.map((ps: any, i: number) => {
+                        const checked = packAllocations[i] !== undefined;
+                        const qty = packAllocations[i] || 0;
+                        const w = parsePackWeight(ps.label, mfr.standardBatchUnit);
+                        const noOfPacks = w > 0 ? Math.floor(qty / w) : Math.round((ps.primaryPacksPerStdBatch || 0) * (qty / mfr.standardBatchSize));
+                        const shippers = Math.round((ps.shippersPerStdBatch || 0) * (qty / mfr.standardBatchSize));
+                        return (
+                          <tr key={i} className="border-t border-border">
+                            <td className="px-2 py-1.5">
+                              <input type="checkbox" checked={checked} onChange={(e) => {
+                                setPackAllocations(prev => {
+                                  const next = { ...prev };
+                                  if (e.target.checked) next[i] = 0;
+                                  else delete next[i];
+                                  return next;
+                                });
+                              }} />
+                            </td>
+                            <td className="px-2 py-1.5">{ps.label}</td>
+                            <td className="px-2 py-1.5">
+                              <input type="number" disabled={!checked} value={checked ? (qty || "") : ""} min={0} step="0.001"
+                                onChange={(e) => setPackAllocations(prev => ({ ...prev, [i]: Number(e.target.value) }))}
+                                className="form-input-sm w-full" />
+                            </td>
+                            <td className="px-2 py-1.5">{checked && qty > 0 ? `${noOfPacks} packs` : "—"}</td>
+                            <td className="px-2 py-1.5 text-muted-foreground">
+                              {ps.secondaryPack || "—"}{checked && qty > 0 && ps.shippersPerStdBatch ? ` · ${shippers} shippers` : ""}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <button type="button" onClick={() => {
+                    // auto-fill: split remaining equally across selected, or assign full to first if none
+                    const selectedIdx = Object.keys(packAllocations).map(Number);
+                    if (selectedIdx.length === 0) {
+                      setPackAllocations({ 0: batchSize });
+                    } else {
+                      const each = batchSize / selectedIdx.length;
+                      const next: Record<number, number> = {};
+                      selectedIdx.forEach(i => { next[i] = Number(each.toFixed(3)); });
+                      setPackAllocations(next);
+                    }
+                  }} className="text-[10px] px-2 py-1 rounded border border-border hover:bg-secondary">
+                    Auto-distribute
+                  </button>
+                  {!allocationOk && (
+                    <div className="text-[10px] text-destructive">Total must equal {batchSize} {mfr.standardBatchUnit}</div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -218,8 +303,10 @@ const BMRCreate = () => {
       </div>
 
       {mfr && scaleFactor > 0 && (
-        <div className="flex items-center justify-end px-5 py-3 border-t border-border bg-secondary shrink-0">
-          <button onClick={handleCreate} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1.5">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border bg-secondary shrink-0">
+          {!allocationOk && <div className="text-[11px] text-destructive">Allocate full batch qty across pack sizes to continue</div>}
+          <button onClick={handleCreate} disabled={!allocationOk}
+            className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
             <FileText className="w-3 h-3" /> Create BMR & open wizard
           </button>
         </div>
