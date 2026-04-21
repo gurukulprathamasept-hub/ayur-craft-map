@@ -307,3 +307,34 @@
     min-width: 70px;
   }
 }
+
+/* ===================== Print styles for BMR ===================== */
+.bmr-printable { display: none; }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  /* Hide everything except the printable area */
+  body * { visibility: hidden !important; }
+  .bmr-printable, .bmr-printable * { visibility: visible !important; }
+  .bmr-printable {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 11pt !important;
+    color: #000 !important;
+  }
+  .bmr-printable table { page-break-inside: auto; }
+  .bmr-printable tr { page-break-inside: avoid; page-break-after: auto; }
+  .bmr-printable .print-section { page-break-before: always; break-before: page; }
+  .bmr-printable .print-section:first-child { page-break-before: auto; break-before: auto; }
+}

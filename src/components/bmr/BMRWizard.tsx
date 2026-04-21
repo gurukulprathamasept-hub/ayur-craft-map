@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { BMRRecord, useBMRs } from "@/context/BMRContext";
 import { toast } from "sonner";
 import BMRStepper from "./BMRStepper";
@@ -10,6 +10,7 @@ import Step3ProcessLog from "./Step3ProcessLog";
 import Step4IPCChecks from "./Step4IPCChecks";
 import Step5YieldPacking from "./Step5YieldPacking";
 import Step6QCRelease from "./Step6QCRelease";
+import BMRPrintable from "./BMRPrintable";
 
 const STEP_SUBTITLES: Record<number, string> = {
   1: "Step 1: Batch header · Ref: AFI Vol.I · Schedule U §I-A",
@@ -74,6 +75,13 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
           Save draft
         </button>
         <button
+          onClick={() => window.print()}
+          className="px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1"
+          title="Print blank BMR for supervisor to fill by hand"
+        >
+          <Printer className="w-3 h-3" /> Print BMR
+        </button>
+        <button
           onClick={() => step < 6 ? goStep(step + 1) : null}
           className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all"
         >
@@ -95,6 +103,9 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
         {step === 5 && <Step5YieldPacking bmr={bmr} onChange={handleChange} />}
         {step === 6 && <Step6QCRelease bmr={bmr} onChange={handleChange} />}
       </div>
+
+      {/* Hidden printable view — only visible during window.print() */}
+      <BMRPrintable bmr={bmr} />
     </>
   );
 };
