@@ -273,8 +273,71 @@ const MFRCreate = () => {
           </div>
         )}
 
-        {/* Step 3: QC & IPC */}
+        {/* Step 3: Yield & Packaging */}
         {activeStep === 3 && (
+          <>
+            <div className="alert-box alert-info mb-3">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>These defaults pre-fill every BMR for this formulation. Theoretical yield = standard batch size × expected yield %. Packaging values can still be overridden per batch.</span>
+            </div>
+
+            <div className="app-card mb-2.5">
+              <div className="app-card-head">
+                <div className="app-card-title">Expected yield (Schedule U §I-A.18)</div>
+              </div>
+              <div className="p-3.5 grid grid-cols-3 gap-3">
+                <div className="form-field">
+                  <label>Expected yield % *</label>
+                  <input type="number" min={0} max={100} step="0.1" value={expectedYieldPct}
+                    onChange={(e) => setExpectedYieldPct(Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Theoretical yield (auto)</label>
+                  <input value={`${theoreticalYield.toFixed(3)} ${batchUnit}`} readOnly className="bg-secondary" />
+                </div>
+                <div className="form-field">
+                  <label>Expected loss</label>
+                  <input value={`${(batchSize - theoreticalYield).toFixed(3)} ${batchUnit}`} readOnly className="bg-secondary" />
+                </div>
+                <div className="form-field col-span-3">
+                  <label>Loss explanation (optional)</label>
+                  <textarea value={yieldLossNote} onChange={(e) => setYieldLossNote(e.target.value)} placeholder="e.g. Drying loss ~1.5%, sieving rejects ~0.5%" />
+                </div>
+              </div>
+            </div>
+
+            <div className="app-card">
+              <div className="app-card-head">
+                <div className="app-card-title">Packaging template (Schedule U §I-A.19)</div>
+              </div>
+              <div className="p-3.5 grid grid-cols-2 gap-3">
+                <div className="form-field">
+                  <label>Primary pack size *</label>
+                  <input value={packaging.primaryPackSize} onChange={(e) => updatePack("primaryPackSize", e.target.value)} placeholder="e.g. 100 g HDPE jar" />
+                </div>
+                <div className="form-field">
+                  <label>Default no. of primary packs / std batch</label>
+                  <input type="number" min={0} value={packaging.defaultPrimaryPacks || ""} onChange={(e) => updatePack("defaultPrimaryPacks", Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>QC retain sample (g)</label>
+                  <input value={packaging.qcRetainSample} onChange={(e) => updatePack("qcRetainSample", e.target.value)} placeholder="e.g. 20" />
+                </div>
+                <div className="form-field">
+                  <label>Secondary pack</label>
+                  <input value={packaging.secondaryPack} onChange={(e) => updatePack("secondaryPack", e.target.value)} placeholder="e.g. Corrugated shipper x 24" />
+                </div>
+                <div className="form-field">
+                  <label>Default no. of shippers / std batch</label>
+                  <input type="number" min={0} value={packaging.defaultShippers || ""} onChange={(e) => updatePack("defaultShippers", Number(e.target.value))} />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Step 4: QC & IPC */}
+        {activeStep === 4 && (
           <div className="app-card">
             <div className="app-card-head">
               <div className="app-card-title">QC parameters & IPC checks</div>
