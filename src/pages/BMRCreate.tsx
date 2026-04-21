@@ -23,11 +23,28 @@ const BMRCreate = () => {
 
   const mfr = formulations.find((f) => f.id === selectedMFR);
 
+  // Resolve pack sizes (handle legacy single-pack shape)
+  const packSizes = useMemo(() => {
+    if (!mfr?.packaging) return [];
+    const pk: any = mfr.packaging;
+    if (Array.isArray(pk.packSizes) && pk.packSizes.length > 0) return pk.packSizes;
+    if (pk.primaryPackSize) {
+      return [{
+        label: pk.primaryPackSize,
+        primaryPacksPerStdBatch: pk.defaultPrimaryPacks || 0,
+        secondaryPack: pk.secondaryPack || "",
+        shippersPerStdBatch: pk.defaultShippers || 0,
+      }];
+    }
+    return [];
+  }, [mfr]);
+
   useEffect(() => {
     if (mfr) {
       const { nextBatchNo, prevBatchNo: prev } = getNextBatchNo(mfr.name, mfr.id);
       setBatchNo(nextBatchNo);
       setPrevBatchNo(prev);
+      setSelectedPackIdx(0);
     } else {
       setBatchNo("");
       setPrevBatchNo(null);
