@@ -21,7 +21,8 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
 
   const passCount = bmr.qcParams.filter(q => q.compliance === "pass").length;
   const failCount = bmr.qcParams.filter(q => q.compliance === "fail").length;
-  const allPass = bmr.qcParams.length > 0 && failCount === 0 && passCount === bmr.qcParams.length;
+  const noQCDefined = bmr.qcParams.length === 0;
+  const allPass = noQCDefined || (failCount === 0 && passCount === bmr.qcParams.length);
 
   const updateSignature = (idx: number, updates: Partial<BMRSignature>) => {
     const signatures = bmr.signatures.map((s, i) => i === idx ? { ...s, ...updates } : s);
