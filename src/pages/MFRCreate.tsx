@@ -337,27 +337,46 @@ const MFRCreate = () => {
             <div className="app-card">
               <div className="app-card-head">
                 <div className="app-card-title">Packaging template (Schedule U §I-A.19)</div>
+                <button onClick={addPackSize} className="px-2.5 py-1 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1">
+                  <Plus className="w-3 h-3" /> Add pack size
+                </button>
               </div>
-              <div className="p-3.5 grid grid-cols-2 gap-3">
-                <div className="form-field">
-                  <label>Primary pack size *</label>
-                  <input value={packaging.primaryPackSize} onChange={(e) => updatePack("primaryPackSize", e.target.value)} placeholder="e.g. 100 g HDPE jar" />
-                </div>
-                <div className="form-field">
-                  <label>Default no. of primary packs / std batch</label>
-                  <input type="number" min={0} value={packaging.defaultPrimaryPacks || ""} onChange={(e) => updatePack("defaultPrimaryPacks", Number(e.target.value))} />
-                </div>
-                <div className="form-field">
-                  <label>QC retain sample (g)</label>
+              <div className="p-3.5 space-y-3">
+                {packaging.packSizes.map((ps, i) => (
+                  <div key={i} className="border border-border rounded-md p-3 relative">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-medium">Pack size {i + 1}</span>
+                      <button
+                        onClick={() => removePackSize(i)}
+                        disabled={packaging.packSizes.length <= 1}
+                        className="ml-auto text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:hover:text-muted-foreground"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="form-field">
+                        <label>Pack size label *</label>
+                        <input value={ps.label} onChange={(e) => updatePackSize(i, "label", e.target.value)} placeholder="e.g. 100 g HDPE jar" />
+                      </div>
+                      <div className="form-field">
+                        <label>Default primary packs / std batch</label>
+                        <input type="number" min={0} value={ps.primaryPacksPerStdBatch || ""} onChange={(e) => updatePackSize(i, "primaryPacksPerStdBatch", Number(e.target.value))} />
+                      </div>
+                      <div className="form-field">
+                        <label>Secondary pack</label>
+                        <input value={ps.secondaryPack} onChange={(e) => updatePackSize(i, "secondaryPack", e.target.value)} placeholder="e.g. Corrugated shipper x 24" />
+                      </div>
+                      <div className="form-field">
+                        <label>Default shippers / std batch</label>
+                        <input type="number" min={0} value={ps.shippersPerStdBatch || ""} onChange={(e) => updatePackSize(i, "shippersPerStdBatch", Number(e.target.value))} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="form-field max-w-xs pt-1">
+                  <label>QC retain sample (g) — shared across all pack sizes</label>
                   <input value={packaging.qcRetainSample} onChange={(e) => updatePack("qcRetainSample", e.target.value)} placeholder="e.g. 20" />
-                </div>
-                <div className="form-field">
-                  <label>Secondary pack</label>
-                  <input value={packaging.secondaryPack} onChange={(e) => updatePack("secondaryPack", e.target.value)} placeholder="e.g. Corrugated shipper x 24" />
-                </div>
-                <div className="form-field">
-                  <label>Default no. of shippers / std batch</label>
-                  <input type="number" min={0} value={packaging.defaultShippers || ""} onChange={(e) => updatePack("defaultShippers", Number(e.target.value))} />
                 </div>
               </div>
             </div>
