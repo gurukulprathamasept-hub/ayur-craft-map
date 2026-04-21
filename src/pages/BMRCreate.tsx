@@ -19,6 +19,7 @@ const BMRCreate = () => {
   const [batchNo, setBatchNo] = useState("");
   const [prevBatchNo, setPrevBatchNo] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedPackIdx, setSelectedPackIdx] = useState<number>(0);
 
   const mfr = formulations.find((f) => f.id === selectedMFR);
 
