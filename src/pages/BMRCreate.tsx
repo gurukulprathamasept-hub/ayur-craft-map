@@ -19,7 +19,8 @@ const BMRCreate = () => {
   const [batchNo, setBatchNo] = useState("");
   const [prevBatchNo, setPrevBatchNo] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [selectedPackIdx, setSelectedPackIdx] = useState<number>(0);
+  // Multi-select: map of packSize index -> qty (in batchUnit) allocated to that pack
+  const [packAllocations, setPackAllocations] = useState<Record<number, number>>({});
 
   const mfr = formulations.find((f) => f.id === selectedMFR);
 
@@ -44,7 +45,7 @@ const BMRCreate = () => {
       const { nextBatchNo, prevBatchNo: prev } = getNextBatchNo(mfr.name, mfr.id);
       setBatchNo(nextBatchNo);
       setPrevBatchNo(prev);
-      setSelectedPackIdx(0);
+      setPackAllocations({});
     } else {
       setBatchNo("");
       setPrevBatchNo(null);
