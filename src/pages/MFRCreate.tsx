@@ -51,6 +51,11 @@ const MFRCreate = () => {
   const [qcParams, setQcParams] = useState<QCParam[]>([emptyQC()]);
   const [ipc, setIpc] = useState("");
 
+  // Yield & Packaging
+  const [expectedYieldPct, setExpectedYieldPct] = useState<number>(98);
+  const [yieldLossNote, setYieldLossNote] = useState("");
+  const [packaging, setPackaging] = useState<PackagingSpec>(emptyPackaging());
+
   // Load existing formulation for editing
   useEffect(() => {
     if (editId) {
@@ -70,6 +75,9 @@ const MFRCreate = () => {
         setSteps(existing.steps.length ? existing.steps : [emptyStep()]);
         setQcParams(existing.qc.length ? existing.qc : [emptyQC()]);
         setIpc(existing.ipc);
+        setExpectedYieldPct(existing.expectedYieldPct ?? 98);
+        setYieldLossNote(existing.yieldLossNote || "");
+        setPackaging(existing.packaging || emptyPackaging());
       }
     }
   }, [editId]);
@@ -83,11 +91,17 @@ const MFRCreate = () => {
   const updateQC = (i: number, field: keyof QCParam, value: string) => {
     setQcParams((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   };
+  const updatePack = <K extends keyof PackagingSpec>(field: K, value: PackagingSpec[K]) => {
+    setPackaging((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const theoreticalYield = batchSize * (expectedYieldPct / 100);
 
   const canProceed = () => {
     if (activeStep === 0) return name.trim() && batchSize > 0;
     if (activeStep === 1) return ingredients.some((r) => r.name.trim() && r.qty > 0);
     if (activeStep === 2) return steps.some((s) => s.step.trim());
+    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.primaryPackSize.trim().length > 0;
     return true;
   };
 
@@ -101,6 +115,9 @@ const MFRCreate = () => {
       steps: steps.filter((s) => s.step.trim()),
       qc: qcParams.filter((q) => q.parameter.trim()),
       ipc,
+      expectedYieldPct,
+      yieldLossNote,
+      packaging,
       createdAt: editId ? (getFormulation(editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
     };
     if (editId) {
