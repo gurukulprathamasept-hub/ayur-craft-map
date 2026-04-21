@@ -57,6 +57,25 @@ const BMRCreate = () => {
     return batchSize / mfr.standardBatchSize;
   }, [mfr, batchSize]);
 
+  // Parse pack size label like "100 g HDPE jar" / "1 kg pouch" / "500 ml" → qty in batchUnit
+  const parsePackWeight = (label: string, batchUnit: string): number => {
+    if (!label) return 0;
+    const m = label.match(/(\d+(?:\.\d+)?)\s*(kg|g|mg|l|ml)\b/i);
+    if (!m) return 0;
+    const val = parseFloat(m[1]);
+    const unit = m[2].toLowerCase();
+    const toBase: Record<string, number> = { mg: 0.000001, g: 0.001, kg: 1, ml: 0.001, l: 1 };
+    const base = val * (toBase[unit] ?? 0); // in kg or l
+    const targetFactor: Record<string, number> = { mg: 1_000_000, g: 1000, kg: 1, ml: 1000, l: 1 };
+    return base * (targetFactor[batchUnit.toLowerCase()] ?? 1);
+  };
+
+  const totalAllocated = useMemo(
+    () => Object.values(packAllocations).reduce((s, v) => s + (Number(v) || 0), 0),
+    [packAllocations]
+  );
+  const allocationOk = packSizes.length === 0 || (totalAllocated > 0 && Math.abs(totalAllocated - batchSize) < 0.001);
+
   const handleCreate = () => {
     if (!mfr || scaleFactor <= 0) return;
 
