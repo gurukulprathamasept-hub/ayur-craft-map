@@ -111,6 +111,17 @@ const MFRCreate = () => {
   const updatePack = <K extends keyof PackagingSpec>(field: K, value: PackagingSpec[K]) => {
     setPackaging((prev) => ({ ...prev, [field]: value }));
   };
+  const updatePackSize = <K extends keyof PackSizeOption>(i: number, field: K, value: PackSizeOption[K]) => {
+    setPackaging((prev) => ({
+      ...prev,
+      packSizes: prev.packSizes.map((p, idx) => (idx === i ? { ...p, [field]: value } : p)),
+    }));
+  };
+  const addPackSize = () => setPackaging((prev) => ({ ...prev, packSizes: [...prev.packSizes, emptyPackSize()] }));
+  const removePackSize = (i: number) => setPackaging((prev) => ({
+    ...prev,
+    packSizes: prev.packSizes.length > 1 ? prev.packSizes.filter((_, idx) => idx !== i) : prev.packSizes,
+  }));
 
   const theoreticalYield = batchSize * (expectedYieldPct / 100);
 
@@ -118,7 +129,7 @@ const MFRCreate = () => {
     if (activeStep === 0) return name.trim() && batchSize > 0;
     if (activeStep === 1) return ingredients.some((r) => r.name.trim() && r.qty > 0);
     if (activeStep === 2) return steps.some((s) => s.step.trim());
-    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.primaryPackSize.trim().length > 0;
+    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.packSizes.some((p) => p.label.trim().length > 0);
     return true;
   };
 
