@@ -256,6 +256,52 @@ const Dashboard = () => {
     ? `Today: ${today} · ${fy}`
     : `${fy} · as of ${fyInfo.end.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`;
 
+  // ===== Exports (FY-scoped) =====
+  const stockCSV = () => toCSV(
+    ["RM Code", "RM Name", "Botanical", "Category", "Part", "UOM", "Stock Qty", "Reorder Level", "Qty Needed", "Unit Rate (INR)", "Stock Value (INR)", "Nearest Expiry", "Status"],
+    filteredRows.map((r) => [
+      r.rm.code, r.rm.name, r.rm.botanical, r.rm.category, r.rm.part, r.rm.uom,
+      r.balance.toFixed(3), r.rm.reorder, r.needed,
+      r.rate || "", r.value.toFixed(2),
+      r.nearest?.expiry || "", r.status,
+    ])
+  );
+  const grnCSV = () => toCSV(
+    ["GRN No", "Date", "Supplier", "Status", "Line RM", "Batch", "Expiry", "Qty", "UOM", "Rate", "QC Status"],
+    fyPendingGRNs.flatMap((g) =>
+      g.lines.map((l) => [
+        g.grnNo, g.date, g.supplier, g.status,
+        l.rmName, l.batch, l.expiry, l.qty, l.uom, l.rate, l.qcStatus,
+      ])
+    )
+  );
+  const activityCSV = () => toCSV(
+    ["Timestamp", "Activity", "User"],
+    activity.map((a) => [a.ts.toISOString(), a.label, a.user])
+  );
+
+  const handleExport = (which: "stock" | "grns" | "activity" | "all") => {
+    const slug = fySlug(fy);
+    if (which === "stock") return downloadCSV(`stock_overview_${slug}.csv`, stockCSV());
+    if (which === "grns") return downloadCSV(`pending_grns_${slug}.csv`, grnCSV());
+    if (which === "activity") return downloadCSV(`recent_activity_${slug}.csv`, activityCSV());
+    // Combined: one file with all three sections
+    const combined = [
+      `# Dashboard export — ${fy}`,
+      `# Generated ${new Date().toISOString()}`,
+      "",
+      "## Stock Overview",
+      stockCSV(),
+      "",
+      "## Pending GRNs",
+      grnCSV(),
+      "",
+      "## Recent Activity",
+      activityCSV(),
+    ].join("\r\n");
+    downloadCSV(`dashboard_${slug}.csv`, combined);
+  };
+
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
