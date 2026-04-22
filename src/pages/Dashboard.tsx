@@ -341,7 +341,7 @@ const Dashboard = () => {
               <ul className="pb-2 pl-6 space-y-1 text-[11px]">
                 {criticalRows.map((r) => (
                   <li key={r.rm.code} className="flex items-center justify-between gap-2 border-t border-current/10 pt-1">
-                    <span>{r.rm.name} <span className="opacity-70">({r.rm.botanical})</span></span>
+                    <span>{displayName(r.rm.name, (r.rm as any).nameHi)} <span className="opacity-70">({r.rm.botanical})</span></span>
                     <span className="font-medium">{r.balance} {r.rm.uom} · need {r.needed} {r.rm.uom}</span>
                   </li>
                 ))}
