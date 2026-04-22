@@ -363,7 +363,7 @@ const Dashboard = () => {
               <ul className="pb-2 pl-6 space-y-1 text-[11px]">
                 {expiringRows.map((r) => (
                   <li key={r.rm.code} className="flex items-center justify-between gap-2 border-t border-current/10 pt-1">
-                    <span>{r.rm.name} — {r.nearest?.batch}</span>
+                    <span>{displayName(r.rm.name, (r.rm as any).nameHi)} — {r.nearest?.batch}</span>
                     <span className="font-medium">{r.nearest?.expiry}</span>
                   </li>
                 ))}
