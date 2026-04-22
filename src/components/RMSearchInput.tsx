@@ -4,7 +4,7 @@ import { useStock } from "@/context/StockContext";
 
 interface Props {
   value: string;
-  onSelect: (rm: { name: string; category: string; part: string; uom: string }) => void;
+  onSelect: (rm: { name: string; category: string; part: string; uom: string; code: string; botanical: string }) => void;
   placeholder?: string;
 }
 
