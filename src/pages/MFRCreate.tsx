@@ -136,6 +136,15 @@ const MFRCreate = () => {
 
   const theoreticalYield = batchSize * (expectedYieldPct / 100);
 
+  // Auto-derive batch prefix from MFR code (preferred) or product name,
+  // unless the user has manually overridden it.
+  useEffect(() => {
+    if (prefixOverridden) return;
+    const derived = derivePrefix(name, code);
+    const used = getUsedPrefixes(editId || undefined);
+    setBatchPrefix(resolveUniquePrefix(derived, used));
+  }, [name, code, prefixOverridden, editId]);
+
   const canProceed = () => {
     if (activeStep === 0) return name.trim() && batchSize > 0;
     if (activeStep === 1) return ingredients.some((r) => r.name.trim() && r.qty > 0);
@@ -145,9 +154,15 @@ const MFRCreate = () => {
   };
 
   const handleSave = () => {
+    // Final collision check at save-time (in case another formulation was added meanwhile)
+    const used = getUsedPrefixes(editId || undefined);
+    const baseRaw = (batchPrefix || derivePrefix(name, code)).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const finalPrefix = resolveUniquePrefix(baseRaw || "BAT", used);
+
     const formulation = {
       id: editId || `MFR-${Date.now()}`,
-      name, sanskrit, type, form, ref, use, shelf, dosha,
+      name, sanskrit, type, form, ref, code, batchPrefix: finalPrefix,
+      use, shelf, dosha,
       standardBatchSize: batchSize,
       standardBatchUnit: batchUnit,
       rm: ingredients.filter((r) => r.name.trim()),
@@ -161,10 +176,10 @@ const MFRCreate = () => {
     };
     if (editId) {
       updateFormulation(editId, formulation);
-      toast.success(`Formulation "${name}" updated successfully`);
+      toast.success(`Formulation "${name}" updated · batch prefix ${finalPrefix}`);
     } else {
       addFormulation(formulation);
-      toast.success(`Formulation "${name}" created successfully`);
+      toast.success(`Formulation "${name}" created · batch prefix ${finalPrefix}`);
     }
     navigate("/mfr-table");
   };
