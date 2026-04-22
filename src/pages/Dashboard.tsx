@@ -27,7 +27,6 @@ const monthMap: Record<string, number> = {
 
 function parseExpiry(exp: string): Date | null {
   if (!exp || exp === "—" || /indef/i.test(exp)) return null;
-  // Formats: "Mar 2026", "14 Jun 2025", "Aug 2026"
   const dmY = exp.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})$/);
   if (dmY) return new Date(parseInt(dmY[3]), monthMap[dmY[2]] ?? 0, parseInt(dmY[1]));
   const mY = exp.match(/^(\w{3})\s+(\d{4})$/);
@@ -36,15 +35,37 @@ function parseExpiry(exp: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function formatRelative(date: Date): string {
-  const diff = Date.now() - date.getTime();
+function parseTxnDate(s: string): Date | null {
+  if (!s || s === "—") return null;
+  const dmY = s.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})$/);
+  if (dmY) return new Date(parseInt(dmY[3]), monthMap[dmY[2]] ?? 0, parseInt(dmY[1]));
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function fyRange(fy: string): { start: Date; end: Date; startYear: number; endYear: number } {
+  const m = fy.match(/(\d{4})-(\d{2})/);
+  const startYear = m ? parseInt(m[1]) : new Date().getFullYear();
+  const endYear = startYear + 1;
+  return {
+    startYear,
+    endYear,
+    start: new Date(startYear, 3, 1),
+    end: new Date(endYear, 2, 31, 23, 59, 59),
+  };
+}
+
+function formatRelative(date: Date, refNow: Date): string {
+  const diff = refNow.getTime() - date.getTime();
+  if (diff < 0) return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  if (days < 60) return `${days}d ago`;
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
 }
 
 const Dashboard = () => {
@@ -59,66 +80,96 @@ const Dashboard = () => {
   const [catFilter, setCatFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
 
-  // Derived rows
+  const fyInfo = useMemo(() => fyRange(fy), [fy]);
+  // Reference "now" for the selected FY: today if FY is current, else FY end
+  const fyNow = useMemo(() => {
+    const realNow = new Date();
+    if (realNow >= fyInfo.start && realNow <= fyInfo.end) return realNow;
+    return fyInfo.end;
+  }, [fyInfo]);
+  const isCurrentFY = useMemo(() => {
+    const n = new Date();
+    return n >= fyInfo.start && n <= fyInfo.end;
+  }, [fyInfo]);
+
+  // Derived rows scoped to selected FY
   const rows = useMemo(() => {
     return rmData.map((rm) => {
-      // Build batch list from inward txns minus consumed
-      const batches = rm.txns
-        .filter((t) => t.type === "Inward" && t.expiry && t.expiry !== "—")
-        .map((t) => ({
-          batch: t.batch,
-          expiry: t.expiry,
-          qty: parseFloat(t.qtyIn) || 0,
-          rate: t.rate,
-        }));
+      // Compute FY-scoped balance: sum of inflows - outflows whose date <= fyNow
+      // Opening rows count as initial balance regardless of date
+      let balance = 0;
+      let lastRate = "0";
+      const inwardLots: Array<{ batch: string; expiry: string; qty: number; rate: string; date: Date }> = [];
 
-      // Compute nearest expiry
-      const withDates = batches
-        .map((b) => ({ ...b, date: parseExpiry(b.expiry) }))
-        .filter((b) => b.date) as Array<{ batch: string; expiry: string; qty: number; rate: string; date: Date }>;
-      withDates.sort((a, b) => a.date.getTime() - b.date.getTime());
+      for (const t of rm.txns) {
+        const td = parseTxnDate(t.date);
+        // Opening rows are baseline; only include if at/before FY start
+        if (t.type === "Opening") {
+          if (!td || td <= fyInfo.start) balance += parseFloat(t.qtyIn) || 0;
+          continue;
+        }
+        if (!td || td > fyNow) continue;
+        if (t.type === "Inward") {
+          const q = parseFloat(t.qtyIn) || 0;
+          balance += q;
+          if (t.rate && t.rate !== "—") lastRate = t.rate;
+          const exp = parseExpiry(t.expiry);
+          if (exp) inwardLots.push({ batch: t.batch, expiry: t.expiry, qty: q, rate: t.rate, date: exp });
+        } else if (t.type === "Outward") {
+          balance -= parseFloat(t.qtyOut) || 0;
+        }
+      }
+      balance = Math.max(0, +balance.toFixed(3));
+
+      const withDates = inwardLots.sort((a, b) => a.date.getTime() - b.date.getTime());
       const nearest = withDates[0];
 
-      // Status
       let status: StatusKey = "OK";
-      const ratio = rm.reorder > 0 ? rm.currentStock / rm.reorder : 1;
-      if (rm.currentStock < rm.reorder * 0.5) status = "Critical";
-      else if (rm.currentStock < rm.reorder) status = "Low";
+      if (balance < rm.reorder * 0.5) status = "Critical";
+      else if (balance < rm.reorder) status = "Low";
       if (nearest) {
-        const days = (nearest.date.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-        if (days <= 30 && status === "OK") status = "Expiring";
+        const days = (nearest.date.getTime() - fyNow.getTime()) / (1000 * 60 * 60 * 24);
+        if (days <= 30 && days >= -365 && status === "OK") status = "Expiring";
       }
 
-      const lastRate = [...rm.txns].reverse().find((t) => t.rate && t.rate !== "—")?.rate || "0";
       const rate = parseFloat(lastRate) || 0;
-      const value = rate * rm.currentStock;
-      const needed = rm.currentStock < rm.reorder ? +(rm.reorder - rm.currentStock).toFixed(2) : 0;
+      const value = rate * balance;
+      const needed = balance < rm.reorder ? +(rm.reorder - balance).toFixed(2) : 0;
 
-      return {
-        rm,
-        status,
-        rate,
-        value,
-        needed,
-        nearest,
-        batches: withDates,
-      };
+      return { rm, status, rate, value, needed, nearest, batches: withDates, balance };
     });
-  }, [rmData]);
+  }, [rmData, fyInfo, fyNow]);
 
   const criticalRows = rows.filter((r) => r.status === "Critical");
   const expiringRows = rows.filter((r) => r.status === "Expiring");
   const lowRows = rows.filter((r) => r.status === "Low");
   const totalValue = rows.reduce((s, r) => s + r.value, 0);
 
-  const activeBmrs = bmrs.filter((b) => b.status === "In process" || b.status === "QC pending");
-  const pendingGrnCount = pendingGRNs.filter((g) => g.status === "pending_qc" || g.status === "partial").length;
+  // FY-scoped BMRs and GRNs
+  const fyBmrs = useMemo(() => bmrs.filter((b) => {
+    const d = parseTxnDate(b.createdAt) || new Date(b.createdAt);
+    return d >= fyInfo.start && d <= fyInfo.end;
+  }), [bmrs, fyInfo]);
+  const activeBmrs = fyBmrs.filter((b) => b.status === "In process" || b.status === "QC pending");
 
-  // Recent activity
+  const fyPendingGRNs = useMemo(() => pendingGRNs.filter((g) => {
+    const d = parseTxnDate(g.date) || new Date(g.date);
+    if (isNaN(d.getTime())) return isCurrentFY; // undated → only current FY
+    return d >= fyInfo.start && d <= fyInfo.end;
+  }), [pendingGRNs, fyInfo, isCurrentFY]);
+  const pendingGrnCount = fyPendingGRNs.filter((g) => g.status === "pending_qc" || g.status === "partial").length;
+
+  const fyIssued = useMemo(() => issuedRecords.filter((i) => {
+    const d = parseTxnDate(i.date) || new Date(i.date);
+    if (isNaN(d.getTime())) return isCurrentFY;
+    return d >= fyInfo.start && d <= fyInfo.end;
+  }), [issuedRecords, fyInfo, isCurrentFY]);
+
+  // Recent activity (FY-scoped)
   const activity = useMemo(() => {
     const items: { ts: Date; label: string; user: string; href?: string }[] = [];
-    bmrs.forEach((b) => {
-      const d = new Date(b.createdAt);
+    fyBmrs.forEach((b) => {
+      const d = parseTxnDate(b.createdAt) || new Date(b.createdAt);
       items.push({
         ts: d,
         label: `BMR ${b.batchNo || "(draft)"} for ${b.productName || "—"} ${b.status === "Released" ? "released" : "created"}`,
@@ -126,17 +177,19 @@ const Dashboard = () => {
         href: `/bmr/${b.id}`,
       });
     });
-    pendingGRNs.forEach((g) => {
+    fyPendingGRNs.forEach((g) => {
+      const d = parseTxnDate(g.date) || new Date(g.date);
       items.push({
-        ts: new Date(),
+        ts: isNaN(d.getTime()) ? fyNow : d,
         label: `${g.grnNo} submitted for QC (${g.supplier})`,
         user: "Stores",
         href: "/rm-inward",
       });
     });
-    issuedRecords.forEach((i) => {
+    fyIssued.forEach((i) => {
+      const d = parseTxnDate(i.date) || new Date(i.date);
       items.push({
-        ts: new Date(),
+        ts: isNaN(d.getTime()) ? fyNow : d,
         label: `${i.issRef} ${i.status === "reversed" ? "reversed" : "issued"} — ${i.source}`,
         user: "Production",
         href: "/rm-outward",
@@ -144,7 +197,7 @@ const Dashboard = () => {
     });
     items.sort((a, b) => b.ts.getTime() - a.ts.getTime());
     return items.slice(0, 5);
-  }, [bmrs, pendingGRNs, issuedRecords]);
+  }, [fyBmrs, fyPendingGRNs, fyIssued, fyNow]);
 
   const filteredRows = rows.filter((r) => {
     if (catFilter !== "All" && r.rm.category !== catFilter) return false;
@@ -164,13 +217,16 @@ const Dashboard = () => {
   };
 
   const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const fySubtitle = isCurrentFY
+    ? `Today: ${today} · ${fy}`
+    : `${fy} · as of ${fyInfo.end.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`;
 
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
         <div className="flex-1">
           <div className="text-[15px] font-medium">Dashboard</div>
-          <div className="text-[11px] text-muted-foreground mt-px">Today: {today} · {fy}</div>
+          <div className="text-[11px] text-muted-foreground mt-px">{fySubtitle}</div>
         </div>
         <Select value={fy} onValueChange={setFy}>
           <SelectTrigger className="h-8 w-[140px] text-xs">
@@ -203,7 +259,7 @@ const Dashboard = () => {
                 {criticalRows.map((r) => (
                   <li key={r.rm.code} className="flex items-center justify-between gap-2 border-t border-current/10 pt-1">
                     <span>{r.rm.name} <span className="opacity-70">({r.rm.botanical})</span></span>
-                    <span className="font-medium">{r.rm.currentStock} {r.rm.uom} · need {r.needed} {r.rm.uom}</span>
+                    <span className="font-medium">{r.balance} {r.rm.uom} · need {r.needed} {r.rm.uom}</span>
                   </li>
                 ))}
               </ul>
@@ -333,7 +389,7 @@ const Dashboard = () => {
                         <div className="text-[10px] text-muted-foreground">{r.rm.botanical} · {r.rm.part}</div>
                       </td>
                       <td><span className={`app-badge ${catBadge}`}>{r.rm.category}</span></td>
-                      <td className={stockClass}>{r.rm.currentStock.toFixed(2)}</td>
+                      <td className={stockClass}>{r.balance.toFixed(2)}</td>
                       <td>{r.rm.uom}</td>
                       <td>{r.rm.reorder.toFixed(1)}</td>
                       <td className={r.needed > 0 ? "text-kpi-danger" : ""}>{r.needed > 0 ? `${r.needed} ${r.rm.uom}` : "—"}</td>
@@ -408,7 +464,7 @@ const Dashboard = () => {
                     <div className="truncate">{a.label}</div>
                     <div className="text-[10px] text-muted-foreground mt-px">by {a.user}</div>
                   </div>
-                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">{formatRelative(a.ts)}</div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">{formatRelative(a.ts, fyNow)}</div>
                 </li>
               ))}
             </ul>
