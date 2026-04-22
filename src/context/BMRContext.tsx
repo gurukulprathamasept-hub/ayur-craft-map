@@ -192,7 +192,16 @@ interface BMRContextType {
   addBMR: (bmr: BMRRecord) => void;
   updateBMR: (id: string, updates: Partial<BMRRecord>) => void;
   getBMR: (id: string) => BMRRecord | undefined;
-  getNextBatchNo: (productName: string, mfrId: string) => { nextBatchNo: string; prevBatchNo: string | null };
+  /**
+   * Generate the next batch number for a formulation.
+   * Pass `batchPrefix` (resolved & stored on the MFR) for collision-free prefixes.
+   * Falls back to deriving from `productName` only if no prefix is supplied.
+   */
+  getNextBatchNo: (
+    productName: string,
+    mfrId: string,
+    batchPrefix?: string,
+  ) => { nextBatchNo: string; prevBatchNo: string | null };
 }
 
 const BMRContext = createContext<BMRContextType | null>(null);
@@ -278,8 +287,13 @@ export const BMRProvider = ({ children }: { children: ReactNode }) => {
 
   const getBMR = (id: string) => bmrs.find((b) => b.id === id);
 
-  const getNextBatchNo = (productName: string, mfrId: string): { nextBatchNo: string; prevBatchNo: string | null } => {
-    const prefix = productName.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "BAT";
+  const getNextBatchNo = (
+    productName: string,
+    mfrId: string,
+    batchPrefix?: string,
+  ): { nextBatchNo: string; prevBatchNo: string | null } => {
+    const fallback = productName.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "BAT";
+    const prefix = (batchPrefix && batchPrefix.trim()) ? batchPrefix.trim().toUpperCase() : fallback;
     const now = new Date();
     const yymm = `${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, "0")}`;
     const pattern = new RegExp(`^${prefix}-${yymm}-(\\d+)$`);
