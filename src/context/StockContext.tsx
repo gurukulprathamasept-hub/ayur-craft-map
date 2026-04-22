@@ -18,6 +18,8 @@ export type Txn = {
 export type RMEntry = {
   code: string;
   name: string;
+  /** Optional Hindi/Devanagari name shown alongside English everywhere. */
+  nameHi?: string;
   botanical: string;
   category: string;
   part: string;
