@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { BMRRecord, BMRIngredient, BMRLotAllocation } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Info, Lock, RefreshCw, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,6 +17,7 @@ const CAT_BADGE: Record<string, string> = {
 
 const Step2Ingredients = ({ bmr, onChange }: Props) => {
   const { getActiveLotsForRM, consumeFromLots, commitConsumption } = useStock();
+  const { displayName } = useLanguage();
 
   const updateIngredient = (idx: number, updates: Partial<BMRIngredient>) => {
     const ingredients = bmr.ingredients.map((ing, i) => i === idx ? { ...ing, ...updates } : ing);
@@ -131,8 +133,10 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
                   <tr key={i} className={ing.consumed ? "bg-secondary/40" : ""}>
                     <td className="text-muted-foreground align-top pt-2">{String(i + 1).padStart(2, "0")}</td>
                     <td className="align-top pt-2">
-                      <div className="font-medium">{ing.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{ing.part}{ing.rmCode ? ` · ${ing.rmCode}` : " · no RM match"}</div>
+                      <div className="font-medium">{displayName(ing.name, ing.nameHi)}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {ing.nameHi && ing.nameHi !== displayName(ing.name, ing.nameHi) ? `${ing.nameHi} · ` : ""}{ing.part}{ing.rmCode ? ` · ${ing.rmCode}` : " · no RM match"}
+                      </div>
                     </td>
                     <td className="align-top pt-2"><span className={`app-badge ${CAT_BADGE[ing.cat] || "app-badge-gray"}`}>{ing.cat}</span></td>
                     <td className="align-top pt-2 font-semibold text-primary">

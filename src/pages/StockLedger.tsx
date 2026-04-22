@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Download, Search } from "lucide-react";
 import { useStock, type RMEntry } from "@/context/StockContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const catBadge: Record<string, string> = {
   Herb: "app-badge-green",
@@ -21,6 +22,7 @@ function computeKpis(rm: RMEntry) {
 
 const StockLedger = () => {
   const { rmData, lots } = useStock();
+  const { displayName } = useLanguage();
   const [selectedRM, setSelectedRM] = useState<string | null>(null);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
@@ -80,8 +82,10 @@ const StockLedger = () => {
                       >
                         <td className="font-mono text-[11px]">{rm.code}</td>
                         <td>
-                          <div className="font-medium text-xs">{rm.name}</div>
-                          <div className="text-[10px] text-muted-foreground italic">{rm.botanical}</div>
+                          <div className="font-medium text-xs">{displayName(rm.name, rm.nameHi)}</div>
+                          <div className="text-[10px] text-muted-foreground italic">
+                            {rm.nameHi && rm.nameHi !== displayName(rm.name, rm.nameHi) ? `${rm.nameHi} · ` : ""}{rm.botanical}
+                          </div>
                         </td>
                         <td>
                           <span className={`app-badge ${catBadge[rm.category] || "app-badge-gray"}`}>{rm.category}</span>
@@ -119,9 +123,9 @@ const StockLedger = () => {
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
         <div className="flex-1">
-          <div className="text-[15px] font-medium">Stock ledger — {activeRM.name}</div>
+          <div className="text-[15px] font-medium">Stock ledger — {displayName(activeRM.name, activeRM.nameHi)}</div>
           <div className="text-[11px] text-muted-foreground mt-px">
-            {activeRM.code} · {activeRM.botanical} · Current stock: {activeRM.currentStock} {activeRM.uom}
+            {activeRM.code} · {activeRM.nameHi ? `${activeRM.nameHi} · ` : ""}{activeRM.botanical} · Current stock: {activeRM.currentStock} {activeRM.uom}
           </div>
         </div>
         <button

@@ -4,7 +4,7 @@ import { useStock } from "@/context/StockContext";
 
 interface Props {
   value: string;
-  onSelect: (rm: { name: string; category: string; part: string; uom: string; code: string; botanical: string }) => void;
+  onSelect: (rm: { name: string; nameHi: string; category: string; part: string; uom: string; code: string; botanical: string }) => void;
   placeholder?: string;
 }
 
@@ -60,13 +60,16 @@ const RMSearchInput = ({ value, onSelect, placeholder }: Props) => {
                 key={r.code}
                 type="button"
                 onClick={() => {
-                  onSelect({ name: r.name, category: r.category.toLowerCase(), part: r.part, uom: r.uom, code: r.code, botanical: r.botanical });
+                  onSelect({ name: r.name, nameHi: r.nameHi || "", category: r.category.toLowerCase(), part: r.part, uom: r.uom, code: r.code, botanical: r.botanical });
                   setQuery(r.name);
                   setOpen(false);
                 }}
                 className="w-full text-left px-2.5 py-1.5 hover:bg-accent border-b border-border last:border-b-0"
               >
-                <div className="text-xs font-medium">{r.name}</div>
+                <div className="text-xs font-medium">
+                  {r.name}
+                  {r.nameHi && <span className="text-muted-foreground font-normal ml-1">/ {r.nameHi}</span>}
+                </div>
                 <div className="text-[10px] text-muted-foreground italic">
                   {r.botanical} • {r.code} • {r.category} • {r.part}
                 </div>

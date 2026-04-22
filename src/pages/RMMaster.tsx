@@ -23,6 +23,7 @@ const catBadge: Record<string, string> = {
 
 type RMFormData = {
   name: string;
+  nameHi: string;
   botanical: string;
   category: string;
   part: string;
@@ -34,7 +35,7 @@ type RMFormData = {
 };
 
 const emptyForm: RMFormData = {
-  name: "", botanical: "", category: "Herb", part: "", uom: "kg",
+  name: "", nameHi: "", botanical: "", category: "Herb", part: "", uom: "kg",
   reorder: "", shelf: "", active: true, qcSpecs: [{ parameter: "", spec: "" }],
 };
 
@@ -64,7 +65,7 @@ const RMMaster = () => {
   const openEdit = (rm: RMEntry) => {
     setEditCode(rm.code);
     setForm({
-      name: rm.name, botanical: rm.botanical, category: rm.category, part: rm.part,
+      name: rm.name, nameHi: rm.nameHi || "", botanical: rm.botanical, category: rm.category, part: rm.part,
       uom: rm.uom, reorder: String(rm.reorder), shelf: rm.shelf, active: rm.active,
       qcSpecs: rm.qcSpecs.length > 0 ? [...rm.qcSpecs] : [{ parameter: "", spec: "" }],
     });
@@ -79,6 +80,7 @@ const RMMaster = () => {
     const cleanSpecs = form.qcSpecs.filter(s => s.parameter.trim() || s.spec.trim());
     const data = {
       name: form.name.trim(),
+      nameHi: form.nameHi.trim(),
       botanical: form.botanical.trim(),
       category: form.category,
       part: form.part.trim(),
@@ -161,7 +163,10 @@ const RMMaster = () => {
                 {filtered.map(rm => (
                   <tr key={rm.code} className="cursor-pointer" onClick={() => openEdit(rm)}>
                     <td className="font-mono text-[11px]">{rm.code}</td>
-                    <td className="font-medium">{rm.name}</td>
+                    <td className="font-medium">
+                      <div>{rm.name}</div>
+                      {rm.nameHi && <div className="text-[10px] text-muted-foreground font-normal mt-px">{rm.nameHi}</div>}
+                    </td>
                     <td className="text-[11px] text-muted-foreground italic">{rm.botanical}</td>
                     <td><span className={`app-badge ${catBadge[rm.category] || "app-badge-gray"}`}>{rm.category}</span></td>
                     <td>{rm.part}</td>
@@ -207,6 +212,16 @@ const RMMaster = () => {
               <div className="form-field">
                 <label>Common name (AFI/API) *</label>
                 <input value={form.name} onChange={e => setField("name", e.target.value)} placeholder="e.g. Ashwagandha" />
+              </div>
+              <div className="form-field">
+                <label>Hindi name (देवनागरी)</label>
+                <input
+                  value={form.nameHi}
+                  onChange={e => setField("nameHi", e.target.value)}
+                  placeholder="e.g. अश्वगंधा"
+                  lang="hi"
+                  style={{ fontFamily: "'Noto Sans Devanagari', 'Mangal', sans-serif" }}
+                />
               </div>
               <div className="form-field">
                 <label>Botanical / scientific name</label>

@@ -12,6 +12,8 @@ export interface RMItem {
   rmCode?: string;
   /** Botanical / scientific name — auto-filled when picked from RM master. */
   botanical?: string;
+  /** Optional Hindi/Devanagari name — auto-filled when picked from RM master. */
+  nameHi?: string;
 }
 
 export interface ProcessStep {
@@ -49,6 +51,8 @@ export interface Formulation {
   id: string;
   name: string;
   sanskrit: string;
+  /** Optional Hindi/Devanagari display name. Falls back to `sanskrit` if empty. */
+  nameHi?: string;
   type: string;
   form: string;
   ref: string;

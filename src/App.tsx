@@ -7,6 +7,7 @@ import { FormulationProvider } from "@/context/FormulationContext";
 import { BMRProvider } from "@/context/BMRContext";
 import { StockProvider } from "@/context/StockContext";
 import { SupplierProvider } from "@/context/SupplierContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import RMInward from "./pages/RMInward";
@@ -28,12 +29,13 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <FormulationProvider>
-        <BMRProvider>
-          <StockProvider>
-          <SupplierProvider>
-            <Toaster />
-            <Sonner />
+      <LanguageProvider>
+        <FormulationProvider>
+          <BMRProvider>
+            <StockProvider>
+            <SupplierProvider>
+              <Toaster />
+              <Sonner />
             <BrowserRouter>
               <Routes>
                 <Route element={<AppLayout />}>
@@ -54,10 +56,11 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-          </SupplierProvider>
-          </StockProvider>
-        </BMRProvider>
-      </FormulationProvider>
+            </SupplierProvider>
+            </StockProvider>
+          </BMRProvider>
+        </FormulationProvider>
+      </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

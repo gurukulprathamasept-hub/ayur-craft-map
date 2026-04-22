@@ -231,7 +231,16 @@ const MFRCreate = () => {
             <div className="p-3.5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="form-field"><label>Formulation name *</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Triphala Churna" /></div>
-                <div className="form-field"><label>Sanskrit name</label><input value={sanskrit} onChange={(e) => setSanskrit(e.target.value)} placeholder="e.g. त्रिफला चूर्ण" /></div>
+                <div className="form-field">
+                  <label>Hindi name (देवनागरी)</label>
+                  <input
+                    value={sanskrit}
+                    onChange={(e) => setSanskrit(e.target.value)}
+                    placeholder="e.g. त्रिफला चूर्ण"
+                    lang="hi"
+                    style={{ fontFamily: "'Noto Sans Devanagari', 'Mangal', sans-serif" }}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="form-field">
@@ -352,6 +361,7 @@ const MFRCreate = () => {
                         setIngredients((prev) => prev.map((it, idx) => idx === i ? {
                           ...it,
                           name: sel.name,
+                          nameHi: sel.nameHi || it.nameHi,
                           cat,
                           part: sel.part || it.part,
                           unit,
@@ -361,9 +371,10 @@ const MFRCreate = () => {
                       }}
                       placeholder="Search RM (name / botanical / code)..."
                     />
-                    {(rm.rmCode || rm.botanical) && (
-                      <div className="flex items-center gap-1.5 pl-1 text-[10px] text-muted-foreground">
+                    {(rm.rmCode || rm.botanical || rm.nameHi) && (
+                      <div className="flex items-center gap-1.5 pl-1 text-[10px] text-muted-foreground flex-wrap">
                         {rm.rmCode && <span className="font-mono px-1 py-px rounded bg-secondary border border-border">{rm.rmCode}</span>}
+                        {rm.nameHi && <span style={{ fontFamily: "'Noto Sans Devanagari', 'Mangal', sans-serif" }}>{rm.nameHi}</span>}
                         {rm.botanical && <span className="italic truncate">{rm.botanical}</span>}
                       </div>
                     )}
