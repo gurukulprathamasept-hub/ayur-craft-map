@@ -10,6 +10,8 @@ export interface BMRLotAllocation {
 
 export interface BMRIngredient {
   name: string;
+  /** Optional Hindi/Devanagari name (snapshot from RM master at BMR creation). */
+  nameHi?: string;
   rmCode?: string;
   cat: string;
   requiredQty: number;
@@ -133,6 +135,8 @@ export interface BMRRecord {
   id: string;
   batchNo: string;
   productName: string;
+  /** Optional Hindi/Devanagari product name (snapshot from MFR at BMR creation). */
+  productNameHi?: string;
   mfrId: string;
   mfrName: string;
   batchSize: number;
