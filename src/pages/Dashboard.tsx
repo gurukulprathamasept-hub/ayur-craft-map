@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { AlertCircle, AlertTriangle, Search, ChevronDown, ChevronUp, FileText, ClipboardCheck, Activity, Calendar, Download } from "lucide-react";
 import { useStock } from "@/context/StockContext";
 import { useBMRs } from "@/context/BMRContext";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   Popover,
   PopoverContent,
