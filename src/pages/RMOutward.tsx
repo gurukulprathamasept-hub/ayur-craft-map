@@ -134,10 +134,11 @@ const IssueSummary = ({ items, onClear, onClose }: { items: IssuedItem[]; onClea
 /* ── Single-drug issue detail ── */
 const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void }) => {
   const { rmData, getStockForRM, issueStock } = useStock();
+  const { displayName } = useLanguage();
 
   const rmItems = rmData.map(rm => {
     const stock = getStockForRM(rm.name);
-    return { name: rm.name, bot: rm.botanical, stock: stock ? `${stock.available} ${stock.uom}` : "—", batch: stock?.batch || "—", expiry: stock?.expiry || "—", uom: rm.uom, available: rm.currentStock };
+    return { name: rm.name, nameHi: (rm as any).nameHi, bot: rm.botanical, stock: stock ? `${stock.available} ${stock.uom}` : "—", batch: stock?.batch || "—", expiry: stock?.expiry || "—", uom: rm.uom, available: rm.currentStock };
   });
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
