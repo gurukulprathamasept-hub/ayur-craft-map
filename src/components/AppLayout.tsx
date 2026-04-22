@@ -9,6 +9,7 @@ import {
   ClipboardList,
   BookOpen,
   Truck,
+  ShieldCheck,
 } from "lucide-react";
 
 const navGroups = [
@@ -39,6 +40,7 @@ const navGroups = [
     label: "Reports",
     items: [
       { to: "/schedule-ta", icon: ClipboardList, label: "Schedule TA" },
+      { to: "/batch-prefix-audit", icon: ShieldCheck, label: "Batch Prefix Audit" },
     ],
   },
 ];

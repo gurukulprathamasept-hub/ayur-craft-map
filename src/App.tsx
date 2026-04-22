@@ -19,6 +19,7 @@ import StockLedger from "./pages/StockLedger";
 import ScheduleTA from "./pages/ScheduleTA";
 import MFRTable from "./pages/MFRTable";
 import MFRCreate from "./pages/MFRCreate";
+import BatchPrefixAudit from "./pages/BatchPrefixAudit";
 import SupplierMaster from "./pages/SupplierMaster";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +48,7 @@ const App = () => (
                   <Route path="/schedule-ta" element={<ScheduleTA />} />
                   <Route path="/mfr-table" element={<MFRTable />} />
                   <Route path="/mfr-create" element={<MFRCreate />} />
+                  <Route path="/batch-prefix-audit" element={<BatchPrefixAudit />} />
                   <Route path="/supplier-master" element={<SupplierMaster />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
