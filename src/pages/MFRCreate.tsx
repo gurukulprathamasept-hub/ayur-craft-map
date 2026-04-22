@@ -74,6 +74,12 @@ const MFRCreate = () => {
         setType(existing.type);
         setForm(existing.form);
         setRef(existing.ref);
+        setCode(existing.code || "");
+        if (existing.batchPrefix) {
+          setBatchPrefix(existing.batchPrefix);
+          // Treat saved prefix as locked — don't auto-recompute on later name edits
+          setPrefixOverridden(true);
+        }
         setUse(existing.use);
         setShelf(existing.shelf);
         setDosha(existing.dosha);
