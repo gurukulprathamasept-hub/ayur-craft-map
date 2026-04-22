@@ -131,7 +131,7 @@ export type LotAllocation = {
 
 const initialData: RMEntry[] = [
   {
-    code: "RM-001", name: "Ashwagandha", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
+    code: "RM-001", name: "Ashwagandha", nameHi: "अश्वगंधा", botanical: "Withania somnifera", category: "Herb", part: "Root", uom: "kg", reorder: 5, shelf: "36 mo", active: true, currentStock: 1.2,
     qcSpecs: [
       // Organoleptic
       { parameter: "Colour", spec: "Pale yellow to brown", section: "Organoleptic", unit: "" },
@@ -169,7 +169,7 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-002", name: "Amalaki / Amla", botanical: "Emblica officinalis", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 10, shelf: "24 mo", active: true, currentStock: 14.5,
+    code: "RM-002", name: "Amalaki / Amla", nameHi: "आमलकी / आँवला", botanical: "Emblica officinalis", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 10, shelf: "24 mo", active: true, currentStock: 14.5,
     qcSpecs: [
       { parameter: "Colour", spec: "Greenish-brown", section: "Organoleptic", unit: "" },
       { parameter: "Odour", spec: "Characteristic sour", section: "Organoleptic", unit: "" },
@@ -188,7 +188,7 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-003", name: "Haritaki", botanical: "Terminalia chebula", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 8, shelf: "24 mo", active: true, currentStock: 6.0,
+    code: "RM-003", name: "Haritaki", nameHi: "हरीतकी", botanical: "Terminalia chebula", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 8, shelf: "24 mo", active: true, currentStock: 6.0,
     qcSpecs: [
       { parameter: "Colour", spec: "Dark brown", section: "Organoleptic", unit: "" },
       { parameter: "Foreign matter", spec: "NMT 2%", section: "Physicochemical", unit: "%" },
@@ -202,7 +202,7 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-004", name: "Vibhitaki", botanical: "Terminalia bellirica", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 5, shelf: "24 mo", active: true, currentStock: 0,
+    code: "RM-004", name: "Vibhitaki", nameHi: "विभीतकी", botanical: "Terminalia bellirica", category: "Herb", part: "Fruit rind", uom: "kg", reorder: 5, shelf: "24 mo", active: true, currentStock: 0,
     qcSpecs: [
       { parameter: "Foreign matter", spec: "NMT 2%", section: "Physicochemical", unit: "%" },
       { parameter: "Total ash", spec: "NMT 5%", section: "Physicochemical", unit: "% w/w" },
@@ -214,7 +214,7 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-012", name: "Shuddha Guggulu", botanical: "Commiphora wightii", category: "Extract", part: "Purified resin", uom: "kg", reorder: 3, shelf: "60 mo", active: true, currentStock: 4.8,
+    code: "RM-012", name: "Shuddha Guggulu", nameHi: "शुद्ध गुग्गुलु", botanical: "Commiphora wightii", category: "Extract", part: "Purified resin", uom: "kg", reorder: 3, shelf: "60 mo", active: true, currentStock: 4.8,
     qcSpecs: [
       { parameter: "Foreign matter", spec: "NMT 1%", section: "Physicochemical", unit: "%" },
       { parameter: "Moisture", spec: "NMT 20%", section: "Physicochemical", unit: "%" },
@@ -227,7 +227,7 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-027", name: "Abhraka (Shuddha)", botanical: "Mica / Biotite", category: "Metal/Mineral", part: "Shodhita flakes", uom: "kg", reorder: 0.5, shelf: "Indef.", active: true, currentStock: 0.35,
+    code: "RM-027", name: "Abhraka (Shuddha)", nameHi: "अभ्रक (शुद्ध)", botanical: "Mica / Biotite", category: "Metal/Mineral", part: "Shodhita flakes", uom: "kg", reorder: 0.5, shelf: "Indef.", active: true, currentStock: 0.35,
     qcSpecs: [
       { parameter: "Loss on ignition", spec: "NMT 2%", section: "Physicochemical", unit: "%" },
       { parameter: "Iron content", spec: "Pass", section: "Identity & Assay", unit: "" },
@@ -239,7 +239,7 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-031", name: "Cow ghee", botanical: "Clarified butter (Ghrita)", category: "Animal", part: "Clarified butter", uom: "L", reorder: 5, shelf: "16 mo", active: true, currentStock: 8.0,
+    code: "RM-031", name: "Cow ghee", nameHi: "गोघृत", botanical: "Clarified butter (Ghrita)", category: "Animal", part: "Clarified butter", uom: "L", reorder: 5, shelf: "16 mo", active: true, currentStock: 8.0,
     qcSpecs: [
       { parameter: "Rancidity (Kreis test)", spec: "Negative", section: "Physicochemical", unit: "" },
       { parameter: "Butyro refractometer reading (40°C)", spec: "40–44", section: "Physicochemical", unit: "" },
@@ -252,7 +252,7 @@ const initialData: RMEntry[] = [
     ],
   },
   {
-    code: "RM-044", name: "Dhataki Pushpa", botanical: "Woodfordia fruticosa", category: "Herb", part: "Flower", uom: "kg", reorder: 1, shelf: "18 mo", active: true, currentStock: 0.6,
+    code: "RM-044", name: "Dhataki Pushpa", nameHi: "धातकी पुष्प", botanical: "Woodfordia fruticosa", category: "Herb", part: "Flower", uom: "kg", reorder: 1, shelf: "18 mo", active: true, currentStock: 0.6,
     qcSpecs: [
       { parameter: "Foreign matter", spec: "NMT 3%", section: "Physicochemical", unit: "%" },
       { parameter: "Total ash", spec: "NMT 6%", section: "Physicochemical", unit: "% w/w" },
