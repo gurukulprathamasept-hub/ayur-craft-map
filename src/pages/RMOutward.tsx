@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer, Download, Edit, RotateCcw } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
