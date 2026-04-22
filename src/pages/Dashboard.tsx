@@ -449,7 +449,22 @@ const Dashboard = () => {
                   className="pl-7 pr-2.5 py-1 border border-border rounded-md bg-secondary text-foreground text-xs w-40"
                 />
               </div>
-              <button className="px-2.5 py-1 rounded-md border border-border text-[11px] font-medium hover:bg-secondary transition-all">Export</button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="px-2.5 py-1 rounded-md border border-border text-[11px] font-medium hover:bg-secondary transition-all flex items-center gap-1">
+                    <Download className="w-3 h-3" /> Export
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export — {fy}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleExport("stock")} className="text-xs">Stock overview ({filteredRows.length})</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("grns")} className="text-xs">Pending GRNs ({fyPendingGRNs.length})</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("activity")} className="text-xs">Recent activity ({activity.length})</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleExport("all")} className="text-xs font-medium">All tables (combined CSV)</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <div className="overflow-x-auto">
