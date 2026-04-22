@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { AlertCircle, AlertTriangle, Search, ChevronDown, ChevronUp, FileText, ClipboardCheck, Activity, Calendar } from "lucide-react";
+import { AlertCircle, AlertTriangle, Search, ChevronDown, ChevronUp, FileText, ClipboardCheck, Activity, Calendar, Download } from "lucide-react";
 import { useStock } from "@/context/StockContext";
 import { useBMRs } from "@/context/BMRContext";
 import {
@@ -9,12 +9,47 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+// ===== CSV helpers =====
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+function toCSV(headers: string[], rows: (string | number)[][]): string {
+  const lines = [headers.map(csvEscape).join(",")];
+  for (const r of rows) lines.push(r.map(csvEscape).join(","));
+  return lines.join("\r\n");
+}
+function downloadCSV(filename: string, content: string) {
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function fySlug(fy: string) {
+  return fy.replace(/\s+/g, "_");
+}
 
 type StatusKey = "Critical" | "Low" | "Expiring" | "OK";
 
@@ -221,6 +256,52 @@ const Dashboard = () => {
     ? `Today: ${today} · ${fy}`
     : `${fy} · as of ${fyInfo.end.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`;
 
+  // ===== Exports (FY-scoped) =====
+  const stockCSV = () => toCSV(
+    ["RM Code", "RM Name", "Botanical", "Category", "Part", "UOM", "Stock Qty", "Reorder Level", "Qty Needed", "Unit Rate (INR)", "Stock Value (INR)", "Nearest Expiry", "Status"],
+    filteredRows.map((r) => [
+      r.rm.code, r.rm.name, r.rm.botanical, r.rm.category, r.rm.part, r.rm.uom,
+      r.balance.toFixed(3), r.rm.reorder, r.needed,
+      r.rate || "", r.value.toFixed(2),
+      r.nearest?.expiry || "", r.status,
+    ])
+  );
+  const grnCSV = () => toCSV(
+    ["GRN No", "Date", "Supplier", "Status", "Line RM", "Batch", "Expiry", "Qty", "UOM", "Rate", "QC Status"],
+    fyPendingGRNs.flatMap((g) =>
+      g.lines.map((l) => [
+        g.grnNo, g.date, g.supplier, g.status,
+        l.rmName, l.batch, l.expiry, l.qty, l.uom, l.rate, l.qcStatus,
+      ])
+    )
+  );
+  const activityCSV = () => toCSV(
+    ["Timestamp", "Activity", "User"],
+    activity.map((a) => [a.ts.toISOString(), a.label, a.user])
+  );
+
+  const handleExport = (which: "stock" | "grns" | "activity" | "all") => {
+    const slug = fySlug(fy);
+    if (which === "stock") return downloadCSV(`stock_overview_${slug}.csv`, stockCSV());
+    if (which === "grns") return downloadCSV(`pending_grns_${slug}.csv`, grnCSV());
+    if (which === "activity") return downloadCSV(`recent_activity_${slug}.csv`, activityCSV());
+    // Combined: one file with all three sections
+    const combined = [
+      `# Dashboard export — ${fy}`,
+      `# Generated ${new Date().toISOString()}`,
+      "",
+      "## Stock Overview",
+      stockCSV(),
+      "",
+      "## Pending GRNs",
+      grnCSV(),
+      "",
+      "## Recent Activity",
+      activityCSV(),
+    ].join("\r\n");
+    downloadCSV(`dashboard_${slug}.csv`, combined);
+  };
+
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
@@ -368,7 +449,22 @@ const Dashboard = () => {
                   className="pl-7 pr-2.5 py-1 border border-border rounded-md bg-secondary text-foreground text-xs w-40"
                 />
               </div>
-              <button className="px-2.5 py-1 rounded-md border border-border text-[11px] font-medium hover:bg-secondary transition-all">Export</button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="px-2.5 py-1 rounded-md border border-border text-[11px] font-medium hover:bg-secondary transition-all flex items-center gap-1">
+                    <Download className="w-3 h-3" /> Export
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export — {fy}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleExport("stock")} className="text-xs">Stock overview ({filteredRows.length})</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("grns")} className="text-xs">Pending GRNs ({fyPendingGRNs.length})</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("activity")} className="text-xs">Recent activity ({activity.length})</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleExport("all")} className="text-xs font-medium">All tables (combined CSV)</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <div className="overflow-x-auto">
