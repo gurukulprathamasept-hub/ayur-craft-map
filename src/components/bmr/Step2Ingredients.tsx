@@ -192,7 +192,7 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
                             {isShort && <span className="text-destructive font-medium">Short by {(ing.shortfall || 0).toFixed(3)}</span>}
                             {!ing.consumed && (
                               <button onClick={() => resetFIFO(i)} className="flex items-center gap-0.5 text-primary hover:underline">
-                                <RefreshCw className="w-2.5 h-2.5" /> FIFO
+                                <RefreshCw className="w-2.5 h-2.5" /> {(!ing.allocations || ing.allocations.length === 0) ? "Retry FIFO" : "FIFO"}
                               </button>
                             )}
                           </div>
