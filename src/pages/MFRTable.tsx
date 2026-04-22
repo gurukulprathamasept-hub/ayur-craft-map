@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Search, Plus, FileText, Pencil, Trash2 } from "lucide-react";
 import { useFormulations, Formulation as CustomFormulation } from "@/context/FormulationContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type RMCategory = "herb" | "extract" | "mineral" | "animal" | "base" | "process";
 
@@ -592,9 +593,9 @@ const MFRTable = () => {
                           />
                         </td>
                         <td>
-                          <div className="font-medium">{f.name} {(f as any)._custom && <span className="app-badge app-badge-teal text-[9px] ml-1">Custom</span>}</div>
+                          <div className="font-medium">{displayName(f.name, f.sanskrit)} {(f as any)._custom && <span className="app-badge app-badge-teal text-[9px] ml-1">Custom</span>}</div>
                           {(f as any)._stdBatch && <div className="text-[10px] text-muted-foreground">Std batch: {(f as any)._stdBatch}</div>}
-                          <div className="text-[10px] text-muted-foreground italic">{f.sanskrit}</div>
+                          {f.sanskrit && f.sanskrit !== displayName(f.name, f.sanskrit) && <div className="text-[10px] text-muted-foreground italic">{f.sanskrit}</div>}
                         </td>
                         <td>
                           <span className={`app-badge ${TYPE_BADGE[f.type] || "app-badge-gray"}`}>{f.type}</span>
