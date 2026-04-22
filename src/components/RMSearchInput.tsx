@@ -66,7 +66,10 @@ const RMSearchInput = ({ value, onSelect, placeholder }: Props) => {
                 }}
                 className="w-full text-left px-2.5 py-1.5 hover:bg-accent border-b border-border last:border-b-0"
               >
-                <div className="text-xs font-medium">{r.name}</div>
+                <div className="text-xs font-medium">
+                  {r.name}
+                  {r.nameHi && <span className="text-muted-foreground font-normal ml-1">/ {r.nameHi}</span>}
+                </div>
                 <div className="text-[10px] text-muted-foreground italic">
                   {r.botanical} • {r.code} • {r.category} • {r.part}
                 </div>
