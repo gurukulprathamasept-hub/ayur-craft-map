@@ -30,7 +30,7 @@ const MFRCreate = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
-  const { addFormulation, updateFormulation, getFormulation } = useFormulations();
+  const { addFormulation, updateFormulation, getFormulation, getUsedPrefixes } = useFormulations();
   const [activeStep, setActiveStep] = useState(0);
 
   // Basic info
@@ -39,6 +39,10 @@ const MFRCreate = () => {
   const [type, setType] = useState("Churna");
   const [form, setForm] = useState("");
   const [ref, setRef] = useState("");
+  const [code, setCode] = useState("");
+  const [batchPrefix, setBatchPrefix] = useState("");
+  const [prefixOverridden, setPrefixOverridden] = useState(false);
+  const [prefixEditing, setPrefixEditing] = useState(false);
   const [use, setUse] = useState("");
   const [shelf, setShelf] = useState("");
   const [dosha, setDosha] = useState("");
