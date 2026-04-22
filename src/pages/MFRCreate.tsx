@@ -12,7 +12,7 @@ const CAT_LABELS: Record<string, string> = { herb: "Herb", extract: "Extract", m
 
 const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging", "QC & IPC"];
 
-const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "" });
+const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "", rmCode: "", botanical: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
 const emptyPackSize = (): PackSizeOption => ({
