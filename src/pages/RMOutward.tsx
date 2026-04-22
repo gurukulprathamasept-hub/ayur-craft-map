@@ -553,7 +553,7 @@ const RMOutward = () => {
                     const bmr = bmrs.find(b => b.batchNo === item.bmr);
                     if (bmr) {
                       setSelectedBMRIngredients(bmr.ingredients.map(ing => ({
-                        name: ing.name, botanical: undefined, req: ing.requiredQty, unit: ing.unit,
+                        name: ing.name, nameHi: (ing as any).nameHi, botanical: undefined, req: ing.requiredQty, unit: ing.unit,
                       })));
                     } else {
                       setSelectedBMRIngredients(undefined);
