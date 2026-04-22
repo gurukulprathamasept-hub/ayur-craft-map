@@ -60,7 +60,7 @@ const RMSearchInput = ({ value, onSelect, placeholder }: Props) => {
                 key={r.code}
                 type="button"
                 onClick={() => {
-                  onSelect({ name: r.name, category: r.category.toLowerCase(), part: r.part, uom: r.uom });
+                  onSelect({ name: r.name, category: r.category.toLowerCase(), part: r.part, uom: r.uom, code: r.code, botanical: r.botanical });
                   setQuery(r.name);
                   setOpen(false);
                 }}
