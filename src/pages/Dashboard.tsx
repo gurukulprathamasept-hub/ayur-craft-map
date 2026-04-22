@@ -27,7 +27,6 @@ const monthMap: Record<string, number> = {
 
 function parseExpiry(exp: string): Date | null {
   if (!exp || exp === "—" || /indef/i.test(exp)) return null;
-  // Formats: "Mar 2026", "14 Jun 2025", "Aug 2026"
   const dmY = exp.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})$/);
   if (dmY) return new Date(parseInt(dmY[3]), monthMap[dmY[2]] ?? 0, parseInt(dmY[1]));
   const mY = exp.match(/^(\w{3})\s+(\d{4})$/);
@@ -36,15 +35,37 @@ function parseExpiry(exp: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function formatRelative(date: Date): string {
-  const diff = Date.now() - date.getTime();
+function parseTxnDate(s: string): Date | null {
+  if (!s || s === "—") return null;
+  const dmY = s.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})$/);
+  if (dmY) return new Date(parseInt(dmY[3]), monthMap[dmY[2]] ?? 0, parseInt(dmY[1]));
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function fyRange(fy: string): { start: Date; end: Date; startYear: number; endYear: number } {
+  const m = fy.match(/(\d{4})-(\d{2})/);
+  const startYear = m ? parseInt(m[1]) : new Date().getFullYear();
+  const endYear = startYear + 1;
+  return {
+    startYear,
+    endYear,
+    start: new Date(startYear, 3, 1),
+    end: new Date(endYear, 2, 31, 23, 59, 59),
+  };
+}
+
+function formatRelative(date: Date, refNow: Date): string {
+  const diff = refNow.getTime() - date.getTime();
+  if (diff < 0) return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  if (days < 60) return `${days}d ago`;
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
 }
 
 const Dashboard = () => {
