@@ -193,7 +193,7 @@ const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIss
             {rmItems.map((item, i) => (
               <div key={i} className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2 py-2.5 items-center text-xs ${i < rmItems.length - 1 ? "border-b border-border" : ""}`}>
                 <div>
-                  <div className="font-medium">{item.name}</div>
+                  <div className="font-medium">{displayName(item.name, item.nameHi)}</div>
                   <div className="text-[10px] text-muted-foreground">{item.bot}</div>
                 </div>
                 <div className={item.available === 0 ? "text-destructive font-medium" : ""}>{item.stock}</div>
