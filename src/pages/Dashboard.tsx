@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { AlertCircle, AlertTriangle, Search, ChevronDown, ChevronUp, FileText, ClipboardCheck, Activity, Calendar } from "lucide-react";
+import { AlertCircle, AlertTriangle, Search, ChevronDown, ChevronUp, FileText, ClipboardCheck, Activity, Calendar, Download } from "lucide-react";
 import { useStock } from "@/context/StockContext";
 import { useBMRs } from "@/context/BMRContext";
 import {
@@ -9,12 +9,47 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+// ===== CSV helpers =====
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+function toCSV(headers: string[], rows: (string | number)[][]): string {
+  const lines = [headers.map(csvEscape).join(",")];
+  for (const r of rows) lines.push(r.map(csvEscape).join(","));
+  return lines.join("\r\n");
+}
+function downloadCSV(filename: string, content: string) {
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function fySlug(fy: string) {
+  return fy.replace(/\s+/g, "_");
+}
 
 type StatusKey = "Critical" | "Low" | "Expiring" | "OK";
 
