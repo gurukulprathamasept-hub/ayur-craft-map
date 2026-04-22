@@ -91,6 +91,7 @@ const BMRCreate = () => {
     const bmr = createDefaultBMR({
       batchNo,
       productName: mfr.name,
+      productNameHi: (mfr as any).nameHi || mfr.sanskrit || "",
       mfrId: mfr.id,
       mfrName: `${mfr.name} (${mfr.type})`,
       batchSize,
@@ -110,6 +111,7 @@ const BMRCreate = () => {
         });
         return {
           name: rm.name,
+          nameHi: (rm as any).nameHi || match?.nameHi || "",
           rmCode: match?.code,
           cat: rm.cat,
           requiredQty: rm.unit === "q.s." ? 0 : Number((rm.qty * scaleFactor).toFixed(3)),
@@ -118,6 +120,7 @@ const BMRCreate = () => {
           part: rm.part,
           lot: "",
           cost: 0,
+          botanicalName: (rm as any).botanical || match?.botanical,
         };
       }),
       steps: mfr.steps.map((s, i) => ({
