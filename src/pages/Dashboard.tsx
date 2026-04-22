@@ -226,7 +226,7 @@ const Dashboard = () => {
       <div className="flex items-center gap-2.5 px-5 py-3 border-b border-border shrink-0">
         <div className="flex-1">
           <div className="text-[15px] font-medium">Dashboard</div>
-          <div className="text-[11px] text-muted-foreground mt-px">Today: {today} · {fy}</div>
+          <div className="text-[11px] text-muted-foreground mt-px">{fySubtitle}</div>
         </div>
         <Select value={fy} onValueChange={setFy}>
           <SelectTrigger className="h-8 w-[140px] text-xs">
@@ -259,7 +259,7 @@ const Dashboard = () => {
                 {criticalRows.map((r) => (
                   <li key={r.rm.code} className="flex items-center justify-between gap-2 border-t border-current/10 pt-1">
                     <span>{r.rm.name} <span className="opacity-70">({r.rm.botanical})</span></span>
-                    <span className="font-medium">{r.rm.currentStock} {r.rm.uom} · need {r.needed} {r.rm.uom}</span>
+                    <span className="font-medium">{r.balance} {r.rm.uom} · need {r.needed} {r.rm.uom}</span>
                   </li>
                 ))}
               </ul>
@@ -389,7 +389,7 @@ const Dashboard = () => {
                         <div className="text-[10px] text-muted-foreground">{r.rm.botanical} · {r.rm.part}</div>
                       </td>
                       <td><span className={`app-badge ${catBadge}`}>{r.rm.category}</span></td>
-                      <td className={stockClass}>{r.rm.currentStock.toFixed(2)}</td>
+                      <td className={stockClass}>{r.balance.toFixed(2)}</td>
                       <td>{r.rm.uom}</td>
                       <td>{r.rm.reorder.toFixed(1)}</td>
                       <td className={r.needed > 0 ? "text-kpi-danger" : ""}>{r.needed > 0 ? `${r.needed} ${r.rm.uom}` : "—"}</td>
@@ -464,7 +464,7 @@ const Dashboard = () => {
                     <div className="truncate">{a.label}</div>
                     <div className="text-[10px] text-muted-foreground mt-px">by {a.user}</div>
                   </div>
-                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">{formatRelative(a.ts)}</div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">{formatRelative(a.ts, fyNow)}</div>
                 </li>
               ))}
             </ul>
