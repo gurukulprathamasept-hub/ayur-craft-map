@@ -221,8 +221,9 @@ const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIss
 };
 
 /* ── Batch issue detail (with live stock & partial issue) ── */
-const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void; bmrLabel: string; bmrIngredients?: { name: string; botanical?: string; req: number; unit: string }[] }) => {
+const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void; bmrLabel: string; bmrIngredients?: { name: string; nameHi?: string; botanical?: string; req: number; unit: string }[] }) => {
   const { getStockForRM, issueStock } = useStock();
+  const { displayName } = useLanguage();
 
   const baseIngredients = bmrIngredients || [
     { name: "Amla / Amalaki", botanical: "Emblica officinalis", req: 3.333, unit: "kg" },
