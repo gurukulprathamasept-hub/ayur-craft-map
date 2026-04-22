@@ -143,7 +143,7 @@ const BMRPrintable = ({ bmr }: Props) => {
               bmr.ingredients.map((ing, i) => (
                 <tr key={i}>
                   <Cell value={i + 1} />
-                  <Cell value={`${ing.name}${ing.botanicalName ? ` (${ing.botanicalName})` : ""}`} />
+                  <Cell value={`${ing.name}${(ing as any).nameHi ? ` / ${(ing as any).nameHi}` : ""}${ing.botanicalName ? ` (${ing.botanicalName})` : ""}`} />
                   <Cell value={ing.cat} />
                   <Cell value={ing.requiredQty} />
                   <Cell value={ing.actualQty} />
