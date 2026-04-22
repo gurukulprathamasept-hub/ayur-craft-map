@@ -233,6 +233,71 @@ const MFRCreate = () => {
                 <div className="form-field"><label>Physical form</label><input value={form} onChange={(e) => setForm(e.target.value)} placeholder="e.g. Fine powder (≥80 mesh)" /></div>
                 <div className="form-field"><label>Pharmacopoeial reference</label><input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. AFI Vol.I" /></div>
               </div>
+
+              {/* MFR code + auto-derived batch prefix */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="form-field">
+                  <label>MFR code</label>
+                  <input
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. MFR-TCH-001"
+                  />
+                </div>
+                <div className="form-field">
+                  <label className="flex items-center gap-1.5">
+                    Batch prefix
+                    <span className="text-[10px] text-muted-foreground font-normal">(auto)</span>
+                  </label>
+                  <div className="flex gap-1.5">
+                    <input
+                      value={batchPrefix}
+                      readOnly={!prefixEditing}
+                      onChange={(e) => {
+                        const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+                        setBatchPrefix(v);
+                        setPrefixOverridden(true);
+                      }}
+                      className={!prefixEditing ? "bg-secondary font-mono" : "font-mono"}
+                      placeholder="auto"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (prefixEditing) {
+                          // Done editing — keep override
+                          setPrefixEditing(false);
+                        } else {
+                          setPrefixEditing(true);
+                        }
+                      }}
+                      title={prefixEditing ? "Done" : "Edit prefix"}
+                      className="px-2 rounded-md border border-border hover:bg-secondary transition-all"
+                    >
+                      {prefixEditing ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                    </button>
+                    {prefixOverridden && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrefixOverridden(false);
+                          setPrefixEditing(false);
+                          const derived = derivePrefix(name, code);
+                          setBatchPrefix(resolveUniquePrefix(derived, getUsedPrefixes(editId || undefined)));
+                        }}
+                        title="Reset to auto"
+                        className="px-2 rounded-md border border-border text-[10px] font-medium hover:bg-secondary transition-all"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    Batch numbers will look like <span className="font-mono">{batchPrefix || "—"}-YYMM-0001</span>
+                  </div>
+                </div>
+                <div className="form-field" />
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="form-field">
                   <label>Standard batch size *</label>
