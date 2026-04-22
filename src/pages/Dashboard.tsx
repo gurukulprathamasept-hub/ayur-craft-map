@@ -107,6 +107,7 @@ function formatRelative(date: Date, refNow: Date): string {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { rmData, pendingGRNs, issuedRecords } = useStock();
+  const { displayName } = useLanguage();
   const { bmrs } = useBMRs();
 
   const [fy, setFy] = useState("FY 2025-26");
