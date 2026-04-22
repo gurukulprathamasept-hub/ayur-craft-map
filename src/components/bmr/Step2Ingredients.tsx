@@ -24,20 +24,33 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
     onChange({ ingredients });
   };
 
-  // Auto-allocate FIFO on first render for each ingredient that has rmCode and requiredQty
+  // Auto-allocate FIFO for each ingredient that has rmCode and requiredQty.
+  // Re-runs when stock changes so newly-added lots get picked up by previously-empty allocations.
   useEffect(() => {
     let mutated = false;
     const ingredients = bmr.ingredients.map((ing) => {
       if (ing.consumed) return ing;
-      if (ing.allocations !== undefined) return ing;
       if (!ing.rmCode || !ing.requiredQty || ing.unit === "q.s.") return ing;
+      const totalAlloc = (ing.allocations || []).reduce((s, a) => s + a.qty, 0);
+      // Skip if already fully allocated
+      if (ing.allocations && ing.allocations.length > 0 && totalAlloc >= ing.requiredQty - 0.0001) return ing;
+      // Try (re)allocating — handles first render AND case where stock was empty before
+      const lots = getActiveLotsForRM(ing.rmCode);
+      if (lots.length === 0 && (ing.allocations?.length || 0) === 0) {
+        // No stock — set empty allocations once so UI shows "No stock available"
+        if (ing.allocations === undefined) {
+          mutated = true;
+          return { ...ing, allocations: [], shortfall: ing.requiredQty };
+        }
+        return ing;
+      }
       const { allocations, shortfall } = consumeFromLots(ing.rmCode, ing.requiredQty);
       mutated = true;
       return { ...ing, allocations, shortfall };
     });
     if (mutated) onChange({ ingredients });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [bmr.ingredients.length, bmr.ingredients.map(i => `${i.rmCode}:${i.requiredQty}`).join("|")]);
 
   const resetFIFO = (idx: number) => {
     const ing = bmr.ingredients[idx];
@@ -179,7 +192,7 @@ const Step2Ingredients = ({ bmr, onChange }: Props) => {
                             {isShort && <span className="text-destructive font-medium">Short by {(ing.shortfall || 0).toFixed(3)}</span>}
                             {!ing.consumed && (
                               <button onClick={() => resetFIFO(i)} className="flex items-center gap-0.5 text-primary hover:underline">
-                                <RefreshCw className="w-2.5 h-2.5" /> FIFO
+                                <RefreshCw className="w-2.5 h-2.5" /> {(!ing.allocations || ing.allocations.length === 0) ? "Retry FIFO" : "FIFO"}
                               </button>
                             )}
                           </div>
