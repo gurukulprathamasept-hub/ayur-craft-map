@@ -462,6 +462,7 @@ const FormulationDetail = ({ f }: { f: Formulation }) => {
 const MFRTable = () => {
   const navigate = useNavigate();
   const { formulations: customFormulations, deleteFormulation } = useFormulations();
+  const { displayName } = useLanguage();
   const [filter, setFilter] = useState("All");
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [search, setSearch] = useState("");

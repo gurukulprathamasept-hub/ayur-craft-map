@@ -68,7 +68,7 @@ const BMRPrintable = ({ bmr }: Props) => {
           <tbody>
             <tr>
               <td style={headerCell}>Product Name</td>
-              <td style={cellStyle}>{bmr.productName}</td>
+              <td style={cellStyle}>{(bmr as any).productNameHi ? `${bmr.productName} / ${(bmr as any).productNameHi}` : bmr.productName}</td>
               <td style={headerCell}>Batch No.</td>
               <td style={cellStyle}>{bmr.batchNo}</td>
             </tr>
@@ -143,7 +143,7 @@ const BMRPrintable = ({ bmr }: Props) => {
               bmr.ingredients.map((ing, i) => (
                 <tr key={i}>
                   <Cell value={i + 1} />
-                  <Cell value={`${ing.name}${ing.botanicalName ? ` (${ing.botanicalName})` : ""}`} />
+                  <Cell value={`${ing.name}${(ing as any).nameHi ? ` / ${(ing as any).nameHi}` : ""}${ing.botanicalName ? ` (${ing.botanicalName})` : ""}`} />
                   <Cell value={ing.cat} />
                   <Cell value={ing.requiredQty} />
                   <Cell value={ing.actualQty} />

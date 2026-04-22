@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useBMRs } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { ArrowLeft, Package, FlaskConical, Search, AlertTriangle, CheckCircle2, Clock, ClipboardList, X, Printer, Download, Edit, RotateCcw } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -133,10 +134,11 @@ const IssueSummary = ({ items, onClear, onClose }: { items: IssuedItem[]; onClea
 /* ── Single-drug issue detail ── */
 const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void }) => {
   const { rmData, getStockForRM, issueStock } = useStock();
+  const { displayName } = useLanguage();
 
   const rmItems = rmData.map(rm => {
     const stock = getStockForRM(rm.name);
-    return { name: rm.name, bot: rm.botanical, stock: stock ? `${stock.available} ${stock.uom}` : "—", batch: stock?.batch || "—", expiry: stock?.expiry || "—", uom: rm.uom, available: rm.currentStock };
+    return { name: rm.name, nameHi: (rm as any).nameHi, bot: rm.botanical, stock: stock ? `${stock.available} ${stock.uom}` : "—", batch: stock?.batch || "—", expiry: stock?.expiry || "—", uom: rm.uom, available: rm.currentStock };
   });
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -191,7 +193,7 @@ const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIss
             {rmItems.map((item, i) => (
               <div key={i} className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2 py-2.5 items-center text-xs ${i < rmItems.length - 1 ? "border-b border-border" : ""}`}>
                 <div>
-                  <div className="font-medium">{item.name}</div>
+                  <div className="font-medium">{displayName(item.name, item.nameHi)}</div>
                   <div className="text-[10px] text-muted-foreground">{item.bot}</div>
                 </div>
                 <div className={item.available === 0 ? "text-destructive font-medium" : ""}>{item.stock}</div>
@@ -219,8 +221,9 @@ const SingleDrugIssueDetail = ({ onBack, onIssued }: { onBack: () => void; onIss
 };
 
 /* ── Batch issue detail (with live stock & partial issue) ── */
-const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void; bmrLabel: string; bmrIngredients?: { name: string; botanical?: string; req: number; unit: string }[] }) => {
+const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBack: () => void; onIssued: (items: IssuedItem[]) => void; bmrLabel: string; bmrIngredients?: { name: string; nameHi?: string; botanical?: string; req: number; unit: string }[] }) => {
   const { getStockForRM, issueStock } = useStock();
+  const { displayName } = useLanguage();
 
   const baseIngredients = bmrIngredients || [
     { name: "Amla / Amalaki", botanical: "Emblica officinalis", req: 3.333, unit: "kg" },
@@ -322,7 +325,7 @@ const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBa
                     <input type="checkbox" checked={item.issueChecked} onChange={() => toggleIssue(i)} disabled={isOut} className="w-3.5 h-3.5 rounded border-border accent-primary" />
                   </div>
                   <div>
-                    <div className="font-medium">{item.name}</div>
+                    <div className="font-medium">{displayName(item.name, (item as any).nameHi)}</div>
                     <div className="text-[10px] text-muted-foreground">{item.botanical}</div>
                   </div>
                   <div>{item.req} {item.unit}</div>
@@ -390,7 +393,7 @@ const RMOutward = () => {
   const { issuedRecords, reverseIssue } = useStock();
   const [view, setView] = useState<"list" | "batch" | "single">("list");
   const [selectedBMR, setSelectedBMR] = useState<string>("");
-  const [selectedBMRIngredients, setSelectedBMRIngredients] = useState<{ name: string; botanical?: string; req: number; unit: string }[] | undefined>(undefined);
+  const [selectedBMRIngredients, setSelectedBMRIngredients] = useState<{ name: string; nameHi?: string; botanical?: string; req: number; unit: string }[] | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [issuedItems, setIssuedItems] = useState<IssuedItem[]>([]);
   const [showSummary, setShowSummary] = useState(false);
@@ -550,7 +553,7 @@ const RMOutward = () => {
                     const bmr = bmrs.find(b => b.batchNo === item.bmr);
                     if (bmr) {
                       setSelectedBMRIngredients(bmr.ingredients.map(ing => ({
-                        name: ing.name, botanical: undefined, req: ing.requiredQty, unit: ing.unit,
+                        name: ing.name, nameHi: (ing as any).nameHi, botanical: undefined, req: ing.requiredQty, unit: ing.unit,
                       })));
                     } else {
                       setSelectedBMRIngredients(undefined);

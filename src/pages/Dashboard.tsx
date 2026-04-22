@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { AlertCircle, AlertTriangle, Search, ChevronDown, ChevronUp, FileText, ClipboardCheck, Activity, Calendar, Download } from "lucide-react";
 import { useStock } from "@/context/StockContext";
 import { useBMRs } from "@/context/BMRContext";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   Popover,
   PopoverContent,
@@ -106,6 +107,7 @@ function formatRelative(date: Date, refNow: Date): string {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { rmData, pendingGRNs, issuedRecords } = useStock();
+  const { displayName } = useLanguage();
   const { bmrs } = useBMRs();
 
   const [fy, setFy] = useState("FY 2025-26");
@@ -339,7 +341,7 @@ const Dashboard = () => {
               <ul className="pb-2 pl-6 space-y-1 text-[11px]">
                 {criticalRows.map((r) => (
                   <li key={r.rm.code} className="flex items-center justify-between gap-2 border-t border-current/10 pt-1">
-                    <span>{r.rm.name} <span className="opacity-70">({r.rm.botanical})</span></span>
+                    <span>{displayName(r.rm.name, (r.rm as any).nameHi)} <span className="opacity-70">({r.rm.botanical})</span></span>
                     <span className="font-medium">{r.balance} {r.rm.uom} · need {r.needed} {r.rm.uom}</span>
                   </li>
                 ))}
@@ -361,7 +363,7 @@ const Dashboard = () => {
               <ul className="pb-2 pl-6 space-y-1 text-[11px]">
                 {expiringRows.map((r) => (
                   <li key={r.rm.code} className="flex items-center justify-between gap-2 border-t border-current/10 pt-1">
-                    <span>{r.rm.name} — {r.nearest?.batch}</span>
+                    <span>{displayName(r.rm.name, (r.rm as any).nameHi)} — {r.nearest?.batch}</span>
                     <span className="font-medium">{r.nearest?.expiry}</span>
                   </li>
                 ))}
@@ -481,7 +483,7 @@ const Dashboard = () => {
                   return (
                     <tr key={r.rm.code} className="cursor-pointer" onClick={() => navigate("/stock-ledger")}>
                       <td>
-                        <div className="font-medium">{r.rm.name}</div>
+                        <div className="font-medium">{displayName(r.rm.name, (r.rm as any).nameHi)}</div>
                         <div className="text-[10px] text-muted-foreground">{r.rm.botanical} · {r.rm.part}</div>
                       </td>
                       <td><span className={`app-badge ${catBadge}`}>{r.rm.category}</span></td>
