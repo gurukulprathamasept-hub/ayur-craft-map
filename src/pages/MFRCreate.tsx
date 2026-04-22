@@ -12,7 +12,7 @@ const CAT_LABELS: Record<string, string> = { herb: "Herb", extract: "Extract", m
 
 const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging", "QC & IPC"];
 
-const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "" });
+const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "", rmCode: "", botanical: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
 const emptyPackSize = (): PackSizeOption => ({
@@ -113,6 +113,16 @@ const MFRCreate = () => {
   const updateIngredient = (i: number, field: keyof RMItem, value: any) => {
     setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   };
+
+  // Auto-append a new empty row when the last row gets an RM picked (RMInward UX parity)
+  useEffect(() => {
+    if (activeStep !== 1) return;
+    const last = ingredients[ingredients.length - 1];
+    if (last && last.name.trim()) {
+      setIngredients((prev) => [...prev, emptyRM()]);
+    }
+  }, [ingredients, activeStep]);
+
   const updateStep = (i: number, field: keyof ProcessStep, value: string) => {
     setSteps((prev) => prev.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   };
@@ -330,18 +340,34 @@ const MFRCreate = () => {
                 <div>Raw material name</div><div>Category</div><div>Qty</div><div>Unit</div><div>Part used</div><div></div>
               </div>
               {ingredients.map((rm, i) => (
-                <div key={i} className="grid grid-cols-[2fr_120px_80px_60px_1.5fr_32px] gap-2 py-1.5 items-center border-b border-border last:border-b-0">
-                  <RMSearchInput
-                    value={rm.name}
-                    onSelect={(sel) => {
-                      const validCats = ["herb","extract","mineral","animal","base","process"];
-                      const cat = (validCats.includes(sel.category) ? sel.category : rm.cat) as RMItem["cat"];
-                      const validUnits = ["kg","g","L","ml","units","q.s."];
-                      const unit = validUnits.includes(sel.uom) ? sel.uom : rm.unit;
-                      setIngredients((prev) => prev.map((it, idx) => idx === i ? { ...it, name: sel.name, cat, part: sel.part || it.part, unit } : it));
-                    }}
-                    placeholder="Search RM (name / botanical / code)..."
-                  />
+                <div key={i} className="grid grid-cols-[2fr_120px_80px_60px_1.5fr_32px] gap-2 py-1.5 items-start border-b border-border last:border-b-0">
+                  <div className="flex flex-col gap-0.5">
+                    <RMSearchInput
+                      value={rm.name}
+                      onSelect={(sel) => {
+                        const validCats = ["herb","extract","mineral","animal","base","process"];
+                        const cat = (validCats.includes(sel.category) ? sel.category : rm.cat) as RMItem["cat"];
+                        const validUnits = ["kg","g","L","ml","units","q.s."];
+                        const unit = validUnits.includes(sel.uom) ? sel.uom : rm.unit;
+                        setIngredients((prev) => prev.map((it, idx) => idx === i ? {
+                          ...it,
+                          name: sel.name,
+                          cat,
+                          part: sel.part || it.part,
+                          unit,
+                          rmCode: sel.code,
+                          botanical: sel.botanical,
+                        } : it));
+                      }}
+                      placeholder="Search RM (name / botanical / code)..."
+                    />
+                    {(rm.rmCode || rm.botanical) && (
+                      <div className="flex items-center gap-1.5 pl-1 text-[10px] text-muted-foreground">
+                        {rm.rmCode && <span className="font-mono px-1 py-px rounded bg-secondary border border-border">{rm.rmCode}</span>}
+                        {rm.botanical && <span className="italic truncate">{rm.botanical}</span>}
+                      </div>
+                    )}
+                  </div>
 
                   <select className="form-field-input" value={rm.cat} onChange={(e) => updateIngredient(i, "cat", e.target.value)}>
                     {rmCategories.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
@@ -351,11 +377,18 @@ const MFRCreate = () => {
                     <option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option><option value="units">units</option><option value="q.s.">q.s.</option>
                   </select>
                   <input className="form-field-input" value={rm.part} onChange={(e) => updateIngredient(i, "part", e.target.value)} placeholder="e.g. Dried fruit rind" />
-                  <button onClick={() => setIngredients((p) => p.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive transition-colors">
+                  <button
+                    onClick={() => setIngredients((p) => p.length > 1 ? p.filter((_, idx) => idx !== i) : p)}
+                    disabled={ingredients.length <= 1}
+                    className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-30 mt-1.5"
+                  >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))}
+              <div className="text-[10px] text-muted-foreground italic mt-2">
+                Tip: a new empty row is added automatically once you pick a raw material.
+              </div>
             </div>
           </div>
         )}

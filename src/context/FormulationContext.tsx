@@ -8,6 +8,10 @@ export interface RMItem {
   qty: number; // quantity per standard batch
   unit: string; // kg, g, L, ml etc.
   part: string;
+  /** RM master code (e.g. "RM-001") — auto-filled when picked from RM master. */
+  rmCode?: string;
+  /** Botanical / scientific name — auto-filled when picked from RM master. */
+  botanical?: string;
 }
 
 export interface ProcessStep {
