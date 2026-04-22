@@ -568,7 +568,6 @@ const ScheduleTA = () => {
                     <th>Product name</th>
                     <th>Batch nos.</th>
                     <th>Qty manufactured</th>
-                    <th>Qty sold</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -577,7 +576,6 @@ const ScheduleTA = () => {
                       <td className="font-medium">{r.product}</td>
                       <td className="text-[11px]">{r.batchNos}</td>
                       <td>{r.manufactured}</td>
-                      <td>{r.sold}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -872,7 +870,6 @@ const PrintableForm = ({
               <th>Product name</th>
               <th>Batch numbers</th>
               <th>Qty manufactured</th>
-              <th>Qty sold</th>
             </tr>
           </thead>
           <tbody>
@@ -881,7 +878,6 @@ const PrintableForm = ({
                 <td>{f.product}</td>
                 <td>{f.batchNos}</td>
                 <td>{f.manufactured}</td>
-                <td>{f.sold}</td>
               </tr>
             ))}
           </tbody>
