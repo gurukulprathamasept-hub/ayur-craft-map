@@ -48,6 +48,10 @@ export interface Formulation {
   type: string;
   form: string;
   ref: string;
+  /** Manually-assigned MFR code, e.g. "MFR-TCH-001" — preferred source for batch prefix. */
+  code?: string;
+  /** Resolved (collision-free) batch number prefix, e.g. "TRCH". Stored once and stable. */
+  batchPrefix?: string;
   use: string;
   shelf: string;
   standardBatchSize: number;
@@ -72,6 +76,8 @@ interface FormulationContextType {
   updateFormulation: (id: string, f: Formulation) => void;
   deleteFormulation: (id: string) => void;
   getFormulation: (id: string) => Formulation | undefined;
+  /** Set of batch prefixes currently used by other formulations (excluding the given id). */
+  getUsedPrefixes: (excludeId?: string) => string[];
 }
 
 const FormulationContext = createContext<FormulationContextType | null>(null);
@@ -99,8 +105,13 @@ export const FormulationProvider = ({ children }: { children: ReactNode }) => {
 
   const getFormulation = (id: string) => formulations.find((f) => f.id === id);
 
+  const getUsedPrefixes = (excludeId?: string) =>
+    formulations
+      .filter((f) => f.id !== excludeId && !!f.batchPrefix)
+      .map((f) => f.batchPrefix!.toUpperCase());
+
   return (
-    <FormulationContext.Provider value={{ formulations, addFormulation, updateFormulation, deleteFormulation, getFormulation }}>
+    <FormulationContext.Provider value={{ formulations, addFormulation, updateFormulation, deleteFormulation, getFormulation, getUsedPrefixes }}>
       {children}
     </FormulationContext.Provider>
   );

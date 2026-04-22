@@ -42,7 +42,7 @@ const BMRCreate = () => {
 
   useEffect(() => {
     if (mfr) {
-      const { nextBatchNo, prevBatchNo: prev } = getNextBatchNo(mfr.name, mfr.id);
+      const { nextBatchNo, prevBatchNo: prev } = getNextBatchNo(mfr.name, mfr.id, mfr.batchPrefix);
       setBatchNo(nextBatchNo);
       setPrevBatchNo(prev);
       setPackAllocations({});
