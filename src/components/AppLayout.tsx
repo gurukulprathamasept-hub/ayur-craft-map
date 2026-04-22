@@ -10,7 +10,9 @@ import {
   BookOpen,
   Truck,
   ShieldCheck,
+  Languages,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const navGroups = [
   {
