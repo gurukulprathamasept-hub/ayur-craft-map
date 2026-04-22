@@ -483,7 +483,7 @@ const Dashboard = () => {
                   return (
                     <tr key={r.rm.code} className="cursor-pointer" onClick={() => navigate("/stock-ledger")}>
                       <td>
-                        <div className="font-medium">{r.rm.name}</div>
+                        <div className="font-medium">{displayName(r.rm.name, (r.rm as any).nameHi)}</div>
                         <div className="text-[10px] text-muted-foreground">{r.rm.botanical} · {r.rm.part}</div>
                       </td>
                       <td><span className={`app-badge ${catBadge}`}>{r.rm.category}</span></td>
