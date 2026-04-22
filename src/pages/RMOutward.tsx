@@ -325,7 +325,7 @@ const BatchIssueDetail = ({ onBack, onIssued, bmrLabel, bmrIngredients }: { onBa
                     <input type="checkbox" checked={item.issueChecked} onChange={() => toggleIssue(i)} disabled={isOut} className="w-3.5 h-3.5 rounded border-border accent-primary" />
                   </div>
                   <div>
-                    <div className="font-medium">{item.name}</div>
+                    <div className="font-medium">{displayName(item.name, (item as any).nameHi)}</div>
                     <div className="text-[10px] text-muted-foreground">{item.botanical}</div>
                   </div>
                   <div>{item.req} {item.unit}</div>
