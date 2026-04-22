@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info, Pencil } from "lucide-react";
 import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec, PackSizeOption } from "@/context/FormulationContext";
 import RMSearchInput from "@/components/RMSearchInput";
+import { derivePrefix, resolveUniquePrefix } from "@/lib/batchPrefix";
 import { toast } from "sonner";
 
 const dosageForms = ["Churna", "Arishta/Asava", "Avaleha", "Taila", "Ghrita", "Vati/Gutika", "Bhasma", "Other"];
