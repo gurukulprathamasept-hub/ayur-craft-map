@@ -197,6 +197,9 @@ const MFRCreate = () => {
       standardBatchUnit: batchUnit,
       rm: ingredients.filter((r) => r.name.trim()),
       steps: steps.filter((s) => s.step.trim()),
+      subProcesses: subProcesses
+        .filter((sp) => sp.name.trim() || sp.ingredients.some((r) => r.name.trim()))
+        .map((sp) => ({ ...sp, ingredients: sp.ingredients.filter((r) => r.name.trim()) })),
       qc: qcParams.filter((q) => q.parameter.trim()),
       ipc,
       expectedYieldPct,
