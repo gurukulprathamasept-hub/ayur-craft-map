@@ -105,6 +105,7 @@ const MFRCreate = () => {
         setBatchUnit(existing.standardBatchUnit);
         setIngredients(existing.rm.length ? existing.rm : [emptyRM()]);
         setSteps(existing.steps.length ? existing.steps : [emptyStep()]);
+        setSubProcesses(existing.subProcesses || []);
         setQcParams(existing.qc.length ? existing.qc : [emptyQC()]);
         setIpc(existing.ipc);
         setExpectedYieldPct(existing.expectedYieldPct ?? 98);
