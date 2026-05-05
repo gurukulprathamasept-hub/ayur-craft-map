@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info, Pencil } from "lucide-react";
-import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec, PackSizeOption } from "@/context/FormulationContext";
+import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec, PackSizeOption, SubProcess, SubProcessType } from "@/context/FormulationContext";
 import RMSearchInput from "@/components/RMSearchInput";
 import { derivePrefix, resolveUniquePrefix } from "@/lib/batchPrefix";
 import { toast } from "sonner";
@@ -10,11 +10,26 @@ const dosageForms = ["Churna", "Arishta/Asava", "Avaleha", "Taila", "Ghrita", "V
 const rmCategories = ["herb", "extract", "mineral", "animal", "base", "process"] as const;
 const CAT_LABELS: Record<string, string> = { herb: "Herb", extract: "Extract", mineral: "Mineral", animal: "Animal", base: "Base / Excipient", process: "Process agent" };
 
-const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging", "QC & IPC"];
+const STEPS = ["Basic info", "Ingredients", "Sub-processes", "Process steps", "Yield & Packaging", "QC & IPC"];
+const SUBPROCESS_TYPES: SubProcessType[] = ["Kwatha", "Kalka", "Bhavana", "Shodhana", "Other"];
 
 const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "", rmCode: "", botanical: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
+const emptySubProcess = (): SubProcess => ({
+  id: `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  type: "Kwatha",
+  name: "",
+  description: "",
+  ingredients: [],
+  waterRatio: "",
+  reductionTarget: "",
+  numberOfCycles: undefined,
+  yieldQty: undefined,
+  yieldUnit: "L",
+  completionTest: "",
+  notes: "",
+});
 const emptyPackSize = (): PackSizeOption => ({
   label: "",
   primaryPacksPerStdBatch: 0,
@@ -52,6 +67,9 @@ const MFRCreate = () => {
   // Ingredients
   const [ingredients, setIngredients] = useState<RMItem[]>([emptyRM()]);
 
+  // Sub-processes
+  const [subProcesses, setSubProcesses] = useState<SubProcess[]>([]);
+
   // Process steps
   const [steps, setSteps] = useState<ProcessStep[]>([emptyStep()]);
 
@@ -87,6 +105,7 @@ const MFRCreate = () => {
         setBatchUnit(existing.standardBatchUnit);
         setIngredients(existing.rm.length ? existing.rm : [emptyRM()]);
         setSteps(existing.steps.length ? existing.steps : [emptyStep()]);
+        setSubProcesses(existing.subProcesses || []);
         setQcParams(existing.qc.length ? existing.qc : [emptyQC()]);
         setIpc(existing.ipc);
         setExpectedYieldPct(existing.expectedYieldPct ?? 98);
@@ -158,8 +177,9 @@ const MFRCreate = () => {
   const canProceed = () => {
     if (activeStep === 0) return name.trim() && batchSize > 0;
     if (activeStep === 1) return ingredients.some((r) => r.name.trim() && r.qty > 0);
-    if (activeStep === 2) return steps.some((s) => s.step.trim());
-    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.packSizes.some((p) => p.label.trim().length > 0);
+    if (activeStep === 2) return true; // sub-processes optional
+    if (activeStep === 3) return steps.some((s) => s.step.trim());
+    if (activeStep === 4) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.packSizes.some((p) => p.label.trim().length > 0);
     return true;
   };
 
@@ -177,6 +197,9 @@ const MFRCreate = () => {
       standardBatchUnit: batchUnit,
       rm: ingredients.filter((r) => r.name.trim()),
       steps: steps.filter((s) => s.step.trim()),
+      subProcesses: subProcesses
+        .filter((sp) => sp.name.trim() || sp.ingredients.some((r) => r.name.trim()))
+        .map((sp) => ({ ...sp, ingredients: sp.ingredients.filter((r) => r.name.trim()) })),
       qc: qcParams.filter((q) => q.parameter.trim()),
       ipc,
       expectedYieldPct,
@@ -404,8 +427,130 @@ const MFRCreate = () => {
           </div>
         )}
 
-        {/* Step 2: Process steps */}
+        {/* Step 2: Sub-processes */}
         {activeStep === 2 && (
+          <>
+            <div className="alert-box alert-info mb-3">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>Add intermediate preparations needed before the final process — e.g. Kwatha (decoction), Kalka (paste), Bhavana (levigation), Shodhana (purification). These will appear as dedicated sections in the BMR.</span>
+            </div>
+            <div className="app-card !overflow-visible">
+              <div className="app-card-head">
+                <div className="app-card-title">Sub-processes / Intermediate preparations ({subProcesses.length})</div>
+                <button onClick={() => setSubProcesses((p) => [...p, emptySubProcess()])} className="px-2.5 py-1 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1">
+                  <Plus className="w-3 h-3" /> Add sub-process
+                </button>
+              </div>
+              <div className="p-3.5 space-y-3">
+                {subProcesses.length === 0 && (
+                  <div className="text-[11px] text-muted-foreground italic text-center py-6">
+                    No sub-processes defined. Optional — add only if this formulation needs intermediates (Kwatha, Kalka, Bhavana, Shodhana).
+                  </div>
+                )}
+                {subProcesses.map((sp, spIdx) => {
+                  const updateSP = (patch: Partial<SubProcess>) =>
+                    setSubProcesses((prev) => prev.map((x, i) => i === spIdx ? { ...x, ...patch } : x));
+                  const updateSPIng = (i: number, patch: Partial<RMItem>) =>
+                    updateSP({ ingredients: sp.ingredients.map((it, idx) => idx === i ? { ...it, ...patch } : it) });
+                  return (
+                    <div key={sp.id} className="border border-border rounded-md p-3 bg-secondary/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="step-num step-num-current text-[9px] w-5 h-5">{spIdx + 1}</div>
+                        <span className="text-xs font-medium">Sub-process {spIdx + 1}</span>
+                        <button onClick={() => setSubProcesses((p) => p.filter((_, i) => i !== spIdx))} className="ml-auto text-muted-foreground hover:text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mb-2">
+                        <div className="form-field">
+                          <label>Type *</label>
+                          <select value={sp.type} onChange={(e) => updateSP({ type: e.target.value as SubProcessType })}>
+                            {SUBPROCESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        <div className="form-field col-span-2">
+                          <label>Name *</label>
+                          <input value={sp.name} onChange={(e) => updateSP({ name: e.target.value })} placeholder="e.g. Dashamoola Kwatha" />
+                        </div>
+                      </div>
+                      <div className="form-field mb-2">
+                        <label>Description</label>
+                        <textarea value={sp.description} onChange={(e) => updateSP({ description: e.target.value })} placeholder="Method / SOP for this intermediate..." />
+                      </div>
+
+                      {sp.type === "Kwatha" && (
+                        <div className="grid grid-cols-3 gap-2 mb-2">
+                          <div className="form-field"><label>Water ratio</label><input value={sp.waterRatio || ""} onChange={(e) => updateSP({ waterRatio: e.target.value })} placeholder="e.g. 1:4" /></div>
+                          <div className="form-field"><label>Reduction target</label><input value={sp.reductionTarget || ""} onChange={(e) => updateSP({ reductionTarget: e.target.value })} placeholder="e.g. Reduce to 1/4th" /></div>
+                          <div className="form-field"><label>Completion test</label><input value={sp.completionTest || ""} onChange={(e) => updateSP({ completionTest: e.target.value })} placeholder="e.g. Varti test" /></div>
+                        </div>
+                      )}
+                      {(sp.type === "Bhavana" || sp.type === "Shodhana") && (
+                        <div className="grid grid-cols-3 gap-2 mb-2">
+                          <div className="form-field"><label>Number of cycles</label><input type="number" min={0} value={sp.numberOfCycles ?? ""} onChange={(e) => updateSP({ numberOfCycles: e.target.value === "" ? undefined : Number(e.target.value) })} placeholder="e.g. 7" /></div>
+                          <div className="form-field"><label>Completion test</label><input value={sp.completionTest || ""} onChange={(e) => updateSP({ completionTest: e.target.value })} placeholder="e.g. Ball formation" /></div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="form-field"><label>Expected yield qty</label><input type="number" min={0} step="0.001" value={sp.yieldQty ?? ""} onChange={(e) => updateSP({ yieldQty: e.target.value === "" ? undefined : Number(e.target.value) })} /></div>
+                        <div className="form-field">
+                          <label>Yield unit</label>
+                          <select value={sp.yieldUnit || "L"} onChange={(e) => updateSP({ yieldUnit: e.target.value })}>
+                            <option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-[11px] font-medium">Dravyas used in this sub-process</span>
+                        <button onClick={() => updateSP({ ingredients: [...sp.ingredients, emptyRM()] })} className="px-2 py-0.5 rounded border border-border text-[10px] font-medium hover:bg-secondary flex items-center gap-1">
+                          <Plus className="w-2.5 h-2.5" /> Add dravya
+                        </button>
+                      </div>
+                      <div className="border border-border rounded-md bg-card p-2">
+                        {sp.ingredients.length === 0 && (
+                          <div className="text-[10px] text-muted-foreground italic py-2 text-center">No dravyas yet — click "Add dravya"</div>
+                        )}
+                        {sp.ingredients.map((rm, i) => (
+                          <div key={i} className="grid grid-cols-[2fr_80px_60px_1.2fr_28px] gap-2 py-1 items-start">
+                            <RMSearchInput
+                              value={rm.name}
+                              onSelect={(sel) => {
+                                const validCats = ["herb","extract","mineral","animal","base","process"];
+                                const cat = (validCats.includes(sel.category) ? sel.category : rm.cat) as RMItem["cat"];
+                                const validUnits = ["kg","g","L","ml","units","q.s."];
+                                const unit = validUnits.includes(sel.uom) ? sel.uom : rm.unit;
+                                updateSPIng(i, { name: sel.name, nameHi: sel.nameHi || rm.nameHi, cat, part: sel.part || rm.part, unit, rmCode: sel.code, botanical: sel.botanical });
+                              }}
+                              placeholder="Search RM..."
+                            />
+                            <input type="number" className="form-field-input" value={rm.qty || ""} onChange={(e) => updateSPIng(i, { qty: Number(e.target.value) })} min={0} step="0.001" placeholder="Qty" />
+                            <select className="form-field-input" value={rm.unit} onChange={(e) => updateSPIng(i, { unit: e.target.value })}>
+                              <option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option><option value="units">units</option><option value="q.s.">q.s.</option>
+                            </select>
+                            <input className="form-field-input" value={rm.part} onChange={(e) => updateSPIng(i, { part: e.target.value })} placeholder="Part used" />
+                            <button onClick={() => updateSP({ ingredients: sp.ingredients.filter((_, idx) => idx !== i) })} className="text-muted-foreground hover:text-destructive mt-1.5">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="form-field mt-2">
+                        <label>Notes</label>
+                        <textarea value={sp.notes || ""} onChange={(e) => updateSP({ notes: e.target.value })} placeholder="Additional remarks..." />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Step 3: Process steps */}
+        {activeStep === 3 && (
           <div className="app-card">
             <div className="app-card-head">
               <div className="app-card-title">Manufacturing process steps</div>
@@ -437,7 +582,7 @@ const MFRCreate = () => {
         )}
 
         {/* Step 3: Yield & Packaging */}
-        {activeStep === 3 && (
+        {activeStep === 4 && (
           <>
             <div className="alert-box alert-info mb-3">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
@@ -519,7 +664,7 @@ const MFRCreate = () => {
         )}
 
         {/* Step 4: QC & IPC */}
-        {activeStep === 4 && (
+        {activeStep === 5 && (
           <div className="app-card">
             <div className="app-card-head">
               <div className="app-card-title">QC parameters & IPC checks</div>
