@@ -67,6 +67,9 @@ const MFRCreate = () => {
   // Ingredients
   const [ingredients, setIngredients] = useState<RMItem[]>([emptyRM()]);
 
+  // Sub-processes
+  const [subProcesses, setSubProcesses] = useState<SubProcess[]>([]);
+
   // Process steps
   const [steps, setSteps] = useState<ProcessStep[]>([emptyStep()]);
 
