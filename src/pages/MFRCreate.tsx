@@ -10,7 +10,8 @@ const dosageForms = ["Churna", "Arishta/Asava", "Avaleha", "Taila", "Ghrita", "V
 const rmCategories = ["herb", "extract", "mineral", "animal", "base", "process"] as const;
 const CAT_LABELS: Record<string, string> = { herb: "Herb", extract: "Extract", mineral: "Mineral", animal: "Animal", base: "Base / Excipient", process: "Process agent" };
 
-const STEPS = ["Basic info", "Ingredients", "Process steps", "Yield & Packaging", "QC & IPC"];
+const STEPS = ["Basic info", "Ingredients", "Sub-processes", "Process steps", "Yield & Packaging", "QC & IPC"];
+const SUBPROCESS_TYPES: SubProcessType[] = ["Kwatha", "Kalka", "Bhavana", "Shodhana", "Other"];
 
 const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "", rmCode: "", botanical: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
