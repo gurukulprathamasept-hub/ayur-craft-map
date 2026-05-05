@@ -177,8 +177,9 @@ const MFRCreate = () => {
   const canProceed = () => {
     if (activeStep === 0) return name.trim() && batchSize > 0;
     if (activeStep === 1) return ingredients.some((r) => r.name.trim() && r.qty > 0);
-    if (activeStep === 2) return steps.some((s) => s.step.trim());
-    if (activeStep === 3) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.packSizes.some((p) => p.label.trim().length > 0);
+    if (activeStep === 2) return true; // sub-processes optional
+    if (activeStep === 3) return steps.some((s) => s.step.trim());
+    if (activeStep === 4) return expectedYieldPct > 0 && expectedYieldPct <= 100 && packaging.packSizes.some((p) => p.label.trim().length > 0);
     return true;
   };
 
