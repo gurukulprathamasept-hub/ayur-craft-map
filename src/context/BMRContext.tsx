@@ -160,6 +160,8 @@ export interface BMRSubProcess {
   // Bhavana / Shodhana
   iterationLog?: BMRSubProcessIterationLog[];
 }
+
+export interface BMRSignature {
   name: string;
   initials: string;
   role: string;
