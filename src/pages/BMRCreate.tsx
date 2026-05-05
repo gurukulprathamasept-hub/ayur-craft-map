@@ -134,6 +134,51 @@ const BMRCreate = () => {
       })),
       ipcChecks: defaultIpcChecks,
       qcParams: mfr.qc.map((q) => ({ parameter: q.parameter, spec: q.spec, result: "", compliance: "" as const })),
+      subProcesses: (mfr.subProcesses || []).map((sp) => ({
+        id: sp.id,
+        type: sp.type as any,
+        name: sp.name,
+        description: sp.description,
+        waterRatio: sp.waterRatio,
+        reductionTarget: sp.reductionTarget,
+        numberOfCycles: sp.numberOfCycles,
+        yieldQty: sp.yieldQty != null ? Number((sp.yieldQty * scaleFactor).toFixed(3)) : undefined,
+        yieldUnit: sp.yieldUnit,
+        completionTest: sp.completionTest,
+        notes: sp.notes,
+        ingredients: sp.ingredients.map((rm) => {
+          const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean);
+          const tokens = norm(rm.name);
+          const match = rmData.find(r => {
+            const rt = norm(r.name);
+            return tokens.some(t => rt.some(x => x.includes(t) || t.includes(x)));
+          });
+          return {
+            name: rm.name,
+            nameHi: (rm as any).nameHi || match?.nameHi || "",
+            rmCode: rm.rmCode || match?.code,
+            cat: rm.cat,
+            requiredQty: rm.unit === "q.s." ? 0 : Number((rm.qty * scaleFactor).toFixed(3)),
+            actualQty: 0,
+            unit: rm.unit,
+            part: rm.part,
+            lot: "",
+            cost: 0,
+            botanicalName: (rm as any).botanical || match?.botanical,
+          };
+        }),
+        actualYield: "",
+        actualYieldUnit: sp.yieldUnit,
+        completionTestResult: "" as const,
+        observedBy: "",
+        date: "",
+        batchNotes: "",
+        initialVolume: "",
+        finalVolume: "",
+        pakaDuration: "",
+        flameSetting: "",
+        iterationLog: [],
+      })),
       theoreticalYield: Number((batchSize * ((mfr.expectedYieldPct ?? 98) / 100)).toFixed(3)),
       blendWeight: { theoreticalBlendWt: String(batchSize), actualBlendWt: "", lossOnBlending: "", yieldAtBlendStage: "" },
       packing: packSizes.length > 0 ? (() => {
