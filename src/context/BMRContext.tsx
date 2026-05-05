@@ -185,6 +185,7 @@ export interface BMRRecord {
   completionDate: string;
   status: "Draft" | "In process" | "QC pending" | "Released" | "Rejected";
   ingredients: BMRIngredient[];
+  subProcesses?: BMRSubProcess[];
   steps: BMRProcessStep[];
   ipcChecks: BMRIPCCheck[];
   qcParams: BMRQCTest[];
