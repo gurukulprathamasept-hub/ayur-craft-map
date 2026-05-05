@@ -16,6 +16,20 @@ const SUBPROCESS_TYPES: SubProcessType[] = ["Kwatha", "Kalka", "Bhavana", "Shodh
 const emptyRM = (): RMItem => ({ name: "", cat: "herb", qty: 0, unit: "kg", part: "", rmCode: "", botanical: "" });
 const emptyStep = (): ProcessStep => ({ step: "", equipment: "", duration: "", temp: "", ipcCheck: "" });
 const emptyQC = (): QCParam => ({ parameter: "", spec: "" });
+const emptySubProcess = (): SubProcess => ({
+  id: `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  type: "Kwatha",
+  name: "",
+  description: "",
+  ingredients: [],
+  waterRatio: "",
+  reductionTarget: "",
+  numberOfCycles: undefined,
+  yieldQty: undefined,
+  yieldUnit: "L",
+  completionTest: "",
+  notes: "",
+});
 const emptyPackSize = (): PackSizeOption => ({
   label: "",
   primaryPacksPerStdBatch: 0,
