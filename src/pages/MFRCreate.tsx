@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Info, Pencil } from "lucide-react";
-import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec, PackSizeOption } from "@/context/FormulationContext";
+import { useFormulations, RMItem, ProcessStep, QCParam, PackagingSpec, PackSizeOption, SubProcess, SubProcessType } from "@/context/FormulationContext";
 import RMSearchInput from "@/components/RMSearchInput";
 import { derivePrefix, resolveUniquePrefix } from "@/lib/batchPrefix";
 import { toast } from "sonner";
