@@ -10,15 +10,17 @@ import Step3ProcessLog from "./Step3ProcessLog";
 import Step4IPCChecks from "./Step4IPCChecks";
 import Step5YieldPacking from "./Step5YieldPacking";
 import Step6QCRelease from "./Step6QCRelease";
+import StepSubProcesses from "./StepSubProcesses";
 import BMRPrintable from "./BMRPrintable";
 
 const STEP_SUBTITLES: Record<number, string> = {
   1: "Step 1: Batch header · Ref: AFI Vol.I · Schedule U §I-A",
-  2: "Step 2: Ingredients · Qty required vs actually used · §I-A.7 & 8",
-  3: "Step 3: Process log · Environmental controls · §I-A.9-13",
-  4: "Step 4: IPC checks · In-process quality control · §I-A.13",
-  5: "Step 5: Yield & packing · Batch certificate · §I-A.18-23",
-  6: "Step 6: QC release · Analytical report · §I-A.16, 20-22",
+  2: "Step 2: Sub-processes · Intermediate preparations (Kwatha, Kalka, Bhavana, Shodhana)",
+  3: "Step 3: Ingredients · Qty required vs actually used · §I-A.7 & 8",
+  4: "Step 4: Process log · Environmental controls · §I-A.9-13",
+  5: "Step 5: IPC checks · In-process quality control · §I-A.13",
+  6: "Step 6: Yield & packing · Batch certificate · §I-A.18-23",
+  7: "Step 7: QC release · Analytical report · §I-A.16, 20-22",
 };
 
 interface Props {
