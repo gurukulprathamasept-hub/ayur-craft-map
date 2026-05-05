@@ -83,6 +83,7 @@ export interface Formulation {
   standardBatchUnit: string;
   rm: RMItem[];
   steps: ProcessStep[];
+  subProcesses?: SubProcess[];
   qc: QCParam[];
   ipc: string;
   dosha: string;
