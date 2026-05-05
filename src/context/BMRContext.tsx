@@ -270,6 +270,7 @@ export function createDefaultBMR(overrides: Partial<BMRRecord> = {}): BMRRecord 
     completionDate: "",
     status: "In process",
     ingredients: [],
+    subProcesses: [],
     steps: [],
     ipcChecks: [],
     qcParams: [],
