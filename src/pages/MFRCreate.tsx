@@ -427,8 +427,8 @@ const MFRCreate = () => {
           </div>
         )}
 
-        {/* Step 2: Process steps */}
-        {activeStep === 2 && (
+        {/* Step 3: Process steps */}
+        {activeStep === 3 && (
           <div className="app-card">
             <div className="app-card-head">
               <div className="app-card-title">Manufacturing process steps</div>
@@ -460,7 +460,7 @@ const MFRCreate = () => {
         )}
 
         {/* Step 3: Yield & Packaging */}
-        {activeStep === 3 && (
+        {activeStep === 4 && (
           <>
             <div className="alert-box alert-info mb-3">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
@@ -542,7 +542,7 @@ const MFRCreate = () => {
         )}
 
         {/* Step 4: QC & IPC */}
-        {activeStep === 4 && (
+        {activeStep === 5 && (
           <div className="app-card">
             <div className="app-card-head">
               <div className="app-card-title">QC parameters & IPC checks</div>
