@@ -122,7 +122,44 @@ export interface BMRQCTest {
   compliance: "pass" | "fail" | "";
 }
 
-export interface BMRSignature {
+export type BMRSubProcessType = "Kwatha" | "Kalka" | "Bhavana" | "Shodhana" | "Other";
+
+export interface BMRSubProcessIterationLog {
+  date: string;
+  cycleNo: number;
+  weightAfter: string;
+  observedByPin: string;
+}
+
+export interface BMRSubProcess {
+  id: string;
+  type: BMRSubProcessType;
+  name: string;
+  description: string;
+  ingredients: BMRIngredient[];
+  // Template fields (snapshot from MFR — readonly in UI)
+  waterRatio?: string;
+  reductionTarget?: string;
+  numberOfCycles?: number;
+  yieldQty?: number;
+  yieldUnit?: string;
+  completionTest?: string;
+  notes?: string;
+  // Per-batch actuals
+  actualYield?: string;
+  actualYieldUnit?: string;
+  completionTestResult?: "Pass" | "Fail" | "";
+  observedBy?: string;
+  date?: string;
+  batchNotes?: string;
+  // Kwatha specific
+  initialVolume?: string;
+  finalVolume?: string;
+  pakaDuration?: string;
+  flameSetting?: string;
+  // Bhavana / Shodhana
+  iterationLog?: BMRSubProcessIterationLog[];
+}
   name: string;
   initials: string;
   role: string;
