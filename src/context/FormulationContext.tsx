@@ -29,6 +29,23 @@ export interface QCParam {
   spec: string;
 }
 
+export type SubProcessType = "Kwatha" | "Kalka" | "Bhavana" | "Shodhana" | "Other";
+
+export interface SubProcess {
+  id: string;
+  type: SubProcessType;
+  name: string;
+  description: string;
+  ingredients: RMItem[];       // dravyas used only in this sub-process
+  waterRatio?: string;         // e.g. "1:4" for Kwatha
+  reductionTarget?: string;    // e.g. "Reduce to 1/4th"
+  numberOfCycles?: number;     // for Bhavana / Shodhana
+  yieldQty?: number;
+  yieldUnit?: string;
+  completionTest?: string;     // e.g. "Varti test", "Ball formation"
+  notes?: string;
+}
+
 export interface PackSizeOption {
   label: string;                       // e.g. "100 g HDPE jar"
   primaryPacksPerStdBatch: number;     // packs per standard batch
