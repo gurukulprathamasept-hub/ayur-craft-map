@@ -12,6 +12,20 @@ const Step1BatchHeader = ({ bmr, onChange, prevBatchNo }: Props) => {
   const updatePersonnel = (key: string, value: string) =>
     onChange({ personnel: { ...bmr.personnel, [key]: value } });
 
+  useEffect(() => {
+    if (bmr.startDate && bmr.shelfLifeMonths > 0) {
+      const d = new Date(bmr.startDate);
+      d.setMonth(d.getMonth() + bmr.shelfLifeMonths);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const expiryDate = `${yyyy}-${mm}-${dd}`;
+      if (expiryDate !== bmr.expiryDate) {
+        onChange({ expiryDate });
+      }
+    }
+  }, [bmr.startDate, bmr.shelfLifeMonths, bmr.expiryDate, onChange]);
+
   return (
     <>
       <div className="alert-box alert-info mb-3">
