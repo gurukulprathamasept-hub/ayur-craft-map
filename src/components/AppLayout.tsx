@@ -145,9 +145,59 @@ const AppLayout = () => {
             </div>
           </div>
           <div>
-            <div className="text-[11px] text-muted-foreground">Logged in as</div>
-            <div className="text-xs font-medium mt-0.5">Dr. Anand Kulkarni</div>
-            <div className="text-[10px] text-muted-foreground">Store Manager</div>
+            <div className="flex items-center justify-between gap-1">
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground">Logged in as</div>
+                <div className="text-xs font-medium mt-0.5 truncate">
+                  {currentUser ? currentUser.name : "— not logged in —"}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {currentUser ? roleLabel(currentUser.role) : ""}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowPin((v) => !v)}
+                  className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-border bg-background hover:bg-secondary transition-colors"
+                  title="Switch user"
+                >
+                  <KeyRound className="w-2.5 h-2.5" /> Switch
+                </button>
+                {currentUser && (
+                  <button
+                    type="button"
+                    onClick={() => { logout(); toast.success("Logged out"); }}
+                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-border bg-background hover:bg-secondary transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="w-2.5 h-2.5" /> Out
+                  </button>
+                )}
+              </div>
+            </div>
+            {showPin && (
+              <div className="mt-2 flex items-center gap-1">
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  autoFocus
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  placeholder="Enter PIN"
+                  className="flex-1 min-w-0 h-7 px-2 text-xs rounded border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <button
+                  type="button"
+                  onClick={handleLogin}
+                  className="h-7 px-2 text-[10px] font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Go
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>
