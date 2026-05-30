@@ -48,6 +48,7 @@ const RMInward = () => {
   const [activeRMTab, setActiveRMTab] = useState(0);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [invoiceNo, setInvoiceNo] = useState("");
+  const [rejectedDisposalQueue, setRejectedDisposalQueue] = useState<Array<{ rmName: string; batch: string; qty: number; uom: string; reason: string }>>([]);
   const [invoiceDate, setInvoiceDate] = useState("");
   const [grnDate, setGrnDate] = useState(new Date().toISOString().split("T")[0]);
   const [grnSearch, setGrnSearch] = useState("");
@@ -266,6 +267,19 @@ const RMInward = () => {
     });
 
     finalApproveGRN(grnNo);
+
+    // Collect rejected lines to prompt for disposal
+    const rejected = currentGRN.lines
+      .filter((l) => l.disposition === "reject")
+      .map((l) => ({
+        rmName: l.rmName,
+        batch: l.batch || "—",
+        qty: l.qty,
+        uom: l.uom,
+        reason: l.rejectionReason || "QC failure at incoming inspection",
+      }));
+    if (rejected.length > 0) setRejectedDisposalQueue(rejected);
+
     setStep("done");
     toast({ title: "GRN finalised", description: "Stock ledger updated for approved items." });
   };
