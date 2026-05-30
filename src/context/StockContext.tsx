@@ -792,6 +792,12 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     setIssuedRecords(prev => prev.map(r => r.issRef === issRef ? { ...r, status: "reversed" as const } : r));
   };
 
+  useEffect(() => { localStorage.setItem('ayur_rm_data', JSON.stringify(rmData)); }, [rmData]);
+  useEffect(() => { localStorage.setItem('ayur_lots', JSON.stringify(lots)); }, [lots]);
+  useEffect(() => { localStorage.setItem('ayur_pending_grns', JSON.stringify(pendingGRNs)); }, [pendingGRNs]);
+  useEffect(() => { localStorage.setItem('ayur_issued_records', JSON.stringify(issuedRecords)); }, [issuedRecords]);
+  useEffect(() => { localStorage.setItem('ayur_grn_count', JSON.stringify(grnCount)); }, [grnCount]);
+
   return (
     <StockContext.Provider value={{
       rmData, getStockForRM, issueStock, reverseIssue, issuedRecords, inwardStock, addRM, updateRM, deleteRM,

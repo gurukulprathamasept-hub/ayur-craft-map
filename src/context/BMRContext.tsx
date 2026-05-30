@@ -371,6 +371,10 @@ export const BMRProvider = ({ children }: { children: ReactNode }) => {
     return { nextBatchNo: `${prefix}-${yymm}-${nextSeq}`, prevBatchNo };
   };
 
+  useEffect(() => {
+    localStorage.setItem('ayur_bmrs', JSON.stringify(bmrs));
+  }, [bmrs]);
+
   return (
     <BMRContext.Provider value={{ bmrs, addBMR, updateBMR, getBMR, getNextBatchNo }}>
       {children}

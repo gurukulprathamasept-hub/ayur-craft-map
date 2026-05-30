@@ -141,6 +141,10 @@ export const FormulationProvider = ({ children }: { children: ReactNode }) => {
       .filter((f) => f.id !== excludeId && !!f.batchPrefix)
       .map((f) => f.batchPrefix!.toUpperCase());
 
+  useEffect(() => {
+    localStorage.setItem('ayur_formulations', JSON.stringify(formulations));
+  }, [formulations]);
+
   return (
     <FormulationContext.Provider value={{ formulations, addFormulation, updateFormulation, deleteFormulation, getFormulation, getUsedPrefixes }}>
       {children}

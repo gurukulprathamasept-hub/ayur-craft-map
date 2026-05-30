@@ -90,6 +90,10 @@ export const SupplierProvider = ({ children }: { children: ReactNode }) => {
     setSuppliers(prev => prev.filter(s => s.id !== id));
   };
 
+  useEffect(() => {
+    localStorage.setItem('ayur_suppliers', JSON.stringify(suppliers));
+  }, [suppliers]);
+
   return (
     <SupplierContext.Provider value={{ suppliers, addSupplier, updateSupplier, deleteSupplier }}>
       {children}
