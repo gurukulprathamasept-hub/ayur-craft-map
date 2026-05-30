@@ -373,6 +373,52 @@ const BMRCreate = () => {
                 </div>
               </div>
             )}
+            {mfr && scaleFactor > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[11px] font-medium">Stock check</div>
+                </div>
+                <div className="border border-border rounded-md overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-secondary">
+                      <tr className="text-left">
+                        <th className="px-2 py-1.5">Ingredient</th>
+                        <th className="px-2 py-1.5 w-24">Required</th>
+                        <th className="px-2 py-1.5 w-24">Available</th>
+                        <th className="px-2 py-1.5 w-24">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stockCheckRows.map((row, i) => (
+                        <tr key={i} className="border-t border-border">
+                          <td className="px-2 py-1.5">
+                            <div>{row.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{row.cat}</div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            {row.required > 0 ? `${row.required.toFixed(3)} ${row.unit}` : <span className="text-muted-foreground">q.s.</span>}
+                          </td>
+                          <td className="px-2 py-1.5">
+                            {row.available > 0 ? `${row.available.toFixed(3)} ${row.unit}` : <span className="text-muted-foreground">0</span>}
+                          </td>
+                          <td className="px-2 py-1.5">
+                            {row.status === "ok" && <span className="app-badge app-badge-green">OK</span>}
+                            {row.status === "low" && <span className="app-badge app-badge-amber">Low</span>}
+                            {row.status === "insufficient" && <span className="app-badge app-badge-red">Insufficient</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {hasInsufficient && (
+                  <div className="alert-strip-amber mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px]">
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                    Some ingredients are out of stock. You can still create the BMR but production cannot start until stock is received.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
