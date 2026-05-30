@@ -11,6 +11,7 @@ import {
   BookOpen,
   Truck,
   ShieldCheck,
+  FlaskConical,
   Languages,
   KeyRound,
   LogOut,
@@ -41,6 +42,7 @@ const navGroups = [
       { to: "/stock-ledger", icon: Warehouse, label: "Stock Ledger" },
       { to: "/mfr-table", icon: BookOpen, label: "MFR Table" },
       { to: "/supplier-master", icon: Truck, label: "Suppliers" },
+      { to: "/analytical-records", icon: FlaskConical, label: "Analytical Records" },
     ],
   },
   {

@@ -9,6 +9,7 @@ import { StockProvider } from "@/context/StockContext";
 import { SupplierProvider } from "@/context/SupplierContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { UserProvider } from "@/context/UserContext";
+import { ARProvider } from "@/context/ARContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import RMInward from "./pages/RMInward";
@@ -23,6 +24,7 @@ import MFRTable from "./pages/MFRTable";
 import MFRCreate from "./pages/MFRCreate";
 import BatchPrefixAudit from "./pages/BatchPrefixAudit";
 import SupplierMaster from "./pages/SupplierMaster";
+import AnalyticalRecords from "./pages/AnalyticalRecords";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,7 @@ const App = () => (
             <BMRProvider>
               <StockProvider>
               <SupplierProvider>
+              <ARProvider>
                 <Toaster />
                 <Sonner />
               <BrowserRouter>
@@ -54,10 +57,12 @@ const App = () => (
                     <Route path="/mfr-create" element={<MFRCreate />} />
                     <Route path="/batch-prefix-audit" element={<BatchPrefixAudit />} />
                     <Route path="/supplier-master" element={<SupplierMaster />} />
+                    <Route path="/analytical-records" element={<AnalyticalRecords />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
+              </ARProvider>
               </SupplierProvider>
               </StockProvider>
             </BMRProvider>
