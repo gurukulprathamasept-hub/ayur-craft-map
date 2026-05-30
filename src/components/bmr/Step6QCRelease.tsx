@@ -1,4 +1,5 @@
-import { BMRRecord, BMRQCTest, BMRSignature } from "@/context/BMRContext";
+import { BMRRecord, BMRQCTest, BMRSignature, BMRIngredient, BMRLotAllocation } from "@/context/BMRContext";
+import { useStock } from "@/context/StockContext";
 import { Info, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +15,8 @@ const SIG_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 const Step6QCRelease = ({ bmr, onChange }: Props) => {
+  const { commitConsumption, reverseConsumption } = useStock();
+
   const updateQC = (idx: number, updates: Partial<BMRQCTest>) => {
     const qcParams = bmr.qcParams.map((q, i) => i === idx ? { ...q, ...updates } : q);
     onChange({ qcParams });
@@ -50,9 +53,40 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
       toast.error("Cannot release — QC tests have failures.");
       return;
     }
-    onChange({ released: true, status: "Released" });
-    toast.success(`Batch ${bmr.batchNo} released! Finished goods inventory updated.`);
+
+    const issRef = `BMR-ISSUE-${bmr.batchNo}`;
+    let deducted = 0;
+    const updatedIngredients: BMRIngredient[] = bmr.ingredients.map((ing) => {
+      if (ing.consumed) return ing;
+      const allocations: BMRLotAllocation[] = (ing.allocations && ing.allocations.length > 0)
+        ? ing.allocations
+        : [{
+            lotId: "manual",
+            batchNo: ing.lot || "—",
+            expiry: ing.expiry || "—",
+            rate: String(ing.cost || 0),
+            qty: ing.actualQty,
+          }];
+      commitConsumption(issRef, bmr.productName, ing.rmCode || "", ing.name, allocations);
+      deducted++;
+      return { ...ing, consumed: true };
+    });
+
+    onChange({ released: true, status: "Released", ingredients: updatedIngredients });
+    toast.success(`Batch ${bmr.batchNo} released — stock deducted for ${deducted} ingredient${deducted === 1 ? "" : "s"}.`);
   };
+
+  const rejectBatch = () => {
+    if (!confirm(`Reject batch ${bmr.batchNo}? Any consumed stock will be restored.`)) return;
+    const issRef = `BMR-ISSUE-${bmr.batchNo}`;
+    reverseConsumption(issRef);
+    const updatedIngredients: BMRIngredient[] = bmr.ingredients.map((ing) =>
+      ing.consumed ? { ...ing, consumed: false } : ing
+    );
+    onChange({ released: false, status: "Rejected", ingredients: updatedIngredients });
+    toast.success(`Batch ${bmr.batchNo} rejected — stock restored.`);
+  };
+
 
   const complianceClass = (c: string) =>
     c === "pass" ? "form-input-sm !border-primary !bg-[hsl(var(--badge-green-bg))] !text-[hsl(var(--badge-green-text))] font-medium"
@@ -233,19 +267,28 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
             ))}
           </div>
 
-          <button
-            onClick={releaseBatch}
-            disabled={bmr.released}
-            className={`w-full py-2 rounded-md text-xs font-medium transition-all ${
-              bmr.released
-                ? "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] cursor-default"
-                : "bg-primary text-primary-foreground hover:opacity-90"
-            }`}
-          >
-            {bmr.released
-              ? `✓ Batch ${bmr.batchNo} released — Certificate generated`
-              : "Release batch to warehouse & generate batch certificate"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={releaseBatch}
+              disabled={bmr.released || bmr.status === "Rejected"}
+              className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
+                bmr.released
+                  ? "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] cursor-default"
+                  : "bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              }`}
+            >
+              {bmr.released
+                ? `✓ Batch ${bmr.batchNo} released — Certificate generated`
+                : "Release batch to warehouse & generate batch certificate"}
+            </button>
+            <button
+              onClick={rejectBatch}
+              disabled={bmr.status === "Rejected"}
+              className="px-3 py-2 rounded-md text-xs font-medium border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors disabled:opacity-50"
+            >
+              {bmr.status === "Rejected" ? "✕ Rejected" : "Reject batch"}
+            </button>
+          </div>
         </div>
       </div>
     </>
