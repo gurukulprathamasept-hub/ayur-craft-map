@@ -12,6 +12,7 @@ import {
   Truck,
   ShieldCheck,
   FlaskConical,
+  Trash2,
   Languages,
   KeyRound,
   LogOut,
@@ -50,6 +51,7 @@ const navGroups = [
     items: [
       { to: "/schedule-ta", icon: ClipboardList, label: "Schedule TA" },
       { to: "/batch-prefix-audit", icon: ShieldCheck, label: "Batch Prefix Audit" },
+      { to: "/disposal-ledger", icon: Trash2, label: "Disposal Ledger" },
     ],
   },
 ];

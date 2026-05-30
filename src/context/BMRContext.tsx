@@ -231,11 +231,29 @@ export interface BMRRecord {
   currentStep: number;
 }
 
+export interface DisposalEntry {
+  id: string;
+  date: string;
+  itemType: "RM" | "Finished Batch" | "Packaging";
+  itemName: string;
+  batchNo: string;
+  qty: string;
+  unit: string;
+  reason: string;
+  disposalMethod: "Incineration" | "Returned to Supplier" | "Reprocessing" | "Other";
+  authorisedBy: string;
+  witnessedBy: string;
+  bmrRef?: string;
+  grnRef?: string;
+}
+
 interface BMRContextType {
   bmrs: BMRRecord[];
   addBMR: (bmr: BMRRecord) => void;
   updateBMR: (id: string, updates: Partial<BMRRecord>) => void;
   getBMR: (id: string) => BMRRecord | undefined;
+  disposalEntries: DisposalEntry[];
+  addDisposalEntry: (entry: DisposalEntry) => void;
   /**
    * Generate the next batch number for a formulation.
    * Pass `batchPrefix` (resolved & stored on the MFR) for collision-free prefixes.
@@ -330,12 +348,22 @@ export const BMRProvider = ({ children }: { children: ReactNode }) => {
     } catch { return []; }
   });
 
+  const [disposalEntries, setDisposalEntries] = useState<DisposalEntry[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_disposals');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+
   const addBMR = (bmr: BMRRecord) => setBMRs((prev) => [...prev, bmr]);
 
   const updateBMR = (id: string, updates: Partial<BMRRecord>) =>
     setBMRs((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
 
   const getBMR = (id: string) => bmrs.find((b) => b.id === id);
+
+  const addDisposalEntry = (entry: DisposalEntry) =>
+    setDisposalEntries((prev) => [entry, ...prev]);
 
   const getNextBatchNo = (
     productName: string,
@@ -375,8 +403,12 @@ export const BMRProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('ayur_bmrs', JSON.stringify(bmrs));
   }, [bmrs]);
 
+  useEffect(() => {
+    localStorage.setItem('ayur_disposals', JSON.stringify(disposalEntries));
+  }, [disposalEntries]);
+
   return (
-    <BMRContext.Provider value={{ bmrs, addBMR, updateBMR, getBMR, getNextBatchNo }}>
+    <BMRContext.Provider value={{ bmrs, addBMR, updateBMR, getBMR, getNextBatchNo, disposalEntries, addDisposalEntry }}>
       {children}
     </BMRContext.Provider>
   );
