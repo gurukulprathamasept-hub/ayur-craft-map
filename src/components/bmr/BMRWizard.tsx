@@ -106,10 +106,10 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
           <Printer className="w-3 h-3" /> Print BMR
         </button>
         <button
-          onClick={() => step < 7 ? goStep(step + 1) : null}
+          onClick={() => step < 6 ? goStep(step + 1) : null}
           className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all"
         >
-          {step < 7 ? "Next step →" : "Finalise BMR"}
+          {step < 6 ? "Next step →" : "Finalise BMR"}
         </button>
         <button onClick={() => navigate("/bmr")} className="px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1">
           <ArrowLeft className="w-3 h-3" /> BMR list
@@ -121,12 +121,11 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
         <BMRStepper currentStep={step} onStepClick={goStep} />
 
         {step === 1 && <Step1BatchHeader bmr={bmr} onChange={handleChange} prevBatchNo={prevBatchNo || null} />}
-        {step === 2 && <StepSubProcesses bmr={bmr} onChange={handleChange} />}
-        {step === 3 && <Step2Ingredients bmr={bmr} onChange={handleChange} />}
-        {step === 4 && <Step3ProcessLog bmr={bmr} onChange={handleChange} />}
-        {step === 5 && <Step4IPCChecks bmr={bmr} onChange={handleChange} />}
-        {step === 6 && <Step5YieldPacking bmr={bmr} onChange={handleChange} />}
-        {step === 7 && <Step6QCRelease bmr={bmr} onChange={handleChange} />}
+        {step === 2 && <Step2Ingredients bmr={bmr} onChange={handleChange} />}
+        {step === 3 && <Step3ProcessLog bmr={bmr} onChange={handleChange} />}
+        {step === 4 && <Step4IPCChecks bmr={bmr} onChange={handleChange} />}
+        {step === 5 && <Step5YieldPacking bmr={bmr} onChange={handleChange} />}
+        {step === 6 && <Step6QCRelease bmr={bmr} onChange={handleChange} />}
       </div>
 
       {/* Hidden printable view — only visible during window.print() */}
