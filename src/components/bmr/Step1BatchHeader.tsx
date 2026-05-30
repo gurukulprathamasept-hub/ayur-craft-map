@@ -1,5 +1,6 @@
 import { BMRRecord } from "@/context/BMRContext";
 import { Info } from "lucide-react";
+import { useEffect } from "react";
 
 interface Props {
   bmr: BMRRecord;
