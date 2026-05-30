@@ -1,4 +1,5 @@
 import { BMRRecord } from "@/context/BMRContext";
+import { useFormulations } from "@/context/FormulationContext";
 import { Info } from "lucide-react";
 
 interface Props {
@@ -7,10 +8,39 @@ interface Props {
 }
 
 const Step5YieldPacking = ({ bmr, onChange }: Props) => {
+  const { getFormulation } = useFormulations();
+  const mfr = bmr.mfrId ? getFormulation(bmr.mfrId) : undefined;
+  const expectedYieldPct = mfr?.expectedYieldPct ?? 95;
+
   const yieldPct = bmr.theoreticalYield > 0 && bmr.actualYield > 0
     ? (bmr.actualYield / bmr.theoreticalYield * 100) : 0;
   const loss = bmr.theoreticalYield - bmr.actualYield;
-  const barColor = yieldPct >= 95 ? "bg-primary" : yieldPct >= 85 ? "bg-[hsl(var(--warning))]" : "bg-destructive";
+  const barColor = yieldPct >= expectedYieldPct ? "bg-primary" : yieldPct >= 85 ? "bg-[hsl(var(--warning))]" : "bg-destructive";
+
+  const handleActualBlendWtChange = (value: string) => {
+    const actualBlendWt = value;
+    const actualYield = parseFloat(actualBlendWt) || 0;
+    const yieldPct = bmr.theoreticalYield > 0
+      ? parseFloat(((actualYield / bmr.theoreticalYield) * 100).toFixed(1))
+      : 0;
+    onChange({
+      actualYield,
+      yieldPct,
+      blendWeight: { ...bmr.blendWeight, actualBlendWt },
+    });
+  };
+
+  const getBadgeClass = (pct: number) => {
+    if (pct >= expectedYieldPct) return "app-badge-green";
+    if (pct >= 85) return "app-badge-amber";
+    return "app-badge-red";
+  };
+
+  const getBadgeLabel = (pct: number) => {
+    if (pct >= expectedYieldPct) return "On target";
+    if (pct >= 85) return "Acceptable";
+    return "Low yield";
+  };
 
   const updatePacking = (key: string, value: string | number) =>
     onChange({ packing: { ...bmr.packing, [key]: value } });
@@ -39,8 +69,18 @@ const Step5YieldPacking = ({ bmr, onChange }: Props) => {
             </div>
             <div className="form-field">
               <label>Actual production yield ({bmr.batchUnit})</label>
-              <input type="number" step="0.001" value={bmr.actualYield || ""}
-                onChange={e => onChange({ actualYield: Number(e.target.value), yieldPct: bmr.theoreticalYield ? Number(e.target.value) / bmr.theoreticalYield * 100 : 0 })} />
+              <div className="relative">
+                <input type="number" step="0.001"
+                  className={bmr.blendWeight?.actualBlendWt ? "pr-16" : ""}
+                  value={bmr.blendWeight?.actualBlendWt || ""}
+                  onChange={e => handleActualBlendWtChange(e.target.value)}
+                  onBlur={e => handleActualBlendWtChange(e.target.value)} />
+                {bmr.actualYield > 0 && (
+                  <span className={`app-badge absolute right-2 top-1/2 -translate-y-1/2 ${getBadgeClass(yieldPct)}`}>
+                    {getBadgeLabel(yieldPct)}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="form-field">
               <label>Yield % (auto)</label>
@@ -57,7 +97,7 @@ const Step5YieldPacking = ({ bmr, onChange }: Props) => {
               <div className={`h-full rounded-sm transition-all ${barColor}`} style={{ width: `${Math.min(100, yieldPct)}%` }} />
             </div>
             <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-              <span>0%</span><span>Target ≥95%</span><span>100%</span>
+              <span>0%</span><span>Target ≥{expectedYieldPct}%</span><span>100%</span>
             </div>
           </div>
         </div>
