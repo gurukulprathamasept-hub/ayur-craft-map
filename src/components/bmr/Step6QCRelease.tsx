@@ -267,19 +267,28 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
             ))}
           </div>
 
-          <button
-            onClick={releaseBatch}
-            disabled={bmr.released}
-            className={`w-full py-2 rounded-md text-xs font-medium transition-all ${
-              bmr.released
-                ? "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] cursor-default"
-                : "bg-primary text-primary-foreground hover:opacity-90"
-            }`}
-          >
-            {bmr.released
-              ? `✓ Batch ${bmr.batchNo} released — Certificate generated`
-              : "Release batch to warehouse & generate batch certificate"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={releaseBatch}
+              disabled={bmr.released || bmr.status === "Rejected"}
+              className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
+                bmr.released
+                  ? "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] cursor-default"
+                  : "bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              }`}
+            >
+              {bmr.released
+                ? `✓ Batch ${bmr.batchNo} released — Certificate generated`
+                : "Release batch to warehouse & generate batch certificate"}
+            </button>
+            <button
+              onClick={rejectBatch}
+              disabled={bmr.status === "Rejected"}
+              className="px-3 py-2 rounded-md text-xs font-medium border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors disabled:opacity-50"
+            >
+              {bmr.status === "Rejected" ? "✕ Rejected" : "Reject batch"}
+            </button>
+          </div>
         </div>
       </div>
     </>
