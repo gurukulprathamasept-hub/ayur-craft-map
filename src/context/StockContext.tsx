@@ -332,11 +332,36 @@ const today = () => {
 };
 
 export const StockProvider = ({ children }: { children: ReactNode }) => {
-  const [rmData, setRmData] = useState<RMEntry[]>(initialData);
-  const [grnCount, setGrnCount] = useState(187);
-  const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
-  const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>([]);
-  const [lots, setLots] = useState<RMLot[]>([]);
+  const [rmData, setRmData] = useState<RMEntry[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_rm_data');
+      return s ? JSON.parse(s) : initialData;
+    } catch { return initialData; }
+  });
+  const [grnCount, setGrnCount] = useState(() => {
+    try {
+      const s = localStorage.getItem('ayur_grn_count');
+      return s ? Number(JSON.parse(s)) : 187;
+    } catch { return 187; }
+  });
+  const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_pending_grns');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+  const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_issued_records');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+  const [lots, setLots] = useState<RMLot[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_lots');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
   const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
     try {
       const stored = localStorage.getItem("grn_drafts");
