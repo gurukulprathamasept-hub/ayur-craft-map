@@ -76,6 +76,33 @@ const BMRCreate = () => {
   );
   const allocationOk = packSizes.length === 0 || (totalAllocated > 0 && Math.abs(totalAllocated - batchSize) < 0.001);
 
+  const stockCheckRows = useMemo(() => {
+    if (!mfr || scaleFactor <= 0) return [];
+    return mfr.rm.map((rm) => {
+      const required = rm.unit === "q.s." ? 0 : Number((rm.qty * scaleFactor).toFixed(3));
+      let available = 0;
+      if (rm.rmCode) {
+        const lots = getActiveLotsForRM(rm.rmCode);
+        available = lots.reduce((sum, l) => sum + l.qtyRemaining, 0);
+      }
+      if (available === 0) {
+        const stock = getStockForRM(rm.name);
+        if (stock) available = stock.available;
+      }
+      let status: "ok" | "low" | "insufficient" = "ok";
+      if (required === 0) {
+        status = "ok";
+      } else if (available === 0) {
+        status = "insufficient";
+      } else if (available < required) {
+        status = "low";
+      }
+      return { name: rm.name, cat: rm.cat, unit: rm.unit, required, available, status };
+    });
+  }, [mfr, scaleFactor, getActiveLotsForRM, getStockForRM]);
+
+  const hasInsufficient = stockCheckRows.some((r) => r.status === "insufficient");
+
   const handleCreate = () => {
     if (!mfr || scaleFactor <= 0) return;
 
