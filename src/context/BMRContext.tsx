@@ -323,7 +323,12 @@ export function createDefaultBMR(overrides: Partial<BMRRecord> = {}): BMRRecord 
 }
 
 export const BMRProvider = ({ children }: { children: ReactNode }) => {
-  const [bmrs, setBMRs] = useState<BMRRecord[]>([]);
+  const [bmrs, setBMRs] = useState<BMRRecord[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_bmrs');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
 
   const addBMR = (bmr: BMRRecord) => setBMRs((prev) => [...prev, bmr]);
 

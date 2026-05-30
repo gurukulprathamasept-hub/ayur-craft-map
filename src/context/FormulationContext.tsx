@@ -115,7 +115,12 @@ export const useFormulations = () => {
 };
 
 export const FormulationProvider = ({ children }: { children: ReactNode }) => {
-  const [formulations, setFormulations] = useState<Formulation[]>([]);
+  const [formulations, setFormulations] = useState<Formulation[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_formulations');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
 
   const addFormulation = (f: Formulation) => {
     setFormulations((prev) => [...prev, f]);

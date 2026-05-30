@@ -65,7 +65,12 @@ export const useSupplier = () => {
 };
 
 export const SupplierProvider = ({ children }: { children: ReactNode }) => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_suppliers');
+      return s ? JSON.parse(s) : initialSuppliers;
+    } catch { return initialSuppliers; }
+  });
 
   const addSupplier = (s: Omit<Supplier, "id">) => {
     setSuppliers(prev => {
