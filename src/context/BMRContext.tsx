@@ -138,6 +138,8 @@ export interface BMRSubProcess {
   name: string;
   description: string;
   ingredients: BMRIngredient[];
+  /** Position in main process timeline — render this sub-process before step at this index (0 = before first step). */
+  insertBeforeStepIndex: number;
   // Template fields (snapshot from MFR — readonly in UI)
   waterRatio?: string;
   reductionTarget?: string;
