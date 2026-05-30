@@ -37,6 +37,7 @@ const App = () => (
       <UserProvider>
         <LanguageProvider>
           <FormulationProvider>
+            <NotificationProvider>
             <BMRProvider>
               <StockProvider>
               <SupplierProvider>
@@ -69,6 +70,7 @@ const App = () => (
               </SupplierProvider>
               </StockProvider>
             </BMRProvider>
+            </NotificationProvider>
           </FormulationProvider>
         </LanguageProvider>
       </UserProvider>
