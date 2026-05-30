@@ -108,9 +108,19 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="grid grid-cols-[200px_1fr] min-h-screen bg-card">
+    <div className="md:grid md:grid-cols-[200px_1fr] min-h-screen bg-card relative">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-30"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       {/* Sidebar */}
-      <aside className="bg-sidebar border-r border-sidebar-border flex flex-col">
+      <aside
+        className={`bg-sidebar border-r border-sidebar-border flex-col fixed md:static inset-y-0 left-0 w-[220px] md:w-auto z-40 ${sidebarOpen ? "flex" : "hidden"} md:flex`}
+      >
         <div className="px-4 pt-4 pb-3 border-b border-sidebar-border flex items-center gap-2">
           <div className="w-[26px] h-[26px] bg-primary rounded-md flex items-center justify-center shrink-0">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
