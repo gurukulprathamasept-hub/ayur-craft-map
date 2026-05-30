@@ -241,7 +241,80 @@ const AppLayout = () => {
 
       {/* Main content */}
       <main className="flex flex-col overflow-hidden">
-        <Outlet />
+        <div className="flex items-center justify-end px-4 py-2 border-b border-border bg-background gap-2 shrink-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="relative inline-flex items-center justify-center w-8 h-8 rounded-md border border-border bg-card hover:bg-secondary transition-colors"
+                aria-label={`Notifications (${unreadCount} unread)`}
+              >
+                <Bell className="w-4 h-4 text-foreground" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-semibold flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[340px] p-0">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                <div className="text-xs font-semibold">Notifications</div>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => markAllRead()}
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-[360px] overflow-y-auto">
+                {recent.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-muted-foreground">
+                    No notifications.
+                  </div>
+                ) : (
+                  recent.map((n) => {
+                    const Icon = NOTIF_ICON[n.type];
+                    const colorCls = NOTIF_COLOR[n.type];
+                    const ref = n.bmrId || n.grnNo || n.rmCode;
+                    return (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={() => handleNotifClick(n.id, n.type, ref)}
+                        className={`w-full text-left px-3 py-2 border-b border-border last:border-b-0 hover:bg-secondary transition-colors flex items-start gap-2 ${
+                          n.read ? "opacity-60" : ""
+                        }`}
+                      >
+                        <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${colorCls}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs leading-snug">{n.message}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {new Date(n.createdAt).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                        </div>
+                        {!n.read && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
