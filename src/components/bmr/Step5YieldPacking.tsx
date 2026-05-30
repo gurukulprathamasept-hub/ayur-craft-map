@@ -8,10 +8,39 @@ interface Props {
 }
 
 const Step5YieldPacking = ({ bmr, onChange }: Props) => {
+  const { getFormulation } = useFormulations();
+  const mfr = bmr.mfrId ? getFormulation(bmr.mfrId) : undefined;
+  const expectedYieldPct = mfr?.expectedYieldPct ?? 95;
+
   const yieldPct = bmr.theoreticalYield > 0 && bmr.actualYield > 0
     ? (bmr.actualYield / bmr.theoreticalYield * 100) : 0;
   const loss = bmr.theoreticalYield - bmr.actualYield;
-  const barColor = yieldPct >= 95 ? "bg-primary" : yieldPct >= 85 ? "bg-[hsl(var(--warning))]" : "bg-destructive";
+  const barColor = yieldPct >= expectedYieldPct ? "bg-primary" : yieldPct >= 85 ? "bg-[hsl(var(--warning))]" : "bg-destructive";
+
+  const handleActualBlendWtChange = (value: string) => {
+    const actualBlendWt = value;
+    const actualYield = parseFloat(actualBlendWt) || 0;
+    const yieldPct = bmr.theoreticalYield > 0
+      ? parseFloat(((actualYield / bmr.theoreticalYield) * 100).toFixed(1))
+      : 0;
+    onChange({
+      actualYield,
+      yieldPct,
+      blendWeight: { ...bmr.blendWeight, actualBlendWt },
+    });
+  };
+
+  const getBadgeClass = (pct: number) => {
+    if (pct >= expectedYieldPct) return "app-badge-green";
+    if (pct >= 85) return "app-badge-amber";
+    return "app-badge-red";
+  };
+
+  const getBadgeLabel = (pct: number) => {
+    if (pct >= expectedYieldPct) return "On target";
+    if (pct >= 85) return "Acceptable";
+    return "Low yield";
+  };
 
   const updatePacking = (key: string, value: string | number) =>
     onChange({ packing: { ...bmr.packing, [key]: value } });
