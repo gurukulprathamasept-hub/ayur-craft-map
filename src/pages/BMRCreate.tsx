@@ -205,6 +205,7 @@ const BMRCreate = () => {
         pakaDuration: "",
         flameSetting: "",
         iterationLog: [],
+        insertBeforeStepIndex: sp.insertBeforeStepIndex ?? 0,
       })),
       theoreticalYield: Number((batchSize * ((mfr.expectedYieldPct ?? 98) / 100)).toFixed(3)),
       blendWeight: { theoreticalBlendWt: String(batchSize), actualBlendWt: "", lossOnBlending: "", yieldAtBlendStage: "" },
