@@ -144,6 +144,7 @@ const AppLayout = () => {
                   key={item.to}
                   to={item.to}
                   end={item.to === "/"}
+                  onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `nav-item-app ${isActive ? "nav-item-app-active" : ""}`
                   }
