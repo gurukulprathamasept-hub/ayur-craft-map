@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type QCSpec = { parameter: string; spec: string; section?: string; unit?: string };
 
@@ -332,11 +332,36 @@ const today = () => {
 };
 
 export const StockProvider = ({ children }: { children: ReactNode }) => {
-  const [rmData, setRmData] = useState<RMEntry[]>(initialData);
-  const [grnCount, setGrnCount] = useState(187);
-  const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>([]);
-  const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>([]);
-  const [lots, setLots] = useState<RMLot[]>([]);
+  const [rmData, setRmData] = useState<RMEntry[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_rm_data');
+      return s ? JSON.parse(s) : initialData;
+    } catch { return initialData; }
+  });
+  const [grnCount, setGrnCount] = useState(() => {
+    try {
+      const s = localStorage.getItem('ayur_grn_count');
+      return s ? Number(JSON.parse(s)) : 187;
+    } catch { return 187; }
+  });
+  const [pendingGRNs, setPendingGRNs] = useState<PendingGRN[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_pending_grns');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+  const [issuedRecords, setIssuedRecords] = useState<IssuedRecord[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_issued_records');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
+  const [lots, setLots] = useState<RMLot[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_lots');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
   const [drafts, setDrafts] = useState<GRNDraft[]>(() => {
     try {
       const stored = localStorage.getItem("grn_drafts");
@@ -766,6 +791,12 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     }));
     setIssuedRecords(prev => prev.map(r => r.issRef === issRef ? { ...r, status: "reversed" as const } : r));
   };
+
+  useEffect(() => { localStorage.setItem('ayur_rm_data', JSON.stringify(rmData)); }, [rmData]);
+  useEffect(() => { localStorage.setItem('ayur_lots', JSON.stringify(lots)); }, [lots]);
+  useEffect(() => { localStorage.setItem('ayur_pending_grns', JSON.stringify(pendingGRNs)); }, [pendingGRNs]);
+  useEffect(() => { localStorage.setItem('ayur_issued_records', JSON.stringify(issuedRecords)); }, [issuedRecords]);
+  useEffect(() => { localStorage.setItem('ayur_grn_count', JSON.stringify(grnCount)); }, [grnCount]);
 
   return (
     <StockContext.Provider value={{

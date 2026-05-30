@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type Supplier = {
   id: string;
@@ -65,7 +65,12 @@ export const useSupplier = () => {
 };
 
 export const SupplierProvider = ({ children }: { children: ReactNode }) => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_suppliers');
+      return s ? JSON.parse(s) : initialSuppliers;
+    } catch { return initialSuppliers; }
+  });
 
   const addSupplier = (s: Omit<Supplier, "id">) => {
     setSuppliers(prev => {
@@ -84,6 +89,10 @@ export const SupplierProvider = ({ children }: { children: ReactNode }) => {
   const deleteSupplier = (id: string) => {
     setSuppliers(prev => prev.filter(s => s.id !== id));
   };
+
+  useEffect(() => {
+    localStorage.setItem('ayur_suppliers', JSON.stringify(suppliers));
+  }, [suppliers]);
 
   return (
     <SupplierContext.Provider value={{ suppliers, addSupplier, updateSupplier, deleteSupplier }}>

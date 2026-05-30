@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface BMRLotAllocation {
   lotId: string;
@@ -323,7 +323,12 @@ export function createDefaultBMR(overrides: Partial<BMRRecord> = {}): BMRRecord 
 }
 
 export const BMRProvider = ({ children }: { children: ReactNode }) => {
-  const [bmrs, setBMRs] = useState<BMRRecord[]>([]);
+  const [bmrs, setBMRs] = useState<BMRRecord[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_bmrs');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
 
   const addBMR = (bmr: BMRRecord) => setBMRs((prev) => [...prev, bmr]);
 
@@ -365,6 +370,10 @@ export const BMRProvider = ({ children }: { children: ReactNode }) => {
     const nextSeq = String(maxSeq + 1).padStart(4, "0");
     return { nextBatchNo: `${prefix}-${yymm}-${nextSeq}`, prevBatchNo };
   };
+
+  useEffect(() => {
+    localStorage.setItem('ayur_bmrs', JSON.stringify(bmrs));
+  }, [bmrs]);
 
   return (
     <BMRContext.Provider value={{ bmrs, addBMR, updateBMR, getBMR, getNextBatchNo }}>

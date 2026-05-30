@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type RMCategory = "herb" | "extract" | "mineral" | "animal" | "base" | "process";
 
@@ -115,7 +115,12 @@ export const useFormulations = () => {
 };
 
 export const FormulationProvider = ({ children }: { children: ReactNode }) => {
-  const [formulations, setFormulations] = useState<Formulation[]>([]);
+  const [formulations, setFormulations] = useState<Formulation[]>(() => {
+    try {
+      const s = localStorage.getItem('ayur_formulations');
+      return s ? JSON.parse(s) : [];
+    } catch { return []; }
+  });
 
   const addFormulation = (f: Formulation) => {
     setFormulations((prev) => [...prev, f]);
@@ -135,6 +140,10 @@ export const FormulationProvider = ({ children }: { children: ReactNode }) => {
     formulations
       .filter((f) => f.id !== excludeId && !!f.batchPrefix)
       .map((f) => f.batchPrefix!.toUpperCase());
+
+  useEffect(() => {
+    localStorage.setItem('ayur_formulations', JSON.stringify(formulations));
+  }, [formulations]);
 
   return (
     <FormulationContext.Provider value={{ formulations, addFormulation, updateFormulation, deleteFormulation, getFormulation, getUsedPrefixes }}>
