@@ -21,6 +21,7 @@ import {
   CalendarClock,
   FileText as FileTextIcon,
   Truck as TruckIcon,
+  Menu,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useUser, roleLabel } from "@/context/UserContext";
