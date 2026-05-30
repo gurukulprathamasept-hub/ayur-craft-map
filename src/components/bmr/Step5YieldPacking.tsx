@@ -69,8 +69,18 @@ const Step5YieldPacking = ({ bmr, onChange }: Props) => {
             </div>
             <div className="form-field">
               <label>Actual production yield ({bmr.batchUnit})</label>
-              <input type="number" step="0.001" value={bmr.actualYield || ""}
-                onChange={e => onChange({ actualYield: Number(e.target.value), yieldPct: bmr.theoreticalYield ? Number(e.target.value) / bmr.theoreticalYield * 100 : 0 })} />
+              <div className="relative">
+                <input type="number" step="0.001"
+                  className={bmr.blendWeight?.actualBlendWt ? "pr-16" : ""}
+                  value={bmr.blendWeight?.actualBlendWt || ""}
+                  onChange={e => handleActualBlendWtChange(e.target.value)}
+                  onBlur={e => handleActualBlendWtChange(e.target.value)} />
+                {bmr.actualYield > 0 && (
+                  <span className={`app-badge absolute right-2 top-1/2 -translate-y-1/2 ${getBadgeClass(yieldPct)}`}>
+                    {getBadgeLabel(yieldPct)}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="form-field">
               <label>Yield % (auto)</label>
