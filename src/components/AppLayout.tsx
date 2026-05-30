@@ -54,6 +54,20 @@ const navGroups = [
 
 const AppLayout = () => {
   const { lang, setLang } = useLanguage();
+  const { currentUser, login, logout } = useUser();
+  const [showPin, setShowPin] = useState(false);
+  const [pin, setPin] = useState("");
+
+  const handleLogin = () => {
+    if (login(pin)) {
+      toast.success("Switched user");
+      setPin("");
+      setShowPin(false);
+    } else {
+      toast.error("Invalid PIN");
+    }
+  };
+
   return (
     <div className="grid grid-cols-[200px_1fr] min-h-screen bg-card">
       {/* Sidebar */}
