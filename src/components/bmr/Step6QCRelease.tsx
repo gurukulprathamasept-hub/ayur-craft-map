@@ -311,6 +311,37 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
           </div>
         </div>
       </div>
+
+      {showDisposalPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-card border border-border rounded-lg shadow-lg max-w-md w-full p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <Trash2 className="w-4 h-4 text-destructive" />
+              <h3 className="text-sm font-semibold">Log disposal for this batch?</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Batch <span className="font-mono font-medium">{bmr.batchNo}</span> ({bmr.productName},{" "}
+              {bmr.batchSize} {bmr.batchUnit}) has been rejected. Schedule U requires a disposal record.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDisposalPrompt(false)}
+                className="px-3 py-1.5 text-xs rounded border border-border bg-background hover:bg-secondary"
+              >
+                Later
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowDisposalPrompt(false); goToDisposal(); }}
+                className="px-3 py-1.5 text-xs rounded bg-primary text-primary-foreground hover:opacity-90 font-medium"
+              >
+                Log disposal now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
