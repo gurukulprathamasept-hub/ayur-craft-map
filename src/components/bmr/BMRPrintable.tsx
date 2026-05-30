@@ -264,7 +264,7 @@ const BMRPrintable = ({ bmr }: Props) => {
       </Section>
 
       {/* Process log */}
-      <Section title="3. Process Log & Environmental Controls">
+      <Section title="3. Process Log & Environmental Controls" scheduleRef="Schedule U §I-A.6 — Manufacturing Process & Environmental Conditions">
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginBottom: "6pt" }}>Environment</h3>
         <Row label="Room Temperature (°C)" value={bmr.environment.roomTemp} />
         <Row label="Relative Humidity (%)" value={bmr.environment.relativeHumidity} />
