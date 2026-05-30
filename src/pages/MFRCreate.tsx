@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 const dosageForms = ["Churna", "Arishta/Asava", "Avaleha", "Taila", "Ghrita", "Vati/Gutika", "Bhasma", "Other"];
 const rmCategories = ["herb", "extract", "mineral", "animal", "base", "process"] as const;
-const CAT_LABELS: Record<string, string> = { herb: "Herb", extract: "Extract", mineral: "Mineral", animal: "Animal", base: "Base / Excipient", process: "Process agent" };
+import { CAT_LABELS } from "@/lib/formulationConstants";
 
 const STEPS = ["Basic info", "Ingredients", "Sub-processes", "Process steps", "Yield & Packaging", "QC & IPC"];
 const SUBPROCESS_TYPES: SubProcessType[] = ["Kwatha", "Kalka", "Bhavana", "Shodhana", "Other"];

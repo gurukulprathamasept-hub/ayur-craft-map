@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { referenceFormulations } from "@/data/referenceFormulations";
 
 export type RMCategory = "herb" | "extract" | "mineral" | "animal" | "base" | "process";
 
@@ -118,8 +119,8 @@ export const FormulationProvider = ({ children }: { children: ReactNode }) => {
   const [formulations, setFormulations] = useState<Formulation[]>(() => {
     try {
       const s = localStorage.getItem('ayur_formulations');
-      return s ? JSON.parse(s) : [];
-    } catch { return []; }
+      return s ? JSON.parse(s) : referenceFormulations;
+    } catch { return referenceFormulations; }
   });
 
   const addFormulation = (f: Formulation) => {
