@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Info } from "lucide-react";
+import { ArrowLeft, FileText, Info, AlertTriangle } from "lucide-react";
 import { useFormulations } from "@/context/FormulationContext";
 import { useBMRs, createDefaultBMR } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
