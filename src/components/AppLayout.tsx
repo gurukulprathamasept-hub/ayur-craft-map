@@ -16,9 +16,17 @@ import {
   Languages,
   KeyRound,
   LogOut,
+  Bell,
+  Package,
+  CalendarClock,
+  FileText as FileTextIcon,
+  Truck as TruckIcon,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useUser, roleLabel } from "@/context/UserContext";
+import { useNotif, NotifType } from "@/context/NotificationContext";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const navGroups = [
@@ -56,11 +64,36 @@ const navGroups = [
   },
 ];
 
+const NOTIF_ICON: Record<NotifType, typeof Package> = {
+  low_stock: Package,
+  expiring: CalendarClock,
+  bmr_pending: FileTextIcon,
+  grn_pending: TruckIcon,
+};
+
+const NOTIF_COLOR: Record<NotifType, string> = {
+  low_stock: "text-destructive",
+  expiring: "text-amber-600",
+  bmr_pending: "text-primary",
+  grn_pending: "text-blue-600",
+};
+
 const AppLayout = () => {
   const { lang, setLang } = useLanguage();
   const { currentUser, login, logout } = useUser();
+  const { notifs, unreadCount, markRead, markAllRead } = useNotif();
+  const navigate = useNavigate();
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState("");
+
+  const recent = notifs.slice(0, 10);
+
+  const handleNotifClick = (id: string, type: NotifType, ref?: string) => {
+    markRead(id);
+    if (type === "bmr_pending" && ref) navigate(`/bmr/${ref}`);
+    else if (type === "grn_pending") navigate(`/rm-inward`);
+    else if (type === "low_stock" || type === "expiring") navigate(`/stock-ledger`);
+  };
 
   const handleLogin = () => {
     if (login(pin)) {
@@ -208,7 +241,80 @@ const AppLayout = () => {
 
       {/* Main content */}
       <main className="flex flex-col overflow-hidden">
-        <Outlet />
+        <div className="flex items-center justify-end px-4 py-2 border-b border-border bg-background gap-2 shrink-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="relative inline-flex items-center justify-center w-8 h-8 rounded-md border border-border bg-card hover:bg-secondary transition-colors"
+                aria-label={`Notifications (${unreadCount} unread)`}
+              >
+                <Bell className="w-4 h-4 text-foreground" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-semibold flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[340px] p-0">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                <div className="text-xs font-semibold">Notifications</div>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => markAllRead()}
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-[360px] overflow-y-auto">
+                {recent.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-muted-foreground">
+                    No notifications.
+                  </div>
+                ) : (
+                  recent.map((n) => {
+                    const Icon = NOTIF_ICON[n.type];
+                    const colorCls = NOTIF_COLOR[n.type];
+                    const ref = n.bmrId || n.grnNo || n.rmCode;
+                    return (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={() => handleNotifClick(n.id, n.type, ref)}
+                        className={`w-full text-left px-3 py-2 border-b border-border last:border-b-0 hover:bg-secondary transition-colors flex items-start gap-2 ${
+                          n.read ? "opacity-60" : ""
+                        }`}
+                      >
+                        <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${colorCls}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs leading-snug">{n.message}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {new Date(n.createdAt).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                        </div>
+                        {!n.read && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useNotif } from "./NotificationContext";
 
 export interface BMRLotAllocation {
   lotId: string;
@@ -406,6 +407,22 @@ export const BMRProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem('ayur_disposals', JSON.stringify(disposalEntries));
   }, [disposalEntries]);
+
+  // Notifications — BMR reached QC pending
+  const { addNotif } = useNotif();
+  useEffect(() => {
+    bmrs.forEach((b) => {
+      if (b.status === "QC pending") {
+        addNotif({
+          type: "bmr_pending",
+          message: `BMR ${b.batchNo} (${b.productName}) is awaiting QC release.`,
+          bmrId: b.id,
+          key: `bmr_pending:${b.id}`,
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bmrs]);
 
   return (
     <BMRContext.Provider value={{ bmrs, addBMR, updateBMR, getBMR, getNextBatchNo, disposalEntries, addDisposalEntry }}>

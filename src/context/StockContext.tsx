@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useNotif } from "./NotificationContext";
 
 export type QCSpec = { parameter: string; spec: string; section?: string; unit?: string };
 
@@ -797,6 +798,61 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => { localStorage.setItem('ayur_pending_grns', JSON.stringify(pendingGRNs)); }, [pendingGRNs]);
   useEffect(() => { localStorage.setItem('ayur_issued_records', JSON.stringify(issuedRecords)); }, [issuedRecords]);
   useEffect(() => { localStorage.setItem('ayur_grn_count', JSON.stringify(grnCount)); }, [grnCount]);
+
+  // ---- Notifications ----
+  const { addNotif } = useNotif();
+
+  // Low stock — any RM whose currentStock fell below its reorder level
+  useEffect(() => {
+    rmData.forEach((rm) => {
+      if (rm.reorder > 0 && rm.currentStock < rm.reorder) {
+        addNotif({
+          type: "low_stock",
+          message: `${rm.name} is below reorder level (${rm.currentStock} ${rm.uom} / reorder ${rm.reorder} ${rm.uom}).`,
+          rmCode: rm.code,
+          key: `low_stock:${rm.code}`,
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rmData]);
+
+  // Expiring lots — any lot expiring within 30 days
+  useEffect(() => {
+    const now = Date.now();
+    const horizon = 30 * 24 * 60 * 60 * 1000;
+    lots.forEach((l) => {
+      if (l.qtyRemaining <= 0) return;
+      const t = Date.parse(l.expiry);
+      if (isNaN(t)) return;
+      const diff = t - now;
+      if (diff > 0 && diff <= horizon) {
+        const days = Math.ceil(diff / (24 * 60 * 60 * 1000));
+        addNotif({
+          type: "expiring",
+          message: `Lot ${l.batchNo} of ${l.rmName} expires in ${days} day${days === 1 ? "" : "s"}.`,
+          rmCode: l.rmCode,
+          key: `expiring:${l.lotId}`,
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lots]);
+
+  // GRN pending — any GRN currently in pending_qc state
+  useEffect(() => {
+    pendingGRNs.forEach((g) => {
+      if (g.status === "pending_qc") {
+        addNotif({
+          type: "grn_pending",
+          message: `GRN ${g.grnNo} submitted for QC (${g.lines.length} item${g.lines.length === 1 ? "" : "s"}).`,
+          grnNo: g.grnNo,
+          key: `grn_pending:${g.grnNo}`,
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingGRNs]);
 
   return (
     <StockContext.Provider value={{

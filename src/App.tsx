@@ -10,6 +10,7 @@ import { SupplierProvider } from "@/context/SupplierContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { UserProvider } from "@/context/UserContext";
 import { ARProvider } from "@/context/ARContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import RMInward from "./pages/RMInward";
@@ -36,6 +37,7 @@ const App = () => (
       <UserProvider>
         <LanguageProvider>
           <FormulationProvider>
+            <NotificationProvider>
             <BMRProvider>
               <StockProvider>
               <SupplierProvider>
@@ -68,6 +70,7 @@ const App = () => (
               </SupplierProvider>
               </StockProvider>
             </BMRProvider>
+            </NotificationProvider>
           </FormulationProvider>
         </LanguageProvider>
       </UserProvider>
