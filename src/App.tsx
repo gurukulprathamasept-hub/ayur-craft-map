@@ -25,6 +25,7 @@ import MFRCreate from "./pages/MFRCreate";
 import BatchPrefixAudit from "./pages/BatchPrefixAudit";
 import SupplierMaster from "./pages/SupplierMaster";
 import AnalyticalRecords from "./pages/AnalyticalRecords";
+import DisposalLedger from "./pages/DisposalLedger";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
                     <Route path="/batch-prefix-audit" element={<BatchPrefixAudit />} />
                     <Route path="/supplier-master" element={<SupplierMaster />} />
                     <Route path="/analytical-records" element={<AnalyticalRecords />} />
+                    <Route path="/disposal-ledger" element={<DisposalLedger />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
