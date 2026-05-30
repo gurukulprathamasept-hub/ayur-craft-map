@@ -301,7 +301,7 @@ const BMRPrintable = ({ bmr }: Props) => {
       </Section>
 
       {/* IPC */}
-      <Section title="4. In-Process Quality Control (IPC) Checks">
+      <Section title="4. In-Process Quality Control (IPC) Checks" scheduleRef="Schedule U §I-A.8 — In-Process Controls">
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
