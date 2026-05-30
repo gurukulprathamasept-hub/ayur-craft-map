@@ -21,6 +21,7 @@ import {
   CalendarClock,
   FileText as FileTextIcon,
   Truck as TruckIcon,
+  Menu,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useUser, roleLabel } from "@/context/UserContext";
@@ -85,6 +86,7 @@ const AppLayout = () => {
   const navigate = useNavigate();
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const recent = notifs.slice(0, 10);
 
@@ -106,9 +108,19 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="grid grid-cols-[200px_1fr] min-h-screen bg-card">
+    <div className="md:grid md:grid-cols-[200px_1fr] min-h-screen bg-card relative">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-30"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       {/* Sidebar */}
-      <aside className="bg-sidebar border-r border-sidebar-border flex flex-col">
+      <aside
+        className={`bg-sidebar border-r border-sidebar-border flex-col fixed md:static inset-y-0 left-0 w-[220px] md:w-auto z-40 ${sidebarOpen ? "flex" : "hidden"} md:flex`}
+      >
         <div className="px-4 pt-4 pb-3 border-b border-sidebar-border flex items-center gap-2">
           <div className="w-[26px] h-[26px] bg-primary rounded-md flex items-center justify-center shrink-0">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
@@ -132,6 +144,7 @@ const AppLayout = () => {
                   key={item.to}
                   to={item.to}
                   end={item.to === "/"}
+                  onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `nav-item-app ${isActive ? "nav-item-app-active" : ""}`
                   }
@@ -241,7 +254,16 @@ const AppLayout = () => {
 
       {/* Main content */}
       <main className="flex flex-col overflow-hidden">
-        <div className="flex items-center justify-end px-4 py-2 border-b border-border bg-background gap-2 shrink-0">
+        <div className="flex items-center px-4 py-2 border-b border-border bg-background gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-md border border-border bg-card hover:bg-secondary transition-colors"
+            aria-label="Toggle navigation"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+          <div className="flex-1" />
           <Popover>
             <PopoverTrigger asChild>
               <button

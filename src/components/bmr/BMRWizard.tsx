@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, Check, Loader2 } from "lucide-react";
 import { BMRRecord, useBMRs } from "@/context/BMRContext";
-import { toast } from "sonner";
+
 import BMRStepper from "./BMRStepper";
 import Step1BatchHeader from "./Step1BatchHeader";
 import Step2Ingredients from "./Step2Ingredients";
@@ -33,10 +33,28 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
   const { getBMR, updateBMR } = useBMRs();
   const bmr = getBMR(bmrId);
   const [step, setStep] = useState(bmr?.currentStep || 1);
+  const [pendingUpdates, setPendingUpdates] = useState<Partial<BMRRecord> | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChange = useCallback((updates: Partial<BMRRecord>) => {
-    updateBMR(bmrId, updates);
-  }, [bmrId, updateBMR]);
+    setPendingUpdates((prev) => ({ ...(prev || {}), ...updates, currentStep: Math.max(bmr?.currentStep || 1, step) }));
+    setSaveState("saving");
+  }, [bmr?.currentStep, step]);
+
+  useEffect(() => {
+    if (!pendingUpdates) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      updateBMR(bmrId, pendingUpdates);
+      setPendingUpdates(null);
+      setSaveState("saved");
+      setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
+    }, 500);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [pendingUpdates, bmrId, updateBMR]);
 
   if (!bmr) {
     return (
@@ -54,10 +72,6 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
     updateBMR(bmrId, { currentStep: Math.max(bmr.currentStep, n) });
   };
 
-  const saveDraft = () => {
-    toast.success("Draft saved");
-  };
-
   return (
     <>
       {/* Top bar */}
@@ -73,9 +87,19 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
             ← Back
           </button>
         )}
-        <button onClick={saveDraft} className="px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">
-          Save draft
-        </button>
+        <div
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground"
+          aria-live="polite"
+          title="Changes are saved automatically"
+        >
+          {saveState === "saving" ? (
+            <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
+          ) : saveState === "saved" ? (
+            <><Check className="w-3 h-3 text-primary" /> Autosaved</>
+          ) : (
+            <><Check className="w-3 h-3 opacity-50" /> Autosaved</>
+          )}
+        </div>
         <button
           onClick={() => window.print()}
           className="px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1"
