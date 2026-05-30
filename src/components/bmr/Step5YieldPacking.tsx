@@ -97,7 +97,7 @@ const Step5YieldPacking = ({ bmr, onChange }: Props) => {
               <div className={`h-full rounded-sm transition-all ${barColor}`} style={{ width: `${Math.min(100, yieldPct)}%` }} />
             </div>
             <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-              <span>0%</span><span>Target ≥95%</span><span>100%</span>
+              <span>0%</span><span>Target ≥{expectedYieldPct}%</span><span>100%</span>
             </div>
           </div>
         </div>
