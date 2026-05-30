@@ -28,11 +28,14 @@ const Blank = ({ value, width = "100%", solid = false }: { value?: string | numb
   </span>
 );
 
-const Section = ({ title, children, breakBefore = true }: { title: string; children: React.ReactNode; breakBefore?: boolean }) => (
+const Section = ({ title, scheduleRef, children, breakBefore = true }: { title: string; scheduleRef?: string; children: React.ReactNode; breakBefore?: boolean }) => (
   <section className="print-section" style={{ pageBreakBefore: breakBefore ? "always" : "auto", breakBefore: breakBefore ? "page" : "auto", marginBottom: "16pt" }}>
-    <h2 style={{ fontSize: "14pt", fontWeight: 700, borderBottom: "2px solid #000", paddingBottom: "4pt", marginBottom: "10pt" }}>
+    <h2 style={{ fontSize: "14pt", fontWeight: 700, borderBottom: "2px solid #000", paddingBottom: "4pt", marginBottom: scheduleRef ? "2pt" : "10pt" }}>
       {title}
     </h2>
+    {scheduleRef && (
+      <div style={{ fontSize: "8.5pt", color: "#666", fontStyle: "italic", marginBottom: "10pt" }}>{scheduleRef}</div>
+    )}
     {children}
   </section>
 );
