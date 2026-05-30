@@ -1022,9 +1022,19 @@ const RMInward = () => {
                 <div className="app-card-head flex items-center justify-between">
                   <div className="app-card-title">{line.rmName}</div>
                   {line.qcStatus === "approved" ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      <CheckCircle2 className="w-3 h-3" /> Approved — +{line.qty} {line.uom} added to ledger
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        <CheckCircle2 className="w-3 h-3" /> Approved — +{line.qty} {line.uom} added to ledger
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/analytical-records?grnRef=${encodeURIComponent(grnNo)}`)}
+                        className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-background hover:bg-secondary"
+                        title="Create Analytical Record linked to this GRN"
+                      >
+                        <FlaskConical className="w-3 h-3" /> Link AR
+                      </button>
+                    </div>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
                       <ShieldX className="w-3 h-3" /> {line.disposition === "retest" ? "Held for retest" : "Rejected — not added"}
