@@ -1,6 +1,8 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BMRRecord, BMRQCTest, BMRSignature, BMRIngredient, BMRLotAllocation } from "@/context/BMRContext";
 import { useStock } from "@/context/StockContext";
-import { Info, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { Info, CheckCircle, AlertTriangle, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -16,6 +18,9 @@ const SIG_COLORS: Record<string, { bg: string; text: string }> = {
 
 const Step6QCRelease = ({ bmr, onChange }: Props) => {
   const { commitConsumption, reverseConsumption } = useStock();
+  const navigate = useNavigate();
+  const [showDisposalPrompt, setShowDisposalPrompt] = useState(false);
+
 
   const updateQC = (idx: number, updates: Partial<BMRQCTest>) => {
     const qcParams = bmr.qcParams.map((q, i) => i === idx ? { ...q, ...updates } : q);
@@ -85,7 +90,22 @@ const Step6QCRelease = ({ bmr, onChange }: Props) => {
     );
     onChange({ released: false, status: "Rejected", ingredients: updatedIngredients });
     toast.success(`Batch ${bmr.batchNo} rejected — stock restored.`);
+    setShowDisposalPrompt(true);
   };
+
+  const goToDisposal = () => {
+    const qs = new URLSearchParams({
+      itemType: "Finished Batch",
+      itemName: bmr.productName,
+      batchNo: bmr.batchNo,
+      qty: String(bmr.batchSize || ""),
+      unit: bmr.batchUnit || "",
+      reason: `Batch rejected at QC release — ${bmr.analystRemarks || "see analytical record"}`,
+      bmrRef: bmr.batchNo,
+    });
+    navigate(`/disposal-ledger?${qs.toString()}`);
+  };
+
 
 
   const complianceClass = (c: string) =>
