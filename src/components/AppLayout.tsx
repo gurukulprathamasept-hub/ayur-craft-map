@@ -86,6 +86,7 @@ const AppLayout = () => {
   const navigate = useNavigate();
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const recent = notifs.slice(0, 10);
 
