@@ -126,8 +126,101 @@ const BMRPrintable = ({ bmr }: Props) => {
         <Row label="Equipment Used" value={bmr.personnel.equipmentUsed} />
       </section>
 
+      {/* Sub-processes (Kwatha / Kalka / Bhavana / Shodhana) */}
+      {bmr.subProcesses && bmr.subProcesses.length > 0 && (
+        <Section title="2A. Sub-Processes (Pharmaceutical Operations)" scheduleRef="Schedule U §I-A.5 — Process Record (Kwatha / Bhavana / Shodhana)">
+          {bmr.subProcesses.map((sp, spi) => (
+            <div key={sp.id || spi} style={{ border: "1px solid #000", padding: "8pt", marginBottom: "12pt", pageBreakInside: "avoid" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6pt", borderBottom: "1px solid #000", paddingBottom: "4pt" }}>
+                <div style={{ fontWeight: 700, fontSize: "12pt" }}>{sp.name || sp.type}</div>
+                <span style={{ border: "1px solid #000", padding: "1pt 6pt", fontSize: "9pt", fontWeight: 600, textTransform: "uppercase" }}>{sp.type}</span>
+              </div>
+              {sp.description && (
+                <div style={{ fontSize: "10pt", marginBottom: "6pt", fontStyle: "italic" }}>{sp.description}</div>
+              )}
+
+              {sp.ingredients && sp.ingredients.length > 0 && (
+                <>
+                  <div style={{ fontSize: "10pt", fontWeight: 700, marginTop: "6pt", marginBottom: "4pt" }}>Ingredients</div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "8pt" }}>
+                    <thead>
+                      <tr>
+                        <th style={headerCell}>#</th>
+                        <th style={headerCell}>Ingredient</th>
+                        <th style={headerCell}>Qty Used</th>
+                        <th style={headerCell}>Unit</th>
+                        <th style={headerCell}>Lot / AR No.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sp.ingredients.map((ing: any, i: number) => (
+                        <tr key={i}>
+                          <Cell value={i + 1} />
+                          <Cell value={`${ing.name || ""}${ing.botanicalName ? ` (${ing.botanicalName})` : ""}`} />
+                          <Cell value={ing.actualQty || ing.requiredQty} />
+                          <Cell value={ing.unit} />
+                          <Cell value={ing.arControlNo || ing.lot || ing.grnRef} />
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+
+              {sp.type === "Kwatha" && (
+                <div style={{ display: "flex", gap: "16pt", marginTop: "6pt", flexWrap: "wrap" }}>
+                  <div><strong>Initial volume:</strong> <Blank value={sp.initialVolume} width="80pt" /></div>
+                  <div style={{ fontSize: "12pt" }}>→</div>
+                  <div><strong>Final volume:</strong> <Blank value={sp.finalVolume} width="80pt" /></div>
+                  {sp.pakaDuration && <div><strong>Paka duration:</strong> {sp.pakaDuration}</div>}
+                  {sp.flameSetting && <div><strong>Flame:</strong> {sp.flameSetting}</div>}
+                </div>
+              )}
+
+              {(sp.type === "Bhavana" || sp.type === "Shodhana") && (
+                <>
+                  <div style={{ fontSize: "10pt", fontWeight: 700, marginTop: "8pt", marginBottom: "4pt" }}>Iteration Log</div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "6pt" }}>
+                    <thead>
+                      <tr>
+                        <th style={headerCell}>#</th>
+                        <th style={headerCell}>Cycle No.</th>
+                        <th style={headerCell}>Date</th>
+                        <th style={headerCell}>Weight After</th>
+                        <th style={headerCell}>Observed By (PIN)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(sp.iterationLog && sp.iterationLog.length > 0 ? sp.iterationLog : Array.from({ length: 3 })).map((log: any, li: number) => (
+                        <tr key={li}>
+                          <Cell value={li + 1} />
+                          <Cell value={log?.cycleNo} />
+                          <Cell value={log?.date} />
+                          <Cell value={log?.weightAfter} />
+                          <Cell value={log?.observedByPin} />
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+
+              <div style={{ display: "flex", gap: "16pt", marginTop: "8pt", flexWrap: "wrap", borderTop: "1px dashed #999", paddingTop: "6pt" }}>
+                <div><strong>Actual Yield:</strong> <Blank value={sp.actualYield ? `${sp.actualYield} ${sp.actualYieldUnit || ""}`.trim() : ""} width="120pt" /></div>
+                <div><strong>Completion Test:</strong> <Blank value={sp.completionTestResult} width="60pt" /></div>
+                {sp.observedBy && <div><strong>Observed By:</strong> {sp.observedBy}</div>}
+                {sp.date && <div><strong>Date:</strong> {sp.date}</div>}
+              </div>
+              {sp.batchNotes && (
+                <div style={{ marginTop: "6pt", fontSize: "10pt" }}><strong>Notes:</strong> {sp.batchNotes}</div>
+              )}
+            </div>
+          ))}
+        </Section>
+      )}
+
       {/* Ingredients */}
-      <Section title="2. Ingredients — Weighing & Dispensing">
+      <Section title="2. Ingredients — Weighing & Dispensing" scheduleRef="Schedule U §I-A.7 — Raw Material Record">
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
