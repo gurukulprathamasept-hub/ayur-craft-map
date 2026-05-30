@@ -440,6 +440,26 @@ const BMRPrintable = ({ bmr }: Props) => {
           </tbody>
         </table>
       </Section>
+
+      {/* Signature blocks */}
+      <section className="print-section" style={{ pageBreakBefore: "always", breakBefore: "page", marginTop: "16pt" }}>
+        <h2 style={{ fontSize: "14pt", fontWeight: 700, borderBottom: "2px solid #000", paddingBottom: "4pt", marginBottom: "2pt" }}>
+          7. Authorisation & Sign-Off
+        </h2>
+        <div style={{ fontSize: "8.5pt", color: "#666", fontStyle: "italic", marginBottom: "12pt" }}>
+          Schedule U §I-A.11 — Personnel Authorisation & Batch Release
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10pt" }}>
+          {["Manufacturing Pharmacist", "Technical Staff", "QC Analyst", "QC Head"].map((role) => (
+            <div key={role} style={{ border: "1px solid #000", padding: "10pt", minHeight: "110pt", pageBreakInside: "avoid" }}>
+              <div style={{ fontWeight: 700, fontSize: "11pt", borderBottom: "1px solid #000", paddingBottom: "4pt", marginBottom: "10pt" }}>{role}</div>
+              <div style={{ marginBottom: "14pt" }}>Name: <Blank width="70%" solid /></div>
+              <div style={{ marginBottom: "14pt" }}>Signature: <Blank width="60%" solid /></div>
+              <div>Date: <Blank width="55%" solid /></div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };
