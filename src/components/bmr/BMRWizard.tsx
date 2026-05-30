@@ -33,10 +33,28 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
   const { getBMR, updateBMR } = useBMRs();
   const bmr = getBMR(bmrId);
   const [step, setStep] = useState(bmr?.currentStep || 1);
+  const [pendingUpdates, setPendingUpdates] = useState<Partial<BMRRecord> | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChange = useCallback((updates: Partial<BMRRecord>) => {
-    updateBMR(bmrId, updates);
-  }, [bmrId, updateBMR]);
+    setPendingUpdates((prev) => ({ ...(prev || {}), ...updates, currentStep: Math.max(bmr?.currentStep || 1, step) }));
+    setSaveState("saving");
+  }, [bmr?.currentStep, step]);
+
+  useEffect(() => {
+    if (!pendingUpdates) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      updateBMR(bmrId, pendingUpdates);
+      setPendingUpdates(null);
+      setSaveState("saved");
+      setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
+    }, 500);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [pendingUpdates, bmrId, updateBMR]);
 
   if (!bmr) {
     return (
