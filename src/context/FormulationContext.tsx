@@ -45,6 +45,8 @@ export interface SubProcess {
   yieldUnit?: string;
   completionTest?: string;     // e.g. "Varti test", "Ball formation"
   notes?: string;
+  /** Position in main process log: render this sub-process before step at this index. */
+  insertBeforeStepIndex?: number;
 }
 
 export interface PackSizeOption {
