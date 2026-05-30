@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, Check, Loader2 } from "lucide-react";
 import { BMRRecord, useBMRs } from "@/context/BMRContext";
 import { toast } from "sonner";
 import BMRStepper from "./BMRStepper";
