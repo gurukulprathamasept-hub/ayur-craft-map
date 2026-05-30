@@ -276,7 +276,7 @@ const RMInward = () => {
         batch: l.batch || "—",
         qty: l.qty,
         uom: l.uom,
-        reason: l.rejectionReason || "QC failure at incoming inspection",
+        reason: l.dispositionReason || "QC failure at incoming inspection",
       }));
     if (rejected.length > 0) setRejectedDisposalQueue(rejected);
 
