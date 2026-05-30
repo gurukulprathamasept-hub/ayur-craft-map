@@ -72,10 +72,6 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
     updateBMR(bmrId, { currentStep: Math.max(bmr.currentStep, n) });
   };
 
-  const saveDraft = () => {
-    toast.success("Draft saved");
-  };
-
   return (
     <>
       {/* Top bar */}
@@ -91,9 +87,19 @@ const BMRWizard = ({ bmrId, prevBatchNo }: Props) => {
             ← Back
           </button>
         )}
-        <button onClick={saveDraft} className="px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all">
-          Save draft
-        </button>
+        <div
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground"
+          aria-live="polite"
+          title="Changes are saved automatically"
+        >
+          {saveState === "saving" ? (
+            <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
+          ) : saveState === "saved" ? (
+            <><Check className="w-3 h-3 text-primary" /> Autosaved</>
+          ) : (
+            <><Check className="w-3 h-3 opacity-50" /> Autosaved</>
+          )}
+        </div>
         <button
           onClick={() => window.print()}
           className="px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary transition-all flex items-center gap-1"
