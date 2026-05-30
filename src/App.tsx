@@ -8,6 +8,7 @@ import { BMRProvider } from "@/context/BMRContext";
 import { StockProvider } from "@/context/StockContext";
 import { SupplierProvider } from "@/context/SupplierContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { UserProvider } from "@/context/UserContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import RMInward from "./pages/RMInward";
@@ -29,38 +30,40 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <LanguageProvider>
-        <FormulationProvider>
-          <BMRProvider>
-            <StockProvider>
-            <SupplierProvider>
-              <Toaster />
-              <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/rm-inward" element={<RMInward />} />
-                  <Route path="/rm-outward" element={<RMOutward />} />
-                  <Route path="/bmr" element={<BMR />} />
-                  <Route path="/bmr-create" element={<BMRCreate />} />
-                  <Route path="/bmr/:id" element={<BMRDetail />} />
-                  <Route path="/rm-master" element={<RMMaster />} />
-                  <Route path="/stock-ledger" element={<StockLedger />} />
-                  <Route path="/schedule-ta" element={<ScheduleTA />} />
-                  <Route path="/mfr-table" element={<MFRTable />} />
-                  <Route path="/mfr-create" element={<MFRCreate />} />
-                  <Route path="/batch-prefix-audit" element={<BatchPrefixAudit />} />
-                  <Route path="/supplier-master" element={<SupplierMaster />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-            </SupplierProvider>
-            </StockProvider>
-          </BMRProvider>
-        </FormulationProvider>
-      </LanguageProvider>
+      <UserProvider>
+        <LanguageProvider>
+          <FormulationProvider>
+            <BMRProvider>
+              <StockProvider>
+              <SupplierProvider>
+                <Toaster />
+                <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<AppLayout />}>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/rm-inward" element={<RMInward />} />
+                    <Route path="/rm-outward" element={<RMOutward />} />
+                    <Route path="/bmr" element={<BMR />} />
+                    <Route path="/bmr-create" element={<BMRCreate />} />
+                    <Route path="/bmr/:id" element={<BMRDetail />} />
+                    <Route path="/rm-master" element={<RMMaster />} />
+                    <Route path="/stock-ledger" element={<StockLedger />} />
+                    <Route path="/schedule-ta" element={<ScheduleTA />} />
+                    <Route path="/mfr-table" element={<MFRTable />} />
+                    <Route path="/mfr-create" element={<MFRCreate />} />
+                    <Route path="/batch-prefix-audit" element={<BatchPrefixAudit />} />
+                    <Route path="/supplier-master" element={<SupplierMaster />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+              </SupplierProvider>
+              </StockProvider>
+            </BMRProvider>
+          </FormulationProvider>
+        </LanguageProvider>
+      </UserProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
