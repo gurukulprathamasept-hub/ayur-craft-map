@@ -21,6 +21,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
+import { useStock } from "@/context/StockContext";
+import { useBMRs } from "@/context/BMRContext";
 
 type Batch = { grn: string; date: string; qty: string; supplier: string };
 type Herb = {
@@ -67,208 +69,47 @@ type Finished = {
   sold: string;
 };
 
-// FY-scoped data
-const DATA: Record<
-  string,
-  {
-    herbs: Herb[];
-    metals: Metal[];
-    animals: Animal[];
-    marines: Marine[];
-    finished: Finished[];
-  }
-> = {
-  "FY 2024-25": {
-    herbs: [
-      {
-        name: "Ashwagandha",
-        bot: "Withania somnifera",
-        qty: "48.2",
-        traders: "48.2",
-        mfg: "—",
-        forest: "—",
-        cult: "—",
-        imp: "—",
-        total: "48.2",
-        part: "Root",
-        batches: [
-          { grn: "GRN-2024-0042", date: "12 May 2024", qty: "25.0 kg", supplier: "Herbal Roots Pvt Ltd" },
-          { grn: "GRN-2024-0118", date: "08 Sep 2024", qty: "23.2 kg", supplier: "Herbal Roots Pvt Ltd" },
-        ],
-      },
-      {
-        name: "Amalaki",
-        bot: "Emblica officinalis",
-        qty: "120.5",
-        traders: "80.0",
-        mfg: "—",
-        forest: "—",
-        cult: "40.5",
-        imp: "—",
-        total: "120.5",
-        part: "Fruit rind",
-        batches: [
-          { grn: "GRN-2024-0061", date: "20 Jun 2024", qty: "80.0 kg", supplier: "Vana Suppliers" },
-          { grn: "GRN-2024-0152", date: "15 Nov 2024", qty: "40.5 kg", supplier: "Own Cultivation Farm" },
-        ],
-      },
-      {
-        name: "Haritaki",
-        bot: "Terminalia chebula",
-        qty: "85.0",
-        traders: "85.0",
-        mfg: "—",
-        forest: "—",
-        cult: "—",
-        imp: "—",
-        total: "85.0",
-        part: "Fruit rind",
-        batches: [
-          { grn: "GRN-2024-0073", date: "02 Jul 2024", qty: "50.0 kg", supplier: "Himalaya Botanicals" },
-          { grn: "GRN-2025-0014", date: "22 Jan 2025", qty: "35.0 kg", supplier: "Himalaya Botanicals" },
-        ],
-      },
-      {
-        name: "Pippali",
-        bot: "Piper longum",
-        qty: "32.4",
-        traders: "32.4",
-        mfg: "—",
-        forest: "—",
-        cult: "—",
-        imp: "—",
-        total: "32.4",
-        part: "Fruit",
-        batches: [
-          { grn: "GRN-2024-0089", date: "18 Aug 2024", qty: "32.4 kg", supplier: "Spice Origins" },
-        ],
-      },
-      {
-        name: "Dhataki Pushpa",
-        bot: "Woodfordia fruticosa",
-        qty: "18.0",
-        traders: "—",
-        mfg: "—",
-        forest: "18.0",
-        cult: "—",
-        imp: "—",
-        total: "18.0",
-        part: "Flower",
-        batches: [
-          { grn: "GRN-2024-0102", date: "10 Sep 2024", qty: "18.0 kg", supplier: "Forest Cooperative MH" },
-        ],
-      },
-    ],
-    metals: [
-      {
-        name: "Abhraka Bhasma",
-        chem: "Mica / Biotite silicate",
-        qty: "2.4",
-        mfg: "2.4",
-        traders: "—",
-        imp: "—",
-        total: "2.4",
-        batches: [
-          { grn: "GRN-2024-0055", date: "05 Jun 2024", qty: "2.4 kg", supplier: "Bhasma Manufacturers India" },
-        ],
-      },
-      {
-        name: "Godanti Bhasma",
-        chem: "Calcium sulphate (Selenite)",
-        qty: "1.2",
-        mfg: "—",
-        traders: "1.2",
-        imp: "—",
-        total: "1.2",
-        batches: [
-          { grn: "GRN-2024-0091", date: "22 Aug 2024", qty: "1.2 kg", supplier: "Mineral Traders Co" },
-        ],
-      },
-    ],
-    animals: [
-      {
-        name: "Madhu (Honey)",
-        source: "Apis cerana indica",
-        qty: "12.0",
-        total: "12.0",
-        batches: [
-          { grn: "GRN-2024-0067", date: "28 Jun 2024", qty: "12.0 kg", supplier: "Khadi Honey Co-op" },
-        ],
-      },
-    ],
-    marines: [],
-    finished: [
-      { product: "Triphala Churna", batchNos: "TRCH-2405-0001, TRCH-2410-0002", manufactured: "85.0 kg", sold: "78.5 kg" },
-      { product: "Chyawanprash", batchNos: "CHYA-2406-0001, CHYA-2412-0003", manufactured: "120.0 kg", sold: "112.0 kg" },
-      { product: "Ashwagandha Churna", batchNos: "ASCH-2407-0001", manufactured: "40.0 kg", sold: "35.5 kg" },
-    ],
-  },
-  "FY 2023-24": {
-    herbs: [
-      {
-        name: "Ashwagandha",
-        bot: "Withania somnifera",
-        qty: "42.0",
-        traders: "42.0",
-        mfg: "—",
-        forest: "—",
-        cult: "—",
-        imp: "—",
-        total: "42.0",
-        part: "Root",
-        batches: [
-          { grn: "GRN-2023-0038", date: "10 May 2023", qty: "42.0 kg", supplier: "Herbal Roots Pvt Ltd" },
-        ],
-      },
-      {
-        name: "Amalaki",
-        bot: "Emblica officinalis",
-        qty: "95.0",
-        traders: "95.0",
-        mfg: "—",
-        forest: "—",
-        cult: "—",
-        imp: "—",
-        total: "95.0",
-        part: "Fruit rind",
-        batches: [
-          { grn: "GRN-2023-0070", date: "18 Jul 2023", qty: "95.0 kg", supplier: "Vana Suppliers" },
-        ],
-      },
-    ],
-    metals: [
-      {
-        name: "Abhraka Bhasma",
-        chem: "Mica / Biotite silicate",
-        qty: "1.8",
-        mfg: "1.8",
-        traders: "—",
-        imp: "—",
-        total: "1.8",
-        batches: [
-          { grn: "GRN-2023-0049", date: "01 Jun 2023", qty: "1.8 kg", supplier: "Bhasma Manufacturers India" },
-        ],
-      },
-    ],
-    animals: [],
-    marines: [],
-    finished: [
-      { product: "Triphala Churna", batchNos: "TRCH-2305-0001", manufactured: "60.0 kg", sold: "60.0 kg" },
-    ],
-  },
-  "FY 2022-23": {
-    herbs: [],
-    metals: [],
-    animals: [],
-    marines: [],
-    finished: [],
-  },
+type DerivedData = {
+  herbs: Herb[];
+  metals: Metal[];
+  animals: Animal[];
+  marines: Marine[];
+  finished: Finished[];
 };
 
 const FY_OPTIONS = ["FY 2024-25", "FY 2023-24", "FY 2022-23"];
 
+// FY string -> [start, end) JS Date range
+function fyRangeDates(fy: string): { start: Date; end: Date } | null {
+  const m = fy.match(/FY (\d{4})-(\d{2})/);
+  if (!m) return null;
+  const startYear = parseInt(m[1], 10);
+  const endYear = parseInt(`20${m[2]}`, 10);
+  return {
+    start: new Date(startYear, 3, 1), // 1 Apr
+    end: new Date(endYear, 3, 1),     // 1 Apr next year (exclusive)
+  };
+}
+
+// Parse dates like "01 Apr 2025", "2025-04-01", "Apr 2025"
+function parseAnyDate(s: string | undefined | null): Date | null {
+  if (!s || s === "—") return null;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+  return null;
+}
+
+function inFY(dateStr: string | undefined, range: { start: Date; end: Date } | null) {
+  if (!range) return false;
+  const d = parseAnyDate(dateStr);
+  if (!d) return false;
+  return d >= range.start && d < range.end;
+}
+
 const ScheduleTA = () => {
   const navigate = useNavigate();
+  const { rmData, pendingGRNs } = useStock();
+  const { bmrs } = useBMRs();
   const [fy, setFy] = useState("FY 2024-25");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     b: true,
@@ -278,15 +119,191 @@ const ScheduleTA = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [missing, setMissing] = useState<string[] | null>(null);
 
-  const data = DATA[fy];
-
   const fyDateRange = useMemo(() => {
     const m = fy.match(/FY (\d{4})-(\d{2})/);
     if (!m) return "";
-    const start = m[1];
-    const end = `20${m[2]}`;
-    return `01 Apr ${start} to 31 Mar ${end}`;
+    return `01 Apr ${m[1]} to 31 Mar 20${m[2]}`;
   }, [fy]);
+
+  const data = useMemo<DerivedData>(() => {
+    const range = fyRangeDates(fy);
+
+    // Build supplier lookup per rmName from pendingGRNs
+    const suppliersByRm = new Map<string, Set<string>>();
+    const grnBatchesByRm = new Map<string, Batch[]>();
+    pendingGRNs.forEach((grn) => {
+      if (!inFY(grn.date, range)) return;
+      grn.lines.forEach((ln) => {
+        if (!suppliersByRm.has(ln.rmName)) suppliersByRm.set(ln.rmName, new Set());
+        suppliersByRm.get(ln.rmName)!.add(grn.supplier);
+        if (!grnBatchesByRm.has(ln.rmName)) grnBatchesByRm.set(ln.rmName, []);
+        grnBatchesByRm.get(ln.rmName)!.push({
+          grn: grn.grnNo,
+          date: grn.date,
+          qty: `${ln.qty} ${ln.uom}`,
+          supplier: grn.supplier,
+        });
+      });
+    });
+
+    const parseQty = (s: string) => {
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    };
+
+    const fmt = (n: number) => (n > 0 ? n.toFixed(2) : "—");
+
+    const buildHerbRow = (rm: typeof rmData[number]): Herb => {
+      let inwardQty = 0;
+      let outwardQty = 0;
+      const batches: Batch[] = [];
+      rm.txns.forEach((t) => {
+        if (!inFY(t.date, range)) return;
+        if (t.type === "Inward") {
+          const q = parseQty(t.qtyIn);
+          inwardQty += q;
+          batches.push({
+            grn: t.ref,
+            date: t.date,
+            qty: `${q.toFixed(3)} ${rm.uom}`,
+            supplier: "—",
+          });
+        } else if (t.type === "Outward") {
+          outwardQty += parseQty(t.qtyOut);
+        }
+      });
+
+      // Prefer GRN-derived batches w/ supplier when available
+      const grnBatches = grnBatchesByRm.get(rm.name) ?? [];
+      const mergedBatches = grnBatches.length ? grnBatches : batches;
+
+      const traders = fmt(inwardQty);
+      return {
+        name: rm.name,
+        bot: rm.botanical,
+        qty: outwardQty > 0 ? outwardQty.toFixed(2) : "—",
+        traders,
+        mfg: "—",
+        forest: "—",
+        cult: "—",
+        imp: "—",
+        total: traders,
+        part: rm.part,
+        batches: mergedBatches,
+      };
+    };
+
+    const buildMetalRow = (rm: typeof rmData[number]): Metal => {
+      let inwardQty = 0;
+      let outwardQty = 0;
+      const batches: Batch[] = [];
+      rm.txns.forEach((t) => {
+        if (!inFY(t.date, range)) return;
+        if (t.type === "Inward") {
+          const q = parseQty(t.qtyIn);
+          inwardQty += q;
+          batches.push({
+            grn: t.ref,
+            date: t.date,
+            qty: `${q.toFixed(3)} ${rm.uom}`,
+            supplier: "—",
+          });
+        } else if (t.type === "Outward") {
+          outwardQty += parseQty(t.qtyOut);
+        }
+      });
+      const grnBatches = grnBatchesByRm.get(rm.name) ?? [];
+      const mergedBatches = grnBatches.length ? grnBatches : batches;
+
+      const traders = fmt(inwardQty);
+      return {
+        name: rm.name,
+        chem: rm.botanical,
+        qty: outwardQty > 0 ? outwardQty.toFixed(2) : "—",
+        mfg: "—",
+        traders,
+        imp: "—",
+        total: traders,
+        batches: mergedBatches,
+      };
+    };
+
+    const buildAnimalRow = (rm: typeof rmData[number]): Animal => {
+      let inwardQty = 0;
+      let outwardQty = 0;
+      const batches: Batch[] = [];
+      rm.txns.forEach((t) => {
+        if (!inFY(t.date, range)) return;
+        if (t.type === "Inward") {
+          const q = parseQty(t.qtyIn);
+          inwardQty += q;
+          batches.push({
+            grn: t.ref,
+            date: t.date,
+            qty: `${q.toFixed(3)} ${rm.uom}`,
+            supplier: "—",
+          });
+        } else if (t.type === "Outward") {
+          outwardQty += parseQty(t.qtyOut);
+        }
+      });
+      const grnBatches = grnBatchesByRm.get(rm.name) ?? [];
+      const mergedBatches = grnBatches.length ? grnBatches : batches;
+      return {
+        name: rm.name,
+        source: rm.botanical,
+        qty: outwardQty > 0 ? outwardQty.toFixed(2) : "—",
+        total: inwardQty > 0 ? inwardQty.toFixed(2) : "—",
+        batches: mergedBatches,
+      };
+    };
+
+    const isHerb = (c: string) => /herb/i.test(c);
+    const isMetal = (c: string) => /metal|mineral/i.test(c);
+    const isAnimal = (c: string) => /animal/i.test(c);
+    const isMarine = (c: string) => /marine/i.test(c);
+
+    const herbs = rmData
+      .filter((r) => isHerb(r.category))
+      .map(buildHerbRow)
+      .filter((r) => r.qty !== "—" || r.total !== "—" || r.batches.length);
+
+    const metals = rmData
+      .filter((r) => isMetal(r.category))
+      .map(buildMetalRow)
+      .filter((r) => r.qty !== "—" || r.total !== "—" || r.batches.length);
+
+    const animals = rmData
+      .filter((r) => isAnimal(r.category))
+      .map(buildAnimalRow)
+      .filter((r) => r.qty !== "—" || r.total !== "—" || r.batches.length);
+
+    const marines = rmData
+      .filter((r) => isMarine(r.category))
+      .map(buildAnimalRow)
+      .filter((r) => r.qty !== "—" || r.total !== "—" || r.batches.length);
+
+    // Finished products from bmrs within FY
+    const finishedMap = new Map<string, { batchNos: string[]; qty: number; unit: string }>();
+    bmrs.forEach((b) => {
+      const dateStr = b.completionDate || b.startDate;
+      if (!inFY(dateStr, range)) return;
+      const key = b.productName || "—";
+      if (!finishedMap.has(key)) finishedMap.set(key, { batchNos: [], qty: 0, unit: b.batchUnit || "kg" });
+      const e = finishedMap.get(key)!;
+      if (b.batchNo) e.batchNos.push(b.batchNo);
+      e.qty += Number(b.batchSize) || 0;
+    });
+
+    const finished: Finished[] = Array.from(finishedMap.entries()).map(([product, v]) => ({
+      product,
+      batchNos: v.batchNos.join(", ") || "—",
+      manufactured: `${v.qty.toFixed(2)} ${v.unit}`,
+      sold: "—",
+    }));
+
+    return { herbs, metals, animals, marines, finished };
+  }, [fy, rmData, pendingGRNs, bmrs]);
 
   const validate = (): string[] => {
     const issues: string[] = [];
@@ -353,7 +370,6 @@ const ScheduleTA = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        {/* Validation banner */}
         {missing && (
           <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 px-3.5 py-2.5 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
@@ -377,7 +393,6 @@ const ScheduleTA = () => {
           </div>
         )}
 
-        {/* Facility info */}
         <div className="bg-secondary rounded-md p-3.5 mb-3 grid grid-cols-3 gap-3 text-xs">
           <div>
             <div className="text-[10px] text-muted-foreground mb-0.5">Mfg. license no.</div>
@@ -688,8 +703,8 @@ const BatchTooltip = ({ batches }: { batches: Batch[] }) => {
           Contributing batches
         </div>
         <div className="divide-y">
-          {batches.map((b) => (
-            <div key={b.grn} className="px-3 py-2 text-[11px] space-y-0.5">
+          {batches.map((b, i) => (
+            <div key={`${b.grn}-${i}`} className="px-3 py-2 text-[11px] space-y-0.5">
               <div className="flex justify-between gap-3">
                 <span className="font-medium">{b.grn}</span>
                 <span className="text-muted-foreground">{b.date}</span>
@@ -713,7 +728,7 @@ const PrintableForm = ({
 }: {
   fy: string;
   fyDateRange: string;
-  data: (typeof DATA)[string];
+  data: DerivedData;
 }) => (
   <div className="px-10 py-8 bg-white text-black text-[11px] leading-relaxed print:px-6 print:py-4">
     <style>{`
