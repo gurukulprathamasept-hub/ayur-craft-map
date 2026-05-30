@@ -11,7 +11,7 @@ const BMRCreate = () => {
   const [searchParams] = useSearchParams();
   const { formulations } = useFormulations();
   const { addBMR, getNextBatchNo } = useBMRs();
-  const { rmData } = useStock();
+  const { rmData, getStockForRM, getActiveLotsForRM } = useStock();
 
   const preselectedId = searchParams.get("mfr");
   const [selectedMFR, setSelectedMFR] = useState<string>(preselectedId || "");
