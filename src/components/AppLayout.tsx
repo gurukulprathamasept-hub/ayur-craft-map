@@ -16,9 +16,17 @@ import {
   Languages,
   KeyRound,
   LogOut,
+  Bell,
+  Package,
+  CalendarClock,
+  FileText as FileTextIcon,
+  Truck as TruckIcon,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useUser, roleLabel } from "@/context/UserContext";
+import { useNotif, NotifType } from "@/context/NotificationContext";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const navGroups = [
@@ -56,11 +64,36 @@ const navGroups = [
   },
 ];
 
+const NOTIF_ICON: Record<NotifType, typeof Package> = {
+  low_stock: Package,
+  expiring: CalendarClock,
+  bmr_pending: FileTextIcon,
+  grn_pending: TruckIcon,
+};
+
+const NOTIF_COLOR: Record<NotifType, string> = {
+  low_stock: "text-destructive",
+  expiring: "text-amber-600",
+  bmr_pending: "text-primary",
+  grn_pending: "text-blue-600",
+};
+
 const AppLayout = () => {
   const { lang, setLang } = useLanguage();
   const { currentUser, login, logout } = useUser();
+  const { notifs, unreadCount, markRead, markAllRead } = useNotif();
+  const navigate = useNavigate();
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState("");
+
+  const recent = notifs.slice(0, 10);
+
+  const handleNotifClick = (id: string, type: NotifType, ref?: string) => {
+    markRead(id);
+    if (type === "bmr_pending" && ref) navigate(`/bmr/${ref}`);
+    else if (type === "grn_pending") navigate(`/rm-inward`);
+    else if (type === "low_stock" || type === "expiring") navigate(`/stock-ledger`);
+  };
 
   const handleLogin = () => {
     if (login(pin)) {
