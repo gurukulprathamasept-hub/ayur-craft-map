@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -11,8 +12,12 @@ import {
   Truck,
   ShieldCheck,
   Languages,
+  KeyRound,
+  LogOut,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useUser, roleLabel } from "@/context/UserContext";
+import { toast } from "sonner";
 
 const navGroups = [
   {
