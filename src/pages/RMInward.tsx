@@ -1085,6 +1085,57 @@ const RMInward = () => {
           </div>
         )}
       </div>
+
+      {rejectedDisposalQueue.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-card border border-border rounded-lg shadow-lg max-w-md w-full p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <Trash2 className="w-4 h-4 text-destructive" />
+              <h3 className="text-sm font-semibold">Log disposal for rejected lots?</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              {rejectedDisposalQueue.length} RM lot{rejectedDisposalQueue.length === 1 ? "" : "s"} were rejected at QC and need a disposal record per Schedule U.
+            </p>
+            <div className="space-y-1.5 mb-4 max-h-48 overflow-auto">
+              {rejectedDisposalQueue.map((r, i) => (
+                <div key={i} className="flex items-center justify-between text-xs border border-border rounded px-2 py-1.5">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{r.rmName}</div>
+                    <div className="text-[10px] text-muted-foreground font-mono">{r.batch} — {r.qty} {r.uom}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qs = new URLSearchParams({
+                        itemType: "RM",
+                        itemName: r.rmName,
+                        batchNo: r.batch,
+                        qty: String(r.qty),
+                        unit: r.uom,
+                        reason: r.reason,
+                        grnRef: grnNo,
+                      });
+                      navigate(`/disposal-ledger?${qs.toString()}`);
+                    }}
+                    className="px-2 py-0.5 text-[10px] rounded bg-primary text-primary-foreground hover:opacity-90 font-medium shrink-0 ml-2"
+                  >
+                    Log
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRejectedDisposalQueue([])}
+                className="px-3 py-1.5 text-xs rounded border border-border bg-background hover:bg-secondary"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
