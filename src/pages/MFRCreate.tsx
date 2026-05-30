@@ -493,13 +493,17 @@ const MFRCreate = () => {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="grid grid-cols-3 gap-2 mb-3">
                         <div className="form-field"><label>Expected yield qty</label><input type="number" min={0} step="0.001" value={sp.yieldQty ?? ""} onChange={(e) => updateSP({ yieldQty: e.target.value === "" ? undefined : Number(e.target.value) })} /></div>
                         <div className="form-field">
                           <label>Yield unit</label>
                           <select value={sp.yieldUnit || "L"} onChange={(e) => updateSP({ yieldUnit: e.target.value })}>
                             <option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option>
                           </select>
+                        </div>
+                        <div className="form-field">
+                          <label>Position in process (insert before step #)</label>
+                          <input type="number" min={0} value={sp.insertBeforeStepIndex ?? 1} onChange={(e) => updateSP({ insertBeforeStepIndex: Number(e.target.value) })} />
                         </div>
                       </div>
 
