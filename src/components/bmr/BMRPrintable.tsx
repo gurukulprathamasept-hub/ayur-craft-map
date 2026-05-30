@@ -55,6 +55,15 @@ const BMRPrintable = ({ bmr }: Props) => {
 
   return (
     <div className="bmr-printable" style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: "11pt", color: "#000", lineHeight: 1.4 }}>
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 12mm; }
+          html, body { background: #fff !important; }
+          .no-print, nav, header[role="banner"], aside, .app-sidebar, [data-sidebar] { display: none !important; }
+          .bmr-printable { width: 210mm; max-width: 210mm; margin: 0 auto; }
+        }
+        .bmr-printable { width: 210mm; max-width: 210mm; margin: 0 auto; }
+      `}</style>
       {/* Header / Title page */}
       <section style={{ marginBottom: "16pt" }}>
         <div style={{ textAlign: "center", marginBottom: "16pt" }}>
