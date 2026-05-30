@@ -29,6 +29,7 @@ const emptySubProcess = (): SubProcess => ({
   yieldUnit: "L",
   completionTest: "",
   notes: "",
+  insertBeforeStepIndex: 1,
 });
 const emptyPackSize = (): PackSizeOption => ({
   label: "",
