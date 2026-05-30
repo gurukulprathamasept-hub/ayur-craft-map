@@ -331,7 +331,7 @@ const BMRPrintable = ({ bmr }: Props) => {
       </Section>
 
       {/* Yield & Packing */}
-      <Section title="5. Yield & Packing">
+      <Section title="5. Yield & Packing" scheduleRef="Schedule U §I-A.9 — Yield Reconciliation & Packaging Record">
         <h3 style={{ fontSize: "11pt", fontWeight: 700, marginBottom: "6pt" }}>Blend Weights</h3>
         <Row label="Theoretical Blend Wt." value={bmr.blendWeight.theoreticalBlendWt} />
         <Row label="Actual Blend Wt." value={bmr.blendWeight.actualBlendWt} />
