@@ -1,4 +1,5 @@
 import { BMRRecord } from "@/context/BMRContext";
+import { useFormulations } from "@/context/FormulationContext";
 import { Info } from "lucide-react";
 
 interface Props {
