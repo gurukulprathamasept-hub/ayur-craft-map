@@ -382,7 +382,7 @@ const BMRPrintable = ({ bmr }: Props) => {
       </Section>
 
       {/* QC */}
-      <Section title="6. QC Analytical Report & Release">
+      <Section title="6. QC Analytical Report & Release" scheduleRef="Schedule U §I-A.10 — Finished Product Analytical Record & Release">
         <Row label="AR Report No." value={bmr.arReportNo} />
         <Row label="Date Sample Sent to QC" value={bmr.dateSampleSentToQC} />
         <Row label="Date of Analysis" value={bmr.dateOfAnalysis} />
