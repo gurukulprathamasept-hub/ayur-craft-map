@@ -5,7 +5,6 @@ interface Props {
 
 const STEPS = [
   "Batch header",
-  "Sub-processes",
   "Ingredients",
   "Process log",
   "IPC checks",
