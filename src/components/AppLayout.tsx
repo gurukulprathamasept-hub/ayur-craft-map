@@ -367,3 +367,44 @@ const AppLayout = () => {
 };
 
 export default AppLayout;
+
+const SwitchUserForm = () => {
+  const { login, users } = useUser();
+  const [pin, setPin] = useState("");
+
+  const submit = () => {
+    const u = users.find((x) => x.pin === pin);
+    if (u && login(pin)) {
+      toast.success(`Switched to ${u.name}`);
+      setPin("");
+    } else {
+      toast.error("Invalid PIN");
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] font-medium">Enter PIN</div>
+      <div className="flex items-center gap-1">
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={6}
+          autoFocus
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="••••"
+          className="flex-1 min-w-0 h-7 px-2 text-xs rounded border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <button
+          type="button"
+          onClick={submit}
+          className="h-7 px-2 text-[10px] font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          Go
+        </button>
+      </div>
+    </div>
+  );
+};
