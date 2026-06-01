@@ -337,9 +337,74 @@ const AppLayout = () => {
         <div className="flex-1 overflow-auto">
           <Outlet />
         </div>
+        <div className="h-8 border-t border-border bg-card flex items-center px-3 text-[11px] text-muted-foreground shrink-0">
+          <span className="truncate">
+            Logged in as{" "}
+            <span className="text-foreground font-medium">
+              {currentUser ? currentUser.name : "— not logged in —"}
+            </span>
+            {currentUser && <> · {roleLabel(currentUser.role)}</>}
+          </span>
+          <div className="ml-auto">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 px-2 h-6 rounded border border-border bg-background hover:bg-secondary transition-colors text-[10px]"
+                >
+                  <KeyRound className="w-2.5 h-2.5" /> Switch user
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[220px] p-2">
+                <SwitchUserForm />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </main>
     </div>
   );
 };
 
 export default AppLayout;
+
+const SwitchUserForm = () => {
+  const { login, users } = useUser();
+  const [pin, setPin] = useState("");
+
+  const submit = () => {
+    const u = users.find((x) => x.pin === pin);
+    if (u && login(pin)) {
+      toast.success(`Switched to ${u.name}`);
+      setPin("");
+    } else {
+      toast.error("Invalid PIN");
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] font-medium">Enter PIN</div>
+      <div className="flex items-center gap-1">
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={6}
+          autoFocus
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="••••"
+          className="flex-1 min-w-0 h-7 px-2 text-xs rounded border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <button
+          type="button"
+          onClick={submit}
+          className="h-7 px-2 text-[10px] font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          Go
+        </button>
+      </div>
+    </div>
+  );
+};
