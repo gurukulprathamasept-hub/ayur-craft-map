@@ -337,6 +337,30 @@ const AppLayout = () => {
         <div className="flex-1 overflow-auto">
           <Outlet />
         </div>
+        <div className="h-8 border-t border-border bg-card flex items-center px-3 text-[11px] text-muted-foreground shrink-0">
+          <span className="truncate">
+            Logged in as{" "}
+            <span className="text-foreground font-medium">
+              {currentUser ? currentUser.name : "— not logged in —"}
+            </span>
+            {currentUser && <> · {roleLabel(currentUser.role)}</>}
+          </span>
+          <div className="ml-auto">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 px-2 h-6 rounded border border-border bg-background hover:bg-secondary transition-colors text-[10px]"
+                >
+                  <KeyRound className="w-2.5 h-2.5" /> Switch user
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[220px] p-2">
+                <SwitchUserForm />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </main>
     </div>
   );
