@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "ayurmap-studio",
+      "version": "0.1.0",
+      "title": "AyurMap Studio"
+    },
+    "tools": [
+      {
+        "name": "list_formulations",
+        "title": "List reference formulations",
+        "description": "List the built-in Ayurvedic reference formulations (Master Formula Records) available in AyurMap Studio, optionally filtered by dosage form or a text query.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "dosageForm": {
+              "type": "string",
+              "description": "Filter by dosage form, e.g. \"Churna\", \"Taila\", \"Bhasma\". Omit or \"All\" for every form."
+            },
+            "query": {
+              "type": "string",
+              "description": "Free-text match on name, Sanskrit name or therapeutic use."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_formulation",
+        "title": "Get formulation record",
+        "description": "Get the full reference Master Formula Record for one Ayurvedic formulation: ingredients with parts used, sub-processes (Kwatha/Kalka/Bhavana/Shodhana), process steps, QC parameters and packaging.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "formulation": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Formulation id or name, e.g. \"Triphala Churna\" or \"ref-1\"."
+            }
+          },
+          "required": [
+            "formulation"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "find_formulations_by_ingredient",
+        "title": "Find formulations by ingredient",
+        "description": "Find which reference Ayurvedic formulations use a given raw material (dravya), matching on common or botanical name. Useful for traceability and substitution questions.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "ingredient": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Raw material name or part of it, e.g. \"Haritaki\", \"Terminalia\", \"Guduchi\"."
+            }
+          },
+          "required": [
+            "ingredient"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_compliance_reference",
+        "title": "Get compliance reference",
+        "description": "Return AyurMap Studio's compliance reference metadata: raw material categories and their Schedule TA reporting groups, dosage forms, and Ayurvedic sub-process (intermediate preparation) types.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "section": {
+              "type": "string",
+              "enum": [
+                "all",
+                "categories",
+                "dosageForms",
+                "subProcesses"
+              ],
+              "description": "Which section to return. Defaults to \"all\"."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
